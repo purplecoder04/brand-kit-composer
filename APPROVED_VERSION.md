@@ -43,3 +43,26 @@ Approved behavior:
 - No new branch support yet.
 
 Do not change Level 3A unless fixing a confirmed bug.
+
+---
+
+# Best Collective Kit Factory V1 - Level 3B Checklist + Notes Blocks
+
+Approved on: 2026-06-09
+
+This version is locked as the approved Level 3B Checklist + Notes Blocks checkpoint.
+
+Approved behavior:
+- Checklist block works.
+- Notes block works.
+- Notes uses approved Workbook-style layout.
+- Lesson block mapping works correctly.
+- Multiple blocks print in order.
+- Page numbers update automatically.
+- No sample content appears unless Reset to Sample Content is clicked.
+- Blank fields stay blank.
+- Brand Template V1 styling remains locked.
+- /mapper remains untouched.
+- /builder remains stable.
+
+Do not change Level 3B unless fixing a confirmed bug.
