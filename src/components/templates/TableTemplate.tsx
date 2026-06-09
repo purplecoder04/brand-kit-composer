@@ -1,6 +1,7 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
+import { CornerWash, Diamond, PLUM_DEEP, SparkleRule } from "./_decor";
 
 type Props = {
   block: Block;
@@ -12,58 +13,68 @@ type Props = {
 export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
   const headers = block.tableData?.headers ?? [];
   const rows = block.tableData?.rows ?? [];
+  const gold = branchProfile.goldAccent;
 
   return (
     <PageCanvas
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
+      bleed
     >
-      {block.subtitle ? (
-        <div
-          style={{
-            fontSize: "11px",
-            letterSpacing: "0.28em",
-            textTransform: "uppercase",
-            color: branchProfile.primaryColor,
-            marginBottom: "0.18in",
-          }}
-        >
-          {block.subtitle}
-        </div>
-      ) : null}
-
-      <h1
-        style={{
-          fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-          fontSize: "32px",
-          lineHeight: 1.15,
-          fontWeight: 500,
-          color: branchProfile.primaryColor,
-          margin: 0,
-        }}
-      >
-        {block.title}
-      </h1>
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "#F5EFE3" }} />
+      <CornerWash branchProfile={branchProfile} variant="topRight" />
+      <CornerWash branchProfile={branchProfile} variant="bottomLeft" />
 
       <div
         style={{
-          width: "0.8in",
-          height: "2px",
-          background: branchProfile.goldAccent,
-          margin: "0.22in 0 0.3in",
+          position: "absolute",
+          top: "0.6in",
+          left: "0.6in",
+          right: "0.6in",
+          bottom: "1.05in",
         }}
-      />
+      >
+        {block.subtitle ? (
+          <div
+            style={{
+              fontSize: "10px",
+              letterSpacing: "0.42em",
+              textTransform: "uppercase",
+              color: PLUM_DEEP,
+              fontWeight: 600,
+              marginBottom: "0.18in",
+            }}
+          >
+            {block.subtitle}
+          </div>
+        ) : null}
 
-      <div style={{ width: "100%", maxWidth: "6.65in", marginLeft: "auto", marginRight: "auto" }}>
-      <table
+        <h1
+          style={{
+            fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+            fontSize: "40px",
+            lineHeight: 1.05,
+            fontWeight: 500,
+            color: PLUM_DEEP,
+            margin: 0,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          {block.title}
+        </h1>
+
+        <SparkleRule color={gold} width="2in" marginTop="0.24in" marginBottom="0.4in" align="left" />
+
+        <div style={{ width: "100%", maxWidth: "6.65in", marginLeft: "auto", marginRight: "auto" }}>
+        <table
         style={{
           width: "100%",
           tableLayout: "fixed",
           borderCollapse: "collapse",
           fontSize: "12px",
-          color: branchProfile.textColor,
-          border: `1.5px solid ${branchProfile.primaryColor}`,
+          color: PLUM_DEEP,
+          border: `1.5px solid ${PLUM_DEEP}`,
         }}
       >
         <thead>
@@ -73,11 +84,11 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                 key={i}
                 style={{
                   textAlign: "left",
-                  background: branchProfile.primaryColor,
+                  background: PLUM_DEEP,
                   color: "#ffffff",
                   padding: "0.14in 0.18in",
                   fontSize: "11px",
-                  letterSpacing: "0.16em",
+                  letterSpacing: "0.24em",
                   textTransform: "uppercase",
                   fontWeight: 600,
                   borderRight:
@@ -93,7 +104,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
         </thead>
         <tbody>
           {rows.map((row, ri) => (
-            <tr key={ri}>
+            <tr key={ri} style={{ background: ri % 2 === 0 ? "rgba(255,253,248,0.6)" : "transparent" }}>
               {row.map((cell, ci) => (
                 <td
                   key={ci}
@@ -116,6 +127,12 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
           ))}
         </tbody>
       </table>
+        </div>
+
+        <div style={{ marginTop: "0.35in", display: "flex", alignItems: "center", gap: "0.12in" }}>
+          <Diamond color={gold} inline />
+          <div style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }} />
+        </div>
       </div>
     </PageCanvas>
   );
