@@ -16,6 +16,7 @@ import {
   RESERVED_MAPPER_KIT_ID,
   SAMPLE_MAPPER_CONTENT,
   buildBlocksFromMapper,
+  encodeMapperDraftForUrl,
   getOverflowWarnings,
   loadMapperDraft,
   saveMapperDraft,
@@ -83,7 +84,12 @@ function MapperPage() {
       return;
     }
     persist(content, source);
-    window.open(`/print/${RESERVED_MAPPER_KIT_ID}?filter=all`, "_blank", "noreferrer");
+    const mapperPayload = encodeMapperDraftForUrl(content, source);
+    window.open(
+      `/print/${RESERVED_MAPPER_KIT_ID}?filter=all#mapper=${mapperPayload}`,
+      "_blank",
+      "noreferrer",
+    );
   };
 
   const onReset = () => {

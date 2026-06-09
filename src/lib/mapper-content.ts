@@ -98,6 +98,39 @@ export function loadMapperContentFromStorage(): MapperContent | null {
   return loadMapperDraft()?.content ?? null;
 }
 
+export function encodeMapperDraftForUrl(
+  content: MapperContent,
+  source: MapperDraftSource = "current",
+): string {
+  const draft: MapperDraft = {
+    content,
+    source,
+    lastSaved: new Date().toISOString(),
+  };
+  return encodeURIComponent(JSON.stringify(draft));
+}
+
+export function loadMapperContentFromUrlHash(): MapperContent | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const hash = window.location.hash.replace(/^#/, "");
+    if (!hash) return null;
+    const raw = new URLSearchParams(hash).get("mapper");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as
+      | Partial<MapperDraft>
+      | Partial<MapperContent>;
+
+    if (parsed && typeof parsed === "object" && "content" in parsed && parsed.content) {
+      return { ...EMPTY_MAPPER_CONTENT, ...(parsed.content as MapperContent) };
+    }
+
+    return { ...EMPTY_MAPPER_CONTENT, ...(parsed as MapperContent) };
+  } catch {
+    return null;
+  }
+}
+
 export function parseKeywords(raw: string): string[] {
   return raw
     .split(/[,•·|]/)

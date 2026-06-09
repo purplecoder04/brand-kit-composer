@@ -11,6 +11,8 @@ import {
   RESERVED_MAPPER_KIT_ID,
   buildBlocksFromMapper,
   loadMapperContentFromStorage,
+  loadMapperContentFromUrlHash,
+  type MapperContent,
 } from "@/lib/mapper-content";
 
 const searchSchema = z.object({
@@ -26,8 +28,7 @@ export const Route = createFileRoute("/print/$kitId")({
 const LESSON_TYPES: PageType[] = ["cover", "divider", "lesson"];
 const WORKBOOK_TYPES: PageType[] = ["cover", "divider", "workbook"];
 
-function buildMapperKitFromStorage(): Kit | null {
-  const content = loadMapperContentFromStorage();
+function buildMapperKitFromContent(content: MapperContent | null): Kit | null {
   if (!content) return null;
 
   return {
@@ -64,12 +65,16 @@ function PrintRoute() {
       return;
     }
 
-    setStoredMapperKit(buildMapperKitFromStorage());
+    setStoredMapperKit(
+      buildMapperKitFromContent(
+        loadMapperContentFromUrlHash() ?? loadMapperContentFromStorage(),
+      ),
+    );
     setMapperStorageChecked(true);
   }, [kitId]);
 
   // Mapper preview: the new tab has a fresh in-memory store. Rebuild from
-  // localStorage after hydration so mapped content prints instead of sample.
+  // the URL hash/localStorage after hydration so mapped content prints instead of sample.
   const kit = useMemo(() => {
     if (kitId === RESERVED_MAPPER_KIT_ID) {
       if (storedMapperKit) return storedMapperKit;
