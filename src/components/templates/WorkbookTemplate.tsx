@@ -20,7 +20,7 @@ type Props = {
 };
 
 export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
-  const lineCount = Math.max(4, Math.min(block.lines ?? 12, 20));
+  const lineCount = Math.max(0, Math.min(block.lines ?? 0, 20));
   const gold = branchProfile.goldAccent;
 
   return (

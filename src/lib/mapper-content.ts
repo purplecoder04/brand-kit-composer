@@ -37,7 +37,7 @@ export type MapperContent = {
   workbookLabel: string;
   workbookTitle: string;
   workbookPrompt: string;
-  workbookLines: number;
+  workbookLines: number | "";
 };
 
 export const RESERVED_MAPPER_KIT_ID = "mapper-preview";
@@ -45,7 +45,7 @@ export const RESERVED_MAPPER_KIT_ID = "mapper-preview";
 export const MAPPER_CONTENT_STORAGE_KEY = "best_collective_current_kit";
 const MAPPER_PRINT_WINDOW_PREFIX = "best_collective_mapper_print:";
 
-export type MapperDraftSource = "current" | "sample";
+export type MapperDraftSource = "current" | "sample" | "blank";
 
 export type MapperDraft = {
   content: MapperContent;
@@ -103,8 +103,8 @@ export function loadMapperContentFromStorage(): MapperContent | null {
 export function buildMapperKit(content: MapperContent): Kit {
   return {
     id: RESERVED_MAPPER_KIT_ID,
-    name: content.kitName || "Kit Content Mapper",
-    branch: content.branch || "Brand",
+    name: content.kitName,
+    branch: content.branch,
     audience: content.audience,
     tone: content.tone,
     description: content.kitTagline,
@@ -238,7 +238,7 @@ export const SAMPLE_MAPPER_CONTENT: MapperContent = (() => {
 export const EMPTY_MAPPER_CONTENT: MapperContent = {
   kitName: "",
   kitSubtitle: "",
-  branch: "Brand",
+  branch: "",
   audience: "",
   tone: "",
   kitTagline: "",
@@ -257,7 +257,7 @@ export const EMPTY_MAPPER_CONTENT: MapperContent = {
   workbookLabel: "",
   workbookTitle: "",
   workbookPrompt: "",
-  workbookLines: 12,
+  workbookLines: "",
 };
 
 export function buildBlocksFromMapper(content: MapperContent): Block[] {
@@ -267,23 +267,24 @@ export function buildBlocksFromMapper(content: MapperContent): Block[] {
       id: `${RESERVED_MAPPER_KIT_ID}-cover`,
       pageType: "cover",
       order: 1,
-      title: content.coverTitle || content.kitName || "Untitled Kit",
+      title: content.coverTitle,
       subtitle: content.coverSubtitle,
       body: content.kitTagline,
+      footerLabel: content.kitSubtitle,
       keywords: keywords.length > 0 ? keywords : undefined,
     },
     {
       id: `${RESERVED_MAPPER_KIT_ID}-divider`,
       pageType: "divider",
       order: 2,
-      title: content.sectionLabel || "Section One",
-      subtitle: content.sectionTitle || "",
+      title: content.sectionLabel,
+      subtitle: content.sectionTitle,
     },
     {
       id: `${RESERVED_MAPPER_KIT_ID}-lesson`,
       pageType: "lesson",
       order: 3,
-      title: content.lessonTitle || "",
+      title: content.lessonTitle,
       subtitle: content.lessonLabel,
       body: content.lessonBody,
     },
@@ -291,7 +292,7 @@ export function buildBlocksFromMapper(content: MapperContent): Block[] {
       id: `${RESERVED_MAPPER_KIT_ID}-table`,
       pageType: "table",
       order: 4,
-      title: content.tableTitle || "",
+      title: content.tableTitle,
       subtitle: content.tableSubtitle,
       tableData: {
         headers: content.tableHeaders.slice(),
@@ -302,10 +303,13 @@ export function buildBlocksFromMapper(content: MapperContent): Block[] {
       id: `${RESERVED_MAPPER_KIT_ID}-workbook`,
       pageType: "workbook",
       order: 5,
-      title: content.workbookTitle || "",
+      title: content.workbookTitle,
       subtitle: content.workbookLabel,
       prompt: content.workbookPrompt,
-      lines: Math.max(4, Math.min(content.workbookLines || 12, 20)),
+      lines:
+        typeof content.workbookLines === "number"
+          ? Math.max(0, Math.min(content.workbookLines, 20))
+          : 0,
     },
   ];
 }
@@ -317,6 +321,26 @@ export type OverflowWarning = {
 
 export function getOverflowWarnings(content: MapperContent): OverflowWarning[] {
   const warnings: OverflowWarning[] = [];
+
+  const requiredFields: Array<{
+    scope: OverflowWarning["scope"];
+    value: string | number | "";
+    label: string;
+  }> = [
+    { scope: "cover", value: content.kitName, label: "Kit name is blank." },
+    { scope: "cover", value: content.coverTitle, label: "Cover title is blank." },
+    { scope: "section", value: content.sectionTitle, label: "Section title is blank." },
+    { scope: "lesson", value: content.lessonTitle, label: "Lesson title is blank." },
+    { scope: "table", value: content.tableTitle, label: "Table title is blank." },
+    { scope: "workbook", value: content.workbookTitle, label: "Workbook title is blank." },
+    { scope: "workbook", value: content.workbookLines, label: "Writing line count is blank." },
+  ];
+
+  for (const field of requiredFields) {
+    if (field.value === "" || field.value === null || field.value === undefined) {
+      warnings.push({ scope: field.scope, message: field.label });
+    }
+  }
 
   if (content.coverTitle.length > 32) {
     warnings.push({ scope: "cover", message: "Cover title may not fit on one line." });
@@ -346,13 +370,20 @@ export function getOverflowWarnings(content: MapperContent): OverflowWarning[] {
     warnings.push({ scope: "table", message: "A table cell is too long and may wrap or clip." });
   }
 
-  if (content.workbookLines < 4 || content.workbookLines > 20) {
+  if (
+    typeof content.workbookLines === "number" &&
+    (content.workbookLines < 4 || content.workbookLines > 20)
+  ) {
     warnings.push({
       scope: "workbook",
       message: "Writing lines should be between 4 and 20.",
     });
   }
-  if (content.workbookPrompt.length > 280 && content.workbookLines > 12) {
+  if (
+    content.workbookPrompt.length > 280 &&
+    typeof content.workbookLines === "number" &&
+    content.workbookLines > 12
+  ) {
     warnings.push({
       scope: "workbook",
       message: "Long prompt with many lines may reduce writing space.",

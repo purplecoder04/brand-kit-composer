@@ -97,9 +97,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
           }}
         >
-          Helping people build stronger brands,
-          <br />
-          with confidence and clarity.
+          {block.subtitle}
         </p>
 
         <h1
@@ -174,10 +172,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
           }}
         >
           {(() => {
-            const pillars =
-              block.keywords && block.keywords.length > 0
-                ? block.keywords
-                : ["Structure", "Legitimacy", "Foundation"];
+            const pillars = block.keywords ?? [];
             return pillars.map((word, i) => (
               <span key={`${word}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: "0.09in" }}>
                 {i > 0 ? <Diamond color={gold} size={9} inline /> : null}
@@ -206,7 +201,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
         branchProfile={branchProfile}
         pageNumber={pageNumber}
         totalPages={totalPages}
-        label="A Best Collective Brand Kit"
+        label={block.footerLabel}
         showPageNumber={false}
         height="0.72in"
       />

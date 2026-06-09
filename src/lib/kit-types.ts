@@ -14,6 +14,7 @@ export type Block = {
   title: string;
   subtitle?: string;
   body?: string;
+  footerLabel?: string;
   prompt?: string;
   lines?: number;
   tableData?: TableData;

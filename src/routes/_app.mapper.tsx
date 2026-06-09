@@ -34,13 +34,13 @@ function MapperPage() {
   const { upsertMapperKit } = useKitStore();
   const initialDraft = useMemo(() => loadMapperDraft(), []);
   const [content, setContent] = useState<MapperContent>(
-    () => initialDraft?.content ?? SAMPLE_MAPPER_CONTENT,
+    () => initialDraft?.content ?? EMPTY_MAPPER_CONTENT,
   );
   const [lastSaved, setLastSaved] = useState<string | null>(
     initialDraft?.lastSaved ?? null,
   );
   const [source, setSource] = useState<MapperDraftSource>(
-    initialDraft?.source ?? "current",
+    initialDraft?.source ?? "blank",
   );
   const [dirty, setDirty] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -53,7 +53,7 @@ function MapperPage() {
   const patch = (p: Partial<MapperContent>) => {
     setContent((c) => ({ ...c, ...p }));
     setDirty(true);
-    if (source === "sample") setSource("current");
+    if (source !== "current") setSource("current");
   };
 
   const persist = (next: MapperContent, nextSource: MapperDraftSource = "current") => {
@@ -65,7 +65,7 @@ function MapperPage() {
   };
 
   const onSaveDraft = () => {
-    persist(content, source === "sample" ? "sample" : "current");
+    persist(content, source);
     toast.success("Draft saved");
   };
 
@@ -90,8 +90,8 @@ function MapperPage() {
   };
   const onClear = () => {
     setContent(EMPTY_MAPPER_CONTENT);
-    setDirty(true);
-    setSource("current");
+    persist(EMPTY_MAPPER_CONTENT, "blank");
+    toast.message("Cleared mapper content");
   };
 
   return (
@@ -154,7 +154,11 @@ function MapperPage() {
         <div>
           <span className="uppercase tracking-wider opacity-70">Preview Source: </span>
           <span style={{ color: "#222026" }}>
-            {source === "sample" ? "Sample Content" : "Current Kit"}
+            {source === "sample"
+              ? "Sample Content"
+              : source === "blank"
+                ? "Blank / New Draft"
+                : "Current Kit"}
           </span>
         </div>
       </div>
@@ -170,7 +174,7 @@ function MapperPage() {
               <Input value={content.kitSubtitle} onChange={(e) => patch({ kitSubtitle: e.target.value })} />
             </Field>
             <Field label="Branch">
-              <Input value={content.branch} disabled readOnly />
+              <Input value={content.branch} onChange={(e) => patch({ branch: e.target.value })} />
             </Field>
             <Field label="Audience">
               <Input value={content.audience} onChange={(e) => patch({ audience: e.target.value })} />
@@ -199,12 +203,12 @@ function MapperPage() {
             </Field>
             <Field
               label="Cover Keywords"
-              hint='Comma- or • separated. Example: Structure, Legitimacy, Foundation. Leave blank to use the default pillars.'
+              hint="Comma- or bullet-separated. Leave blank to print no keywords."
             >
               <Input
                 value={content.coverKeywords}
                 onChange={(e) => patch({ coverKeywords: e.target.value })}
-                placeholder="Structure, Legitimacy, Foundation"
+                placeholder=""
               />
             </Field>
           </SectionCard>
@@ -323,7 +327,12 @@ function MapperPage() {
                 max={20}
                 value={content.workbookLines}
                 onChange={(e) =>
-                  patch({ workbookLines: Number.parseInt(e.target.value || "0", 10) || 0 })
+                  patch({
+                    workbookLines:
+                      e.target.value === ""
+                        ? ""
+                        : Number.parseInt(e.target.value, 10) || 0,
+                  })
                 }
               />
             </Field>

@@ -85,7 +85,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
             maxWidth: "6in",
           }}
         >
-          {block.subtitle || "Section"}
+          {block.subtitle}
         </h2>
 
         <Diamond color={gold} style={{ marginTop: "0.4in" }} />
