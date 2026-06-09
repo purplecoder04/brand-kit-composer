@@ -173,11 +173,18 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             gap: "0.09in",
           }}
         >
-          <span>Structure</span>
-          <Diamond color={gold} size={9} inline />
-          <span>Legitimacy</span>
-          <Diamond color={gold} size={9} inline />
-          <span>Foundation</span>
+          {(() => {
+            const pillars =
+              block.keywords && block.keywords.length > 0
+                ? block.keywords
+                : ["Structure", "Legitimacy", "Foundation"];
+            return pillars.map((word, i) => (
+              <span key={`${word}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: "0.09in" }}>
+                {i > 0 ? <Diamond color={gold} size={9} inline /> : null}
+                <span>{word}</span>
+              </span>
+            ));
+          })()}
         </div>
 
         {block.body ? (

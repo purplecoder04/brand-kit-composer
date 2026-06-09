@@ -8,11 +8,13 @@ import {
   Printer,
   ClipboardCheck,
   Library,
+  Edit3,
 } from "lucide-react";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/create", label: "Create Kit", icon: FilePlus2 },
+  { to: "/mapper", label: "Kit Content Mapper", icon: Edit3 },
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/builder", label: "Kit Builder", icon: Wrench },
   { to: "/print-preview", label: "Print Preview", icon: Printer },
