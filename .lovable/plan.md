@@ -1,55 +1,102 @@
 ## Goal
 
-Eliminate Type 3 font output in the exported PDF without changing the approved visual design, layout, page count, or page order.
+Build Phase 2: a **Kit Content Mapper** screen that lets the user paste/edit real kit content, see it rendered live inside the five locked Brand Template V1 pages, see overflow warnings, and print/save to PDF. Local state only. Templates, print CSS, and visual design are NOT touched.
 
-## Root cause
+## New route
 
-The print route relies on Google-hosted `Cormorant Garamond` and `Inter`. When the browser's "Save as PDF" runs, those webfonts get embedded as Type 3 subsets. The fix is to force PDF-safe system fonts in print mode only — screen preview keeps the existing webfonts.
+`src/routes/_app.mapper.tsx` → `/mapper`, titled **Kit Content Mapper**. Add to the sidebar in `src/components/AppLayout.tsx` (icon: `Edit3` from lucide-react).
 
-## Changes (print/PDF only, no design edits)
+## Data flow (local state only)
 
-### 1. `src/styles.css` — add print-only font overrides
+- The mapper owns a single local React state object (`MapperContent`) initialized from the existing `SAMPLE_KIT`.
+- Pure helper `buildBlocksFromMapper(content)` returns the fixed 5-block array in locked order: Cover → Divider → Lesson → Table → Workbook. No add/remove block UI — page count is permanently 5.
+- The mapper writes that content into a reserved kit (`id: "mapper-preview"`) inside the existing `useKitStore` reducer on every change (debounced). This lets the existing `/print/$kitId` route render the mapped content with zero changes to the print pipeline.
+- A one-time `useEffect` on mount inserts the `mapper-preview` kit into the store if absent. Branch profile is the existing `BRAND_PROFILE`.
 
-Append to the existing `@media print { ... }` block:
+## Form fields (left column, scrollable, grouped in shadcn `Card`s)
 
-```css
-@media print {
-  /* PDF-safe font stacks — avoid Type 3 embedding from web fonts */
-  html, body, .page-canvas, .page-canvas * {
-    font-family: Arial, Helvetica, system-ui, sans-serif !important;
-  }
-  .page-canvas h1,
-  .page-canvas h2,
-  .page-canvas h3,
-  .page-canvas [data-font-display],
-  .page-canvas .font-display {
-    font-family: Georgia, Cambria, "Times New Roman", serif !important;
-  }
-}
-```
+### Kit Info
+- Kit Name, Subtitle, Branch (read-only "Brand"), Audience, Tone, Kit Tagline
 
-This single rule remaps every template (Cover, Divider, Lesson, Table, Workbook) at print time because every page renders inside `.page-canvas`. No template files need to change.
+### Cover Content
+- **Cover Title** → `block.title`
+- **Cover Subtitle** → `block.subtitle` (small line above title, e.g. "Best Collective")
+- **Cover Keywords** → comma- or `•`-separated list rendered as the cover keyword line ("Structure • Legitimacy • Foundation"). Stored as `block.keywords?: string[]` — handled by a tiny non-template change in the mapper-to-block mapping only; the CoverTemplate already renders three pillar words and stays untouched. The mapper passes the parsed keywords through the existing pillar slot, falling back to "Structure • Legitimacy • Foundation" if empty. **Kit Tagline / description remain a separate field** (`block.body` on the cover) and are NOT overwritten by Cover Keywords.
 
-### 2. `src/routes/print.$kitId.tsx` — drop webfont dependency for the print route
+### Section Content
+- Section Label (eyebrow → `block.title`), Section Title (display → `block.subtitle`)
 
-- Remove the Google Fonts `<link>` from the print document head for this route only (add a route-level `head()` that omits the font links and instead injects a small inline `<style>` that re-declares the print font stacks above, so even on-screen preview of the print route uses system fonts and matches the PDF output 1:1).
-- Keep the existing layout, the Print button, page break classes, and page sizing untouched.
+### Lesson Content
+- Lesson Label (eyebrow → `block.subtitle`), Lesson Title (→ `block.title`), Lesson Body (multiline → `block.body`)
 
-### 3. `src/routes/__root.tsx` — scope Google Fonts to non-print routes
+### Table / Tracker Content
+- Table Title, Table Subtitle
+- Column 1/2/3 Header inputs
+- Repeatable Row entries with **+ Add Row** and **× Remove** per row. Real `<table>` preserved by TableTemplate (untouched).
 
-Leave the Google Fonts links in `__root.tsx` (so the builder/preview UI keeps the designed look on screen), but the print route's own `head()` will not add anything that re-pulls those fonts. The `@media print` overrides in styles.css guarantee that even if a webfont loads in the print route's browser tab, the PDF rasterizes with Georgia/Arial.
+### Workbook Content
+- Workbook Label, Workbook Title, Workbook Prompt (textarea), Number of Writing Lines (number input, clamped 4–20 to match the existing template)
 
-## Explicitly NOT changing
+All inputs use existing shadcn primitives.
 
-- No template redesign (Cover, Divider, Lesson, Table, Workbook all untouched).
-- No layout, color, page count, page order, footer, or page numbering changes.
-- No removal of decorative SVGs (they are inline SVG, not glyph fonts — safe).
-- No conversion of text to images/outlines.
-- No new features, no Supabase/auth/AI work.
+## Buttons (sticky toolbar above the form)
 
-## Verification
+- **Generate Preview** — forces a sync + scrolls preview to top
+- **Print / Save as PDF** — opens `/print/mapper-preview?filter=all` in a new tab
+- **Reset to Sample Content** — repopulates form from `SAMPLE_KIT`
+- **Clear All** — empties every text field; table → one empty row; workbook lines → 12; keywords cleared (cover then renders default pillars)
 
-After applying:
-1. Open `/print/sample-gybs` in the preview, trigger Save as PDF.
-2. Confirm 5 pages, Letter size, page numbers correct, table intact, workbook lines intact, text selectable.
-3. Inspect the PDF (e.g. `pdffonts file.pdf`) — expect only TrueType/Type1 entries (Georgia, Arial, or their substitutes), no Type 3.
+## Live preview (right column)
+
+- Reuses existing `PagePreview` + `PageRenderer` — the same components used in `/print-preview` — so the rendered preview IS locked Brand Template V1.
+- Renders the 5 blocks at `scale={0.55}` stacked vertically with "Page N of 5" caption.
+- No template edits.
+
+## Overflow warnings
+
+Pure helper `getOverflowWarnings(content)` returning human-readable warnings, shown as a yellow `Alert` panel above the preview AND inline next to the relevant form section. Heuristics (no auto-shrink, no silent truncation):
+
+- Lesson body > 1,400 characters → "Lesson body may overflow the page."
+- Lesson body paragraph count > 6 → "Lesson has many paragraphs; consider splitting."
+- Table rows > 12 → "Table has too many rows for one page."
+- Any table cell > 90 chars → "A table cell is too long and may wrap or clip."
+- Workbook prompt > 280 chars AND lines > 12 → "Long prompt with many lines may reduce writing space."
+- Workbook lines outside 4–20 → "Writing lines should be between 4 and 20."
+- Cover title > 32 chars → "Cover title may not fit on one line."
+- Cover keywords list > 4 items → "Too many cover keywords; recommended 2–4."
+- Section title > 40 chars → "Section title may wrap awkwardly."
+
+## Print / PDF (unchanged pipeline)
+
+- `/print/mapper-preview?filter=all` reuses the existing `PrintRoute`, which already enforces 5 pages, page-break CSS, and the print-only system font overrides from Phase 1.
+- No changes to `styles.css`, `PageCanvas`, or any template.
+
+## Files to add
+
+- `src/routes/_app.mapper.tsx` — Kit Content Mapper screen (form + preview + warnings + buttons)
+- `src/lib/mapper-content.ts` — `MapperContent` type, `SAMPLE_MAPPER_CONTENT`, `EMPTY_MAPPER_CONTENT`, `buildBlocksFromMapper(content)`, `getOverflowWarnings(content)`
+
+## Files to edit (small, additive only)
+
+- `src/components/AppLayout.tsx` — add nav entry `{ to: "/mapper", label: "Kit Content Mapper", icon: Edit3 }`
+- `src/lib/kit-store.tsx` — add `upsertMapperKit(content)` helper that creates the reserved `mapper-preview` kit and updates its 5 blocks; no behavior change for existing kits
+- `src/lib/kit-types.ts` — extend `Block` with optional `keywords?: string[]` (additive, ignored by every existing template; the mapper passes parsed keywords through as an alternative pillar list)
+- `src/components/templates/CoverTemplate.tsx` — read `block.keywords` IF present and render those in the existing pillar slot, else render the existing default "Structure / Legitimacy / Foundation" pillars. **No layout, font, spacing, color, or decoration changes** — purely a content swap inside the slot that already exists. This is the minimum needed to honor your correction without redesigning the template; if you would rather keep CoverTemplate byte-identical and never read keywords, I will skip this edit and the keyword line will simply remain the hard-coded default.
+
+## Files NOT touched
+
+- SectionDividerTemplate, LessonTemplate, TableTemplate, WorkbookTemplate
+- PageCanvas, `_decor.tsx`
+- `styles.css` (print pipeline locked)
+- `print.$kitId.tsx`
+- `branch-profile.ts`, `sample-kit.ts`
+
+## Success criteria
+
+- `/mapper` reachable from sidebar
+- Editing any field updates the live 5-page preview using locked V1 templates
+- Cover Keywords drives the keyword/pillar line; Cover Subtitle and Kit Tagline remain independent
+- Overflow warnings appear/disappear correctly
+- Print / Save as PDF yields exactly 5 pages, print-safe fonts, correct page numbering, real table, spacious workbook lines, 8.5×11
+- Reset and Clear behave as described
+- No template/visual/print-styling changes beyond the single CoverTemplate content-slot swap noted above (or zero changes if you reject that edit)
