@@ -195,6 +195,28 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
     return id;
   }, []);
 
+  const upsertMapperKit = useCallback<StoreCtx["upsertMapperKit"]>((content) => {
+    const kit: Kit = {
+      id: RESERVED_MAPPER_KIT_ID,
+      name: content.kitName || "Kit Content Mapper",
+      branch: content.branch || "Brand",
+      audience: content.audience,
+      tone: content.tone,
+      description: content.kitTagline,
+      lessonGuide: "",
+      workbook: "",
+      tracker: "",
+      branchProfile: BRAND_PROFILE,
+      blocks: buildBlocksFromMapper(content),
+      version: "v1",
+      status: "Template Test",
+      qcStatus: "Needs Review",
+      dochubStatus: "Not Ready",
+      updatedAt: new Date().toISOString(),
+    };
+    dispatch({ type: "upsertMapperKit", kit });
+  }, []);
+
   const value = useMemo<StoreCtx>(
     () => ({
       state,
@@ -253,29 +275,9 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "saveVersion", entry });
       },
       saveQCReport: (report) => dispatch({ type: "saveQCReport", report }),
-      upsertMapperKit: (content: MapperContent) => {
-        const kit: Kit = {
-          id: RESERVED_MAPPER_KIT_ID,
-          name: content.kitName || "Kit Content Mapper",
-          branch: content.branch || "Brand",
-          audience: content.audience,
-          tone: content.tone,
-          description: content.kitTagline,
-          lessonGuide: "",
-          workbook: "",
-          tracker: "",
-          branchProfile: BRAND_PROFILE,
-          blocks: buildBlocksFromMapper(content),
-          version: "v1",
-          status: "Template Test",
-          qcStatus: "Needs Review",
-          dochubStatus: "Not Ready",
-          updatedAt: new Date().toISOString(),
-        };
-        dispatch({ type: "upsertMapperKit", kit });
-      },
+      upsertMapperKit,
     }),
-    [state, createKit],
+    [state, createKit, upsertMapperKit],
   );
 
   return (

@@ -16,6 +16,8 @@ import {
   SAMPLE_MAPPER_CONTENT,
   buildBlocksFromMapper,
   getOverflowWarnings,
+  loadMapperContentFromStorage,
+  saveMapperContentToStorage,
   type MapperContent,
   type OverflowWarning,
 } from "@/lib/mapper-content";
@@ -28,16 +30,18 @@ export const Route = createFileRoute("/_app/mapper")({
 
 function MapperPage() {
   const { upsertMapperKit } = useKitStore();
-  const [content, setContent] = useState<MapperContent>(SAMPLE_MAPPER_CONTENT);
+  const [content, setContent] = useState<MapperContent>(
+    () => loadMapperContentFromStorage() ?? SAMPLE_MAPPER_CONTENT,
+  );
   const [refreshKey, setRefreshKey] = useState(0);
   const previewRef = useRef<HTMLDivElement | null>(null);
 
-  // Live-sync mapper content into the reserved kit so /print/mapper-preview works.
+  // Live-sync mapper content into the reserved kit AND persist to localStorage
+  // so the /print/mapper-preview tab can recover the mapped content.
   useEffect(() => {
     upsertMapperKit(content);
-    // upsertMapperKit identity changes with store state; intentionally omitted to avoid loops.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [content]);
+    saveMapperContentToStorage(content);
+  }, [content, upsertMapperKit]);
 
   const blocks = useMemo(() => buildBlocksFromMapper(content), [content, refreshKey]);
   const warnings = useMemo(() => getOverflowWarnings(content), [content]);
@@ -53,6 +57,9 @@ function MapperPage() {
 
   const onPrint = () => {
     if (typeof window === "undefined") return;
+    // Persist immediately so the new tab's print route always sees the latest content.
+    saveMapperContentToStorage(content);
+    upsertMapperKit(content);
     window.open(`/print/${RESERVED_MAPPER_KIT_ID}?filter=all`, "_blank", "noreferrer");
   };
 
