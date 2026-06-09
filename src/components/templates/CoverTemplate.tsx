@@ -20,14 +20,19 @@ type Props = {
 
 export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
   const gold = branchProfile.goldAccent;
-  const titleLines = block.title === "Get Your Business Straight"
-    ? ["Get Your", "Business", "Straight"]
-    : block.title.split(/\s+/).reduce<string[]>((lines, word) => {
-        const current = lines[lines.length - 1] ?? "";
-        if (!current || `${current} ${word}`.length <= 12) lines[lines.length - 1] = current ? `${current} ${word}` : word;
-        else lines.push(word);
-        return lines;
-      }, [""]);
+  const titleLines =
+    block.title === "Get Your Business Straight"
+      ? ["Get Your", "Business", "Straight"]
+      : block.title.split(/\s+/).reduce<string[]>(
+          (lines, word) => {
+            const current = lines[lines.length - 1] ?? "";
+            if (!current || `${current} ${word}`.length <= 12)
+              lines[lines.length - 1] = current ? `${current} ${word}` : word;
+            else lines.push(word);
+            return lines;
+          },
+          [""],
+        );
 
   return (
     <PageCanvas
@@ -43,7 +48,13 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
         color={gold}
         width="1.7in"
         height="3.95in"
-        style={{ position: "absolute", left: "0.45in", top: "3.22in", transform: "rotate(-12deg)", opacity: 0.95 }}
+        style={{
+          position: "absolute",
+          left: "0.45in",
+          top: "3.22in",
+          transform: "rotate(-12deg)",
+          opacity: 0.95,
+        }}
       />
 
       <main
@@ -69,7 +80,12 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
           Best Collective
         </div>
 
-        <SparkleRule color={branchProfile.accentColor} width="3.05in" marginTop="0.18in" marginBottom="0.2in" />
+        <SparkleRule
+          color={branchProfile.accentColor}
+          width="3.05in"
+          marginTop="0.18in"
+          marginBottom="0.2in"
+        />
 
         <p
           style={{
@@ -113,9 +129,32 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             gap: "0.26in",
           }}
         >
-          <div style={{ width: "1.15in", height: "1px", background: branchProfile.accentColor, opacity: 0.72 }} />
-          <div style={{ fontSize: "31px", letterSpacing: "0.38em", color: branchProfile.accentColor, fontWeight: 500 }}>KIT</div>
-          <div style={{ width: "1.15in", height: "1px", background: branchProfile.accentColor, opacity: 0.72 }} />
+          <div
+            style={{
+              width: "1.15in",
+              height: "1px",
+              background: branchProfile.accentColor,
+              opacity: 0.72,
+            }}
+          />
+          <div
+            style={{
+              fontSize: "31px",
+              letterSpacing: "0.38em",
+              color: branchProfile.accentColor,
+              fontWeight: 500,
+            }}
+          >
+            KIT
+          </div>
+          <div
+            style={{
+              width: "1.15in",
+              height: "1px",
+              background: branchProfile.accentColor,
+              opacity: 0.72,
+            }}
+          />
         </div>
 
         <Diamond color={gold} size={14} style={{ margin: "0 auto 0.2in" }} />
@@ -130,7 +169,8 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             marginBottom: "0.24in",
           }}
         >
-          Structure <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Legitimacy <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Foundation
+          Structure <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Legitimacy{" "}
+          <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Foundation
         </div>
 
         {block.body ? (

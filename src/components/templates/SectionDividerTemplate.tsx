@@ -1,7 +1,15 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
-import { BotanicalSprig, CornerWash, Diamond, KitFooterBand, PLUM_DEEP, SparkleRule, TEXT_INK } from "./_decor";
+import {
+  BotanicalSprig,
+  CornerWash,
+  Diamond,
+  KitFooterBand,
+  PLUM_DEEP,
+  SparkleRule,
+  TEXT_INK,
+} from "./_decor";
 
 type Props = {
   block: Block;
@@ -10,12 +18,7 @@ type Props = {
   totalPages?: number;
 };
 
-export function SectionDividerTemplate({
-  block,
-  branchProfile,
-  pageNumber,
-  totalPages,
-}: Props) {
+export function SectionDividerTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
   const gold = branchProfile.goldAccent;
   return (
     <PageCanvas
@@ -27,7 +30,18 @@ export function SectionDividerTemplate({
     >
       <CornerWash branchProfile={branchProfile} variant="both" />
 
-      <div aria-hidden style={{ position: "absolute", left: "0.65in", right: "0.65in", top: "0.62in", height: "1px", background: gold, opacity: 0.7 }} />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: "0.65in",
+          right: "0.65in",
+          top: "0.62in",
+          height: "1px",
+          background: gold,
+          opacity: 0.7,
+        }}
+      />
 
       <div
         style={{
@@ -75,7 +89,12 @@ export function SectionDividerTemplate({
         </h2>
 
         <Diamond color={gold} style={{ marginTop: "0.4in" }} />
-        <BotanicalSprig color={gold} width="0.55in" height="1.05in" style={{ marginTop: "0.18in" }} />
+        <BotanicalSprig
+          color={gold}
+          width="0.55in"
+          height="1.05in"
+          style={{ marginTop: "0.18in" }}
+        />
 
         {block.body ? (
           <p
@@ -94,7 +113,11 @@ export function SectionDividerTemplate({
           </p>
         ) : null}
       </div>
-      <KitFooterBand branchProfile={branchProfile} pageNumber={pageNumber} totalPages={totalPages} />
+      <KitFooterBand
+        branchProfile={branchProfile}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+      />
     </PageCanvas>
   );
 }

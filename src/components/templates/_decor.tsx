@@ -72,11 +72,7 @@ export function BotanicalSprig({
   style?: CSSProperties;
 }) {
   return (
-    <svg
-      aria-hidden
-      viewBox="0 0 100 220"
-      style={{ width, height, ...style }}
-    >
+    <svg aria-hidden viewBox="0 0 100 220" style={{ width, height, ...style }}>
       <path d="M50 10 C 50 60 50 140 50 210" stroke={color} strokeWidth="1.2" fill="none" />
       {[35, 75, 120, 165].map((y, i) => {
         const left = i % 2 === 0;
@@ -115,7 +111,13 @@ export function CoverOrganicFrame({ branchProfile }: { branchProfile: BranchProf
       aria-hidden
       viewBox="0 0 850 1100"
       preserveAspectRatio="none"
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
     >
       <rect width="850" height="1100" fill={CREAM_PAPER} />
       <path
@@ -222,7 +224,9 @@ export function KitFooterBand({
       >
         <span>{footerText}</span>
         {showPageNumber && typeof pageNumber === "number" && typeof totalPages === "number" ? (
-          <span>{pageNumber} / {totalPages}</span>
+          <span>
+            {pageNumber} / {totalPages}
+          </span>
         ) : null}
       </div>
       <div
@@ -262,34 +266,96 @@ export function CornerWash({
       aria-hidden
       viewBox="0 0 850 1100"
       preserveAspectRatio="none"
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
     >
       {showTL && (
         <>
-          <path d="M0,0 L276,0 C226,86 162,124 114,202 C60,290 28,350 0,392 Z" fill={lilacColor} opacity={0.58} />
-          <path d="M0,0 L126,0 C144,82 88,144 44,216 C18,258 4,304 0,338 Z" fill={primaryColor} opacity={0.5} />
-          <path d="M24,238 C46,176 82,122 146,72" stroke={goldAccent} strokeWidth="1.25" fill="none" opacity={0.82} />
+          <path
+            d="M0,0 L276,0 C226,86 162,124 114,202 C60,290 28,350 0,392 Z"
+            fill={lilacColor}
+            opacity={0.58}
+          />
+          <path
+            d="M0,0 L126,0 C144,82 88,144 44,216 C18,258 4,304 0,338 Z"
+            fill={primaryColor}
+            opacity={0.5}
+          />
+          <path
+            d="M24,238 C46,176 82,122 146,72"
+            stroke={goldAccent}
+            strokeWidth="1.25"
+            fill="none"
+            opacity={0.82}
+          />
         </>
       )}
       {showTR && (
         <>
-          <path d="M850,0 L586,0 C622,82 706,126 762,206 C812,278 838,342 850,394 Z" fill={blushColor} opacity={0.58} />
-          <path d="M850,0 L704,0 C754,78 782,138 770,216 C758,296 808,348 850,384 Z" fill={stoneColor} opacity={0.76} />
-          <path d="M828,226 C810,162 774,112 708,66" stroke={goldAccent} strokeWidth="1.25" fill="none" opacity={0.82} />
+          <path
+            d="M850,0 L586,0 C622,82 706,126 762,206 C812,278 838,342 850,394 Z"
+            fill={blushColor}
+            opacity={0.58}
+          />
+          <path
+            d="M850,0 L704,0 C754,78 782,138 770,216 C758,296 808,348 850,384 Z"
+            fill={stoneColor}
+            opacity={0.76}
+          />
+          <path
+            d="M828,226 C810,162 774,112 708,66"
+            stroke={goldAccent}
+            strokeWidth="1.25"
+            fill="none"
+            opacity={0.82}
+          />
         </>
       )}
       {showBL && (
         <>
-          <path d="M0,1100 L0,780 C44,850 98,902 158,960 C220,1020 260,1066 284,1100 Z" fill={blushColor} opacity={0.5} />
-          <path d="M0,1100 L0,902 C34,938 72,978 118,1016 C164,1054 192,1082 208,1100 Z" fill={stoneColor} opacity={0.68} />
-          <path d="M20,1016 C78,972 124,932 154,874" stroke={goldAccent} strokeWidth="1.1" fill="none" opacity={0.72} />
+          <path
+            d="M0,1100 L0,780 C44,850 98,902 158,960 C220,1020 260,1066 284,1100 Z"
+            fill={blushColor}
+            opacity={0.5}
+          />
+          <path
+            d="M0,1100 L0,902 C34,938 72,978 118,1016 C164,1054 192,1082 208,1100 Z"
+            fill={stoneColor}
+            opacity={0.68}
+          />
+          <path
+            d="M20,1016 C78,972 124,932 154,874"
+            stroke={goldAccent}
+            strokeWidth="1.1"
+            fill="none"
+            opacity={0.72}
+          />
         </>
       )}
       {showBR && (
         <>
-          <path d="M850,1100 L850,780 C806,850 752,902 692,960 C630,1020 590,1066 566,1100 Z" fill={lilacColor} opacity={0.5} />
-          <path d="M850,1100 L850,902 C816,938 778,978 732,1016 C686,1054 658,1082 642,1100 Z" fill={primaryColor} opacity={0.42} />
-          <path d="M830,1016 C772,972 726,932 696,874" stroke={goldAccent} strokeWidth="1.1" fill="none" opacity={0.72} />
+          <path
+            d="M850,1100 L850,780 C806,850 752,902 692,960 C630,1020 590,1066 566,1100 Z"
+            fill={lilacColor}
+            opacity={0.5}
+          />
+          <path
+            d="M850,1100 L850,902 C816,938 778,978 732,1016 C686,1054 658,1082 642,1100 Z"
+            fill={primaryColor}
+            opacity={0.42}
+          />
+          <path
+            d="M830,1016 C772,972 726,932 696,874"
+            stroke={goldAccent}
+            strokeWidth="1.1"
+            fill="none"
+            opacity={0.72}
+          />
         </>
       )}
     </svg>

@@ -1,7 +1,15 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
-import { CornerWash, Diamond, KitFooterBand, PAPER_PANEL, PLUM_DEEP, SparkleRule, TEXT_INK } from "./_decor";
+import {
+  CornerWash,
+  Diamond,
+  KitFooterBand,
+  PAPER_PANEL,
+  PLUM_DEEP,
+  SparkleRule,
+  TEXT_INK,
+} from "./_decor";
 
 type Props = {
   block: Block;
@@ -26,7 +34,18 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
       <CornerWash branchProfile={branchProfile} variant="topRight" />
       <CornerWash branchProfile={branchProfile} variant="bottomLeft" />
 
-      <div aria-hidden style={{ position: "absolute", left: "0.62in", top: "0.62in", width: "2.1in", height: "1px", background: gold, opacity: 0.72 }} />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: "0.62in",
+          top: "0.62in",
+          width: "2.1in",
+          height: "1px",
+          background: gold,
+          opacity: 0.72,
+        }}
+      />
 
       <div
         style={{
@@ -66,7 +85,13 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
           {block.title}
         </h1>
 
-        <SparkleRule color={gold} width="2in" marginTop="0.24in" marginBottom="0.34in" align="left" />
+        <SparkleRule
+          color={gold}
+          width="2in"
+          marginTop="0.24in"
+          marginBottom="0.34in"
+          align="left"
+        />
 
         <div
           className="kit-table-wrap"
@@ -106,7 +131,8 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                       letterSpacing: "0.22em",
                       textTransform: "uppercase",
                       fontWeight: 600,
-                      borderRight: i < headers.length - 1 ? `1px solid ${branchProfile.accentColor}` : "none",
+                      borderRight:
+                        i < headers.length - 1 ? `1px solid ${branchProfile.accentColor}` : "none",
                     }}
                   >
                     {h}
@@ -116,15 +142,20 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
             </thead>
             <tbody>
               {rows.map((row, ri) => (
-                <tr key={ri} style={{ background: ri % 2 === 0 ? "rgba(250,244,234,0.72)" : PAPER_PANEL }}>
+                <tr
+                  key={ri}
+                  style={{ background: ri % 2 === 0 ? "rgba(250,244,234,0.72)" : PAPER_PANEL }}
+                >
                   {row.map((cell, ci) => (
                     <td
                       key={ci}
                       style={{
                         padding: "0.18in 0.17in",
                         borderTop: ri === 0 ? `1px solid ${branchProfile.stoneColor}` : "none",
-                        borderBottom: ri < rows.length - 1 ? `1px solid ${branchProfile.stoneColor}` : "none",
-                        borderRight: ci < row.length - 1 ? `1px solid ${branchProfile.stoneColor}` : "none",
+                        borderBottom:
+                          ri < rows.length - 1 ? `1px solid ${branchProfile.stoneColor}` : "none",
+                        borderRight:
+                          ci < row.length - 1 ? `1px solid ${branchProfile.stoneColor}` : "none",
                         verticalAlign: "top",
                         lineHeight: 1.5,
                         wordWrap: "break-word",
@@ -141,10 +172,16 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
 
         <div style={{ marginTop: "0.35in", display: "flex", alignItems: "center", gap: "0.12in" }}>
           <Diamond color={gold} inline />
-          <div style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }} />
+          <div
+            style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }}
+          />
         </div>
       </div>
-      <KitFooterBand branchProfile={branchProfile} pageNumber={pageNumber} totalPages={totalPages} />
+      <KitFooterBand
+        branchProfile={branchProfile}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+      />
     </PageCanvas>
   );
 }

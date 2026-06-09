@@ -1,7 +1,16 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
-import { BotanicalSprig, CornerWash, Diamond, KitFooterBand, PAPER_PANEL, PLUM_DEEP, SparkleRule, TEXT_INK } from "./_decor";
+import {
+  BotanicalSprig,
+  CornerWash,
+  Diamond,
+  KitFooterBand,
+  PAPER_PANEL,
+  PLUM_DEEP,
+  SparkleRule,
+  TEXT_INK,
+} from "./_decor";
 
 type Props = {
   block: Block;
@@ -32,7 +41,18 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
         style={{ position: "absolute", left: "0.36in", top: "3.55in", opacity: 0.88 }}
       />
 
-      <div aria-hidden style={{ position: "absolute", left: "0.62in", top: "0.62in", width: "2.1in", height: "1px", background: gold, opacity: 0.72 }} />
+      <div
+        aria-hidden
+        style={{
+          position: "absolute",
+          left: "0.62in",
+          top: "0.62in",
+          width: "2.1in",
+          height: "1px",
+          background: gold,
+          opacity: 0.72,
+        }}
+      />
 
       <div
         style={{
@@ -72,7 +92,13 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
           {block.title}
         </h1>
 
-        <SparkleRule color={gold} width="2in" marginTop="0.28in" marginBottom="0.4in" align="left" />
+        <SparkleRule
+          color={gold}
+          width="2in"
+          marginTop="0.28in"
+          marginBottom="0.4in"
+          align="left"
+        />
 
         <div
           style={{
@@ -100,10 +126,16 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
 
         <div style={{ marginTop: "0.4in", display: "flex", alignItems: "center", gap: "0.12in" }}>
           <Diamond color={gold} inline />
-          <div style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }} />
+          <div
+            style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }}
+          />
         </div>
       </div>
-      <KitFooterBand branchProfile={branchProfile} pageNumber={pageNumber} totalPages={totalPages} />
+      <KitFooterBand
+        branchProfile={branchProfile}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+      />
     </PageCanvas>
   );
 }
