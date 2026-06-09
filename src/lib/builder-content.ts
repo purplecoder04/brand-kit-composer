@@ -386,15 +386,16 @@ export function pageTypeLabel(pageType: PageType): string {
 }
 
 function buildLessonPages(block: BuilderBlock): Block[] {
-  const chunks = chunkLessonBody(block.body);
-  if (chunks.length === 0) return [toRenderableBlock(block)];
+  const lessonBlock = normalizeLessonBlockForRender(block);
+  const chunks = chunkLessonBody(lessonBlock.body);
+  if (chunks.length === 0) return [toRenderableBlock(lessonBlock)];
 
   return chunks.map((body, index) => ({
-    ...toRenderableBlock(block),
-    id: index === 0 ? block.id : `${block.id}-continued-${index + 1}`,
-    title: index === 0 ? block.title : continuedTitle(block.title),
+    ...toRenderableBlock(lessonBlock),
+    id: index === 0 ? lessonBlock.id : `${lessonBlock.id}-continued-${index + 1}`,
+    title: index === 0 ? lessonBlock.title : continuedTitle(lessonBlock.title),
     body,
-    order: block.order + index / 100,
+    order: lessonBlock.order + index / 100,
   }));
 }
 
@@ -428,23 +429,41 @@ function buildChecklistPages(block: BuilderBlock): Block[] {
 }
 
 function toRenderableBlock(block: BuilderBlock): Block {
+  const renderBlock = block.pageType === "lesson" ? normalizeLessonBlockForRender(block) : block;
   const keywords = parseKeywords(block.keywords);
   return {
-    id: block.id,
-    pageType: block.pageType,
-    order: block.order,
-    title: block.title,
-    subtitle: block.subtitle,
-    body: block.body,
-    footerLabel: block.pageType === "cover" ? block.subtitle : undefined,
-    keywords: block.pageType === "cover" && keywords.length > 0 ? keywords : undefined,
-    prompt: block.prompt,
-    lines: typeof block.lines === "number" ? Math.max(0, Math.min(block.lines, 20)) : 0,
+    id: renderBlock.id,
+    pageType: renderBlock.pageType,
+    order: renderBlock.order,
+    title: renderBlock.title,
+    subtitle: renderBlock.subtitle,
+    body: renderBlock.body,
+    footerLabel: renderBlock.pageType === "cover" ? renderBlock.subtitle : undefined,
+    keywords: renderBlock.pageType === "cover" && keywords.length > 0 ? keywords : undefined,
+    prompt: renderBlock.prompt,
+    lines: typeof renderBlock.lines === "number" ? Math.max(0, Math.min(renderBlock.lines, 20)) : 0,
     tableData: {
-      headers: block.tableData.headers.slice(),
-      rows: block.tableData.rows.map((row) => row.slice()),
+      headers: renderBlock.tableData.headers.slice(),
+      rows: renderBlock.tableData.rows.map((row) => row.slice()),
     },
   };
+}
+
+function normalizeLessonBlockForRender(block: BuilderBlock): BuilderBlock {
+  const bodyFromSubtitle = extractBodyLabelValue(block.subtitle);
+  if (!bodyFromSubtitle) return block;
+
+  return {
+    ...block,
+    subtitle: "",
+    body: bodyFromSubtitle,
+  };
+}
+
+function extractBodyLabelValue(value: string): string | null {
+  const match = value.match(/^\s*body\s*:\s*([\s\S]*)$/i);
+  const body = match?.[1]?.trim();
+  return body ? body : null;
 }
 
 function normalizeBlock(block: BuilderBlock): BuilderBlock {
