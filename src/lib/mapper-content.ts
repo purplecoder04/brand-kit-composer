@@ -41,30 +41,61 @@ export type MapperContent = {
 
 export const RESERVED_MAPPER_KIT_ID = "mapper-preview";
 
-export const MAPPER_CONTENT_STORAGE_KEY = "best-collective:mapper-content:v1";
+export const MAPPER_CONTENT_STORAGE_KEY = "best_collective_current_kit";
 
-export function saveMapperContentToStorage(content: MapperContent): void {
-  if (typeof window === "undefined") return;
+export type MapperDraftSource = "current" | "sample";
+
+export type MapperDraft = {
+  content: MapperContent;
+  source: MapperDraftSource;
+  lastSaved: string; // ISO timestamp
+};
+
+export function saveMapperDraft(
+  content: MapperContent,
+  source: MapperDraftSource = "current",
+): MapperDraft {
+  const draft: MapperDraft = {
+    content,
+    source,
+    lastSaved: new Date().toISOString(),
+  };
+  if (typeof window === "undefined") return draft;
   try {
-    window.localStorage.setItem(
-      MAPPER_CONTENT_STORAGE_KEY,
-      JSON.stringify(content),
-    );
+    window.localStorage.setItem(MAPPER_CONTENT_STORAGE_KEY, JSON.stringify(draft));
   } catch {
     // ignore quota / privacy-mode errors
   }
+  return draft;
 }
 
-export function loadMapperContentFromStorage(): MapperContent | null {
+export function loadMapperDraft(): MapperDraft | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = window.localStorage.getItem(MAPPER_CONTENT_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<MapperContent>;
-    return { ...EMPTY_MAPPER_CONTENT, ...parsed } as MapperContent;
+    const parsed = JSON.parse(raw) as Partial<MapperDraft> & Partial<MapperContent>;
+    // Backward compat: prior version stored MapperContent directly.
+    if (parsed && typeof parsed === "object" && "content" in parsed && parsed.content) {
+      return {
+        content: { ...EMPTY_MAPPER_CONTENT, ...(parsed.content as MapperContent) },
+        source: (parsed.source as MapperDraftSource) ?? "current",
+        lastSaved: (parsed.lastSaved as string) ?? new Date().toISOString(),
+      };
+    }
+    return {
+      content: { ...EMPTY_MAPPER_CONTENT, ...(parsed as MapperContent) },
+      source: "current",
+      lastSaved: new Date().toISOString(),
+    };
   } catch {
     return null;
   }
+}
+
+/** Back-compat helper used by the print route. */
+export function loadMapperContentFromStorage(): MapperContent | null {
+  return loadMapperDraft()?.content ?? null;
 }
 
 export function parseKeywords(raw: string): string[] {
