@@ -66,3 +66,29 @@ Approved behavior:
 - /builder remains stable.
 
 Do not change Level 3B unless fixing a confirmed bug.
+
+---
+
+# Best Collective Kit Factory V1 - Level 4 Version Library
+
+Approved on: 2026-06-09
+
+This version is locked as the approved Level 4 Version Library checkpoint.
+
+Approved behavior:
+- Save to Version Library creates a new version record every time.
+- Versions auto-increment by kit name.
+- Full builder drafts are stored with each version.
+- Versions can reopen in /builder.
+- Versions can duplicate.
+- Versions can archive without deleting.
+- QC status can be updated.
+- Sale-ready status can be updated.
+- DocHub-ready status can be updated.
+- Notes can be added/edited.
+- /mapper remains untouched.
+- /builder remains stable.
+- Brand Template V1 remains locked.
+- Print/PDF pipeline still works.
+
+Do not change Level 4 unless fixing a confirmed bug.
