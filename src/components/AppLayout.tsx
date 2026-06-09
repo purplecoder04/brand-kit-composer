@@ -19,7 +19,7 @@ const NAV = [
   { to: "/builder", label: "Multi-Page Builder", icon: Wrench },
   { to: "/print-preview", label: "Print Preview", icon: Printer },
   { to: "/qc", label: "QC Report", icon: ClipboardCheck },
-  { to: "/versions", label: "Version Library", icon: Library },
+  { to: "/version-library", label: "Version Library", icon: Library },
 ] as const;
 
 export function AppLayout() {

@@ -13,6 +13,7 @@ import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrintKitIdRouteImport } from './routes/print.$kitId'
 import { Route as AppVersionsRouteImport } from './routes/_app.versions'
+import { Route as AppVersionLibraryRouteImport } from './routes/_app.version-library'
 import { Route as AppTemplatesRouteImport } from './routes/_app.templates'
 import { Route as AppQcRouteImport } from './routes/_app.qc'
 import { Route as AppPrintPreviewRouteImport } from './routes/_app.print-preview'
@@ -38,6 +39,11 @@ const PrintKitIdRoute = PrintKitIdRouteImport.update({
 const AppVersionsRoute = AppVersionsRouteImport.update({
   id: '/versions',
   path: '/versions',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppVersionLibraryRoute = AppVersionLibraryRouteImport.update({
+  id: '/version-library',
+  path: '/version-library',
   getParentRoute: () => AppRoute,
 } as any)
 const AppTemplatesRoute = AppTemplatesRouteImport.update({
@@ -85,6 +91,7 @@ export interface FileRoutesByFullPath {
   '/print-preview': typeof AppPrintPreviewRoute
   '/qc': typeof AppQcRoute
   '/templates': typeof AppTemplatesRoute
+  '/version-library': typeof AppVersionLibraryRoute
   '/versions': typeof AppVersionsRoute
   '/print/$kitId': typeof PrintKitIdRoute
 }
@@ -97,6 +104,7 @@ export interface FileRoutesByTo {
   '/print-preview': typeof AppPrintPreviewRoute
   '/qc': typeof AppQcRoute
   '/templates': typeof AppTemplatesRoute
+  '/version-library': typeof AppVersionLibraryRoute
   '/versions': typeof AppVersionsRoute
   '/print/$kitId': typeof PrintKitIdRoute
 }
@@ -111,6 +119,7 @@ export interface FileRoutesById {
   '/_app/print-preview': typeof AppPrintPreviewRoute
   '/_app/qc': typeof AppQcRoute
   '/_app/templates': typeof AppTemplatesRoute
+  '/_app/version-library': typeof AppVersionLibraryRoute
   '/_app/versions': typeof AppVersionsRoute
   '/print/$kitId': typeof PrintKitIdRoute
 }
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/print-preview'
     | '/qc'
     | '/templates'
+    | '/version-library'
     | '/versions'
     | '/print/$kitId'
   fileRoutesByTo: FileRoutesByTo
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/print-preview'
     | '/qc'
     | '/templates'
+    | '/version-library'
     | '/versions'
     | '/print/$kitId'
   id:
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/_app/print-preview'
     | '/_app/qc'
     | '/_app/templates'
+    | '/_app/version-library'
     | '/_app/versions'
     | '/print/$kitId'
   fileRoutesById: FileRoutesById
@@ -188,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/versions'
       fullPath: '/versions'
       preLoaderRoute: typeof AppVersionsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/version-library': {
+      id: '/_app/version-library'
+      path: '/version-library'
+      fullPath: '/version-library'
+      preLoaderRoute: typeof AppVersionLibraryRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/templates': {
@@ -250,6 +269,7 @@ interface AppRouteChildren {
   AppPrintPreviewRoute: typeof AppPrintPreviewRoute
   AppQcRoute: typeof AppQcRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
+  AppVersionLibraryRoute: typeof AppVersionLibraryRoute
   AppVersionsRoute: typeof AppVersionsRoute
 }
 
@@ -261,6 +281,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppPrintPreviewRoute: AppPrintPreviewRoute,
   AppQcRoute: AppQcRoute,
   AppTemplatesRoute: AppTemplatesRoute,
+  AppVersionLibraryRoute: AppVersionLibraryRoute,
   AppVersionsRoute: AppVersionsRoute,
 }
 

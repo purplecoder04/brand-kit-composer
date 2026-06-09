@@ -6,6 +6,7 @@ import {
   ArrowUp,
   Copy,
   Eraser,
+  Library,
   Plus,
   Printer,
   RefreshCw,
@@ -41,6 +42,11 @@ import {
   type BuilderDraftSource,
   type BuilderWarning,
 } from "@/lib/builder-content";
+import {
+  createVersionFromDraft,
+  loadVersionLibrary,
+  saveVersionLibrary,
+} from "@/lib/version-library";
 import type { PageType } from "@/lib/kit-types";
 
 export const Route = createFileRoute("/_app/builder")({
@@ -154,6 +160,14 @@ function BuilderPage() {
     toast.success("Level 3B draft saved");
   };
 
+  const saveToVersionLibrary = () => {
+    const savedDraft = persist();
+    const records = loadVersionLibrary();
+    const version = createVersionFromDraft(records, savedDraft);
+    saveVersionLibrary([version, ...records]);
+    toast.success("Saved to Version Library");
+  };
+
   const generatePreview = () => {
     persist();
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -203,6 +217,9 @@ function BuilderPage() {
         </Button>
         <Button onClick={saveDraft} variant="outline">
           <Save className="mr-2 h-4 w-4" /> Save Draft
+        </Button>
+        <Button onClick={saveToVersionLibrary} variant="outline">
+          <Library className="mr-2 h-4 w-4" /> Save to Version Library
         </Button>
         <Button onClick={printDraft} variant="outline">
           <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
