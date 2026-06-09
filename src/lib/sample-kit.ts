@@ -18,7 +18,7 @@ export const SAMPLE_KIT: Kit = {
   status: "Template Test",
   qcStatus: "Needs Review",
   dochubStatus: "Not Ready",
-  updatedAt: new Date().toISOString(),
+  updatedAt: "2026-06-01T00:00:00.000Z",
   blocks: [
     {
       id: "b1",
