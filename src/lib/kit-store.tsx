@@ -1,24 +1,8 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useReducer,
-  type ReactNode,
-} from "react";
-import type {
-  Block,
-  Kit,
-  PageType,
-  QCReport,
-  VersionEntry,
-} from "./kit-types";
+import { createContext, useCallback, useContext, useMemo, useReducer, type ReactNode } from "react";
+import type { Block, Kit, PageType, QCReport, VersionEntry } from "./kit-types";
 import { SAMPLE_KIT } from "./sample-kit";
 import { BRAND_PROFILE } from "./branch-profile";
-import {
-  buildMapperKit,
-  type MapperContent,
-} from "./mapper-content";
+import { buildMapperKit, type MapperContent } from "./mapper-content";
 
 type State = {
   kits: Kit[];
@@ -58,9 +42,7 @@ function reducer(state: State, action: Action): State {
                 ...k,
                 updatedAt: new Date().toISOString(),
                 blocks: k.blocks
-                  .map((b) =>
-                    b.id === action.blockId ? { ...b, ...action.patch } : b,
-                  )
+                  .map((b) => (b.id === action.blockId ? { ...b, ...action.patch } : b))
                   .sort((a, b) => a.order - b.order),
               }
             : k,
@@ -74,9 +56,7 @@ function reducer(state: State, action: Action): State {
             ? {
                 ...k,
                 updatedAt: new Date().toISOString(),
-                blocks: [...k.blocks, action.block].sort(
-                  (a, b) => a.order - b.order,
-                ),
+                blocks: [...k.blocks, action.block].sort((a, b) => a.order - b.order),
               }
             : k,
         ),
@@ -156,6 +136,10 @@ function defaultTitleFor(pageType: PageType): string {
       return "New Table";
     case "workbook":
       return "Workbook Prompt";
+    case "checklist":
+      return "New Checklist";
+    case "notes":
+      return "Notes";
   }
 }
 
@@ -202,8 +186,7 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       createKit,
-      updateKit: (kitId, patch) =>
-        dispatch({ type: "updateKit", kitId, patch }),
+      updateKit: (kitId, patch) => dispatch({ type: "updateKit", kitId, patch }),
       updateBlock: (kitId, blockId, patch) =>
         dispatch({ type: "updateBlock", kitId, blockId, patch }),
       addBlock: (kitId, pageType) => {
@@ -219,8 +202,7 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
             title: defaultTitleFor(pageType),
             subtitle: "",
             body: pageType === "lesson" ? "Write the lesson body here." : "",
-            prompt:
-              pageType === "workbook" ? "Write your prompt here." : undefined,
+            prompt: pageType === "workbook" ? "Write your prompt here." : undefined,
             lines: pageType === "workbook" ? 12 : undefined,
             tableData:
               pageType === "table"
@@ -236,8 +218,7 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
           },
         });
       },
-      removeBlock: (kitId, blockId) =>
-        dispatch({ type: "removeBlock", kitId, blockId }),
+      removeBlock: (kitId, blockId) => dispatch({ type: "removeBlock", kitId, blockId }),
       saveVersion: (kitId, notes) => {
         const kit = state.kits.find((k) => k.id === kitId);
         if (!kit) return;
@@ -261,11 +242,7 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
     [state, createKit, upsertMapperKit],
   );
 
-  return (
-    <KitStoreContext.Provider value={value}>
-      {children}
-    </KitStoreContext.Provider>
-  );
+  return <KitStoreContext.Provider value={value}>{children}</KitStoreContext.Provider>;
 }
 
 export function useKitStore() {

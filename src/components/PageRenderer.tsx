@@ -5,6 +5,7 @@ import { SectionDividerTemplate } from "./templates/SectionDividerTemplate";
 import { LessonTemplate } from "./templates/LessonTemplate";
 import { TableTemplate } from "./templates/TableTemplate";
 import { WorkbookTemplate } from "./templates/WorkbookTemplate";
+import { ChecklistTemplate } from "./templates/ChecklistTemplate";
 
 type Props = {
   block: Block;
@@ -24,6 +25,10 @@ export function PageRenderer(props: Props) {
     case "table":
       return <TableTemplate {...props} />;
     case "workbook":
+      return <WorkbookTemplate {...props} />;
+    case "checklist":
+      return <ChecklistTemplate {...props} />;
+    case "notes":
       return <WorkbookTemplate {...props} />;
     default:
       return null;

@@ -34,7 +34,7 @@ export const Route = createFileRoute("/print/$kitId")({
 });
 
 const LESSON_TYPES: PageType[] = ["cover", "divider", "lesson"];
-const WORKBOOK_TYPES: PageType[] = ["cover", "divider", "workbook"];
+const WORKBOOK_TYPES: PageType[] = ["cover", "divider", "workbook", "notes"];
 
 function buildMapperKitFromContent(content: MapperContent | null): Kit | null {
   return content ? buildMapperKit(content) : null;

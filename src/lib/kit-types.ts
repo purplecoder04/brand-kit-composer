@@ -1,6 +1,13 @@
 import type { BranchProfile } from "./branch-profile";
 
-export type PageType = "cover" | "divider" | "lesson" | "table" | "workbook";
+export type PageType =
+  | "cover"
+  | "divider"
+  | "lesson"
+  | "table"
+  | "workbook"
+  | "checklist"
+  | "notes";
 
 export type TableData = {
   headers: string[];

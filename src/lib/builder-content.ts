@@ -36,7 +36,7 @@ export type BuilderDraft = {
 
 export type BuilderWarning = {
   blockId?: string;
-  scope: "kit" | "cover" | "divider" | "lesson" | "table" | "workbook";
+  scope: "kit" | "cover" | "divider" | "lesson" | "table" | "workbook" | "checklist" | "notes";
   message: string;
 };
 
@@ -45,6 +45,8 @@ const LESSON_CHAR_LIMIT = 1400;
 const LESSON_PARAGRAPH_LIMIT = 6;
 const TABLE_ROWS_PER_PAGE = 8;
 const WORKBOOK_PROMPT_LIMIT = 280;
+const CHECKLIST_ITEMS_PER_PAGE = 12;
+const NOTES_PROMPT_LIMIT = 280;
 
 export const BUILDER_BLOCK_TYPES: Array<{ type: PageType; label: string }> = [
   { type: "cover", label: "Cover" },
@@ -52,6 +54,8 @@ export const BUILDER_BLOCK_TYPES: Array<{ type: PageType; label: string }> = [
   { type: "lesson", label: "Lesson Page" },
   { type: "table", label: "Table / Tracker Page" },
   { type: "workbook", label: "Workbook Page" },
+  { type: "checklist", label: "Checklist Page" },
+  { type: "notes", label: "Notes Page" },
 ];
 
 export function createBlankBuilderDraft(): BuilderDraft {
@@ -190,7 +194,7 @@ export function buildBuilderKit(draft: BuilderDraft): Kit {
     tracker: "",
     branchProfile: BRAND_PROFILE,
     blocks: buildPagesFromKitDraft(normalized),
-    version: "v1-level-3a",
+    version: "v1-level-3b",
     status: "Draft",
     qcStatus: "Needs Review",
     dochubStatus: "Not Ready",
@@ -202,6 +206,7 @@ export function buildPagesFromKitDraft(draft: BuilderDraft): Block[] {
   return normalizeDraft(draft).blocks.flatMap((block) => {
     if (block.pageType === "lesson") return buildLessonPages(block);
     if (block.pageType === "table") return buildTablePages(block);
+    if (block.pageType === "checklist") return buildChecklistPages(block);
     return [toRenderableBlock(block)];
   });
 }
@@ -296,6 +301,55 @@ export function getBuilderWarnings(draft: BuilderDraft): BuilderWarning[] {
         });
       }
     }
+
+    if (block.pageType === "checklist") {
+      const items = parseChecklistItems(block.body);
+      if (items.length === 0) {
+        warnings.push({
+          blockId: block.id,
+          scope: "checklist",
+          message: `${block.title || "Checklist page"} has no checklist items.`,
+        });
+      }
+      if (items.length > CHECKLIST_ITEMS_PER_PAGE) {
+        warnings.push({
+          blockId: block.id,
+          scope: "checklist",
+          message: `${block.title || "Checklist page"} is too long and will create continuation checklist pages.`,
+        });
+      }
+      if (items.some((item) => item.length > 90)) {
+        warnings.push({
+          blockId: block.id,
+          scope: "checklist",
+          message: `${block.title || "Checklist page"} has a long checklist item that may wrap tightly.`,
+        });
+      }
+    }
+
+    if (block.pageType === "notes") {
+      if (block.prompt.length > NOTES_PROMPT_LIMIT) {
+        warnings.push({
+          blockId: block.id,
+          scope: "notes",
+          message: `${block.title || "Notes page"} has a long prompt that may reduce writing space.`,
+        });
+      }
+      if (block.lines === "") {
+        warnings.push({
+          blockId: block.id,
+          scope: "notes",
+          message: `${block.title || "Notes page"} is missing a writing line count.`,
+        });
+      }
+      if (typeof block.lines === "number" && (block.lines < 4 || block.lines > 20)) {
+        warnings.push({
+          blockId: block.id,
+          scope: "notes",
+          message: `${block.title || "Notes page"} writing lines should stay between 4 and 20.`,
+        });
+      }
+    }
   }
 
   return warnings;
@@ -356,6 +410,19 @@ function buildTablePages(block: BuilderBlock): Block[] {
       headers: block.tableData.headers.slice(),
       rows: rowsForPage.map((row) => row.slice()),
     },
+    order: block.order + index / 100,
+  }));
+}
+
+function buildChecklistPages(block: BuilderBlock): Block[] {
+  const items = parseChecklistItems(block.body);
+  if (items.length === 0) return [toRenderableBlock(block)];
+
+  return chunk(items, CHECKLIST_ITEMS_PER_PAGE).map((itemsForPage, index) => ({
+    ...toRenderableBlock(block),
+    id: index === 0 ? block.id : `${block.id}-continued-${index + 1}`,
+    title: index === 0 ? block.title : continuedTitle(block.title),
+    body: itemsForPage.join("\n"),
     order: block.order + index / 100,
   }));
 }
@@ -434,6 +501,13 @@ function parseKeywords(raw: string): string[] {
 function splitParagraphs(body: string): string[] {
   return body
     .split(/\n\s*\n/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseChecklistItems(body: string): string[] {
+  return body
+    .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
 }

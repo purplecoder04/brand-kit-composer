@@ -151,7 +151,7 @@ function BuilderPage() {
 
   const saveDraft = () => {
     persist();
-    toast.success("Level 3A draft saved");
+    toast.success("Level 3B draft saved");
   };
 
   const generatePreview = () => {
@@ -179,13 +179,13 @@ function BuilderPage() {
     const blank = saveBuilderDraft(createBlankBuilderDraft());
     setDraft(blank);
     setDirty(false);
-    toast.message("Cleared Level 3A builder");
+    toast.message("Cleared Level 3B builder");
   };
 
   return (
     <div className="screen-only p-8">
       <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Level 3A · Local Multi-Page Kit Builder
+        Level 3B · Local Multi-Page Kit Builder
       </div>
       <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
         Multi-Page Kit Builder
@@ -299,7 +299,7 @@ function BuilderPage() {
               className="rounded-md border px-4 py-6 text-sm"
               style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#6b6470" }}
             >
-              Add a block to begin the Level 3A preview.
+              Add a block to begin the Level 3B preview.
             </div>
           ) : (
             kit.blocks.map((block, index) => (
@@ -680,6 +680,16 @@ function CurrentBlockEditor({
           </Field>
         ) : null}
 
+        {block.pageType === "checklist" ? (
+          <Field label="Checklist Items" hint="One item per line.">
+            <Textarea
+              rows={10}
+              value={block.body}
+              onChange={(event) => onChange(block.id, { body: event.target.value })}
+            />
+          </Field>
+        ) : null}
+
         {block.pageType === "table" ? (
           <BuilderTableEditor
             block={block}
@@ -690,6 +700,32 @@ function CurrentBlockEditor({
         {block.pageType === "workbook" ? (
           <>
             <Field label="Workbook Prompt">
+              <Textarea
+                rows={5}
+                value={block.prompt}
+                onChange={(event) => onChange(block.id, { prompt: event.target.value })}
+              />
+            </Field>
+            <Field label="Writing Lines Count">
+              <Input
+                type="number"
+                min={4}
+                max={20}
+                value={block.lines}
+                onChange={(event) =>
+                  onChange(block.id, {
+                    lines:
+                      event.target.value === "" ? "" : Number.parseInt(event.target.value, 10) || 0,
+                  })
+                }
+              />
+            </Field>
+          </>
+        ) : null}
+
+        {block.pageType === "notes" ? (
+          <>
+            <Field label="Notes Prompt" hint="Optional. Leave blank for writing lines only.">
               <Textarea
                 rows={5}
                 value={block.prompt}
