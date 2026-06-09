@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Eraser, Printer, RefreshCw, RotateCcw, Plus, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+import { AlertTriangle, Eraser, Printer, RefreshCw, RotateCcw, Plus, X, Save } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,8 +17,9 @@ import {
   SAMPLE_MAPPER_CONTENT,
   buildBlocksFromMapper,
   getOverflowWarnings,
-  loadMapperContentFromStorage,
-  saveMapperContentToStorage,
+  loadMapperDraft,
+  saveMapperDraft,
+  type MapperDraftSource,
   type MapperContent,
   type OverflowWarning,
 } from "@/lib/mapper-content";
@@ -30,41 +32,70 @@ export const Route = createFileRoute("/_app/mapper")({
 
 function MapperPage() {
   const { upsertMapperKit } = useKitStore();
+  const initialDraft = useMemo(() => loadMapperDraft(), []);
   const [content, setContent] = useState<MapperContent>(
-    () => loadMapperContentFromStorage() ?? SAMPLE_MAPPER_CONTENT,
+    () => initialDraft?.content ?? SAMPLE_MAPPER_CONTENT,
   );
+  const [lastSaved, setLastSaved] = useState<string | null>(
+    initialDraft?.lastSaved ?? null,
+  );
+  const [source, setSource] = useState<MapperDraftSource>(
+    initialDraft?.source ?? "current",
+  );
+  const [dirty, setDirty] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const previewRef = useRef<HTMLDivElement | null>(null);
-
-  // Live-sync mapper content into the reserved kit AND persist to localStorage
-  // so the /print/mapper-preview tab can recover the mapped content.
-  useEffect(() => {
-    upsertMapperKit(content);
-    saveMapperContentToStorage(content);
-  }, [content, upsertMapperKit]);
 
   const blocks = useMemo(() => buildBlocksFromMapper(content), [content, refreshKey]);
   const warnings = useMemo(() => getOverflowWarnings(content), [content]);
   const warningsByScope = useMemo(() => groupByScope(warnings), [warnings]);
 
-  const patch = (p: Partial<MapperContent>) => setContent((c) => ({ ...c, ...p }));
+  const patch = (p: Partial<MapperContent>) => {
+    setContent((c) => ({ ...c, ...p }));
+    setDirty(true);
+    if (source === "sample") setSource("current");
+  };
+
+  const persist = (next: MapperContent, nextSource: MapperDraftSource = "current") => {
+    const draft = saveMapperDraft(next, nextSource);
+    upsertMapperKit(next);
+    setLastSaved(draft.lastSaved);
+    setSource(nextSource);
+    setDirty(false);
+  };
+
+  const onSaveDraft = () => {
+    persist(content, source === "sample" ? "sample" : "current");
+    toast.success("Draft saved");
+  };
 
   const onGenerate = () => {
-    upsertMapperKit(content);
+    persist(content, source);
     setRefreshKey((k) => k + 1);
     previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast.success("Preview generated");
   };
 
   const onPrint = () => {
     if (typeof window === "undefined") return;
-    // Persist immediately so the new tab's print route always sees the latest content.
-    saveMapperContentToStorage(content);
-    upsertMapperKit(content);
+    if (dirty || !lastSaved) {
+      toast.warning("Please click Generate Preview or Save Draft before printing.");
+      return;
+    }
+    persist(content, source);
     window.open(`/print/${RESERVED_MAPPER_KIT_ID}?filter=all`, "_blank", "noreferrer");
   };
 
-  const onReset = () => setContent(SAMPLE_MAPPER_CONTENT);
-  const onClear = () => setContent(EMPTY_MAPPER_CONTENT);
+  const onReset = () => {
+    setContent(SAMPLE_MAPPER_CONTENT);
+    persist(SAMPLE_MAPPER_CONTENT, "sample");
+    toast.message("Reset to sample content");
+  };
+  const onClear = () => {
+    setContent(EMPTY_MAPPER_CONTENT);
+    setDirty(true);
+    setSource("current");
+  };
 
   return (
     <div className="p-8">
@@ -88,6 +119,9 @@ function MapperPage() {
         <Button onClick={onGenerate} style={{ background: "#4F2D68", color: "#fff" }}>
           <RefreshCw className="mr-2 h-4 w-4" /> Generate Preview
         </Button>
+        <Button onClick={onSaveDraft} variant="outline">
+          <Save className="mr-2 h-4 w-4" /> Save Draft
+        </Button>
         <Button onClick={onPrint} variant="outline">
           <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
         </Button>
@@ -102,6 +136,29 @@ function MapperPage() {
             <AlertTriangle className="h-4 w-4" /> {warnings.length} warning{warnings.length === 1 ? "" : "s"}
           </span>
         ) : null}
+      </div>
+
+      <div
+        className="mb-6 grid grid-cols-1 gap-2 rounded-md border px-4 py-3 text-xs sm:grid-cols-3"
+        style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#4F2D68" }}
+      >
+        <div>
+          <span className="uppercase tracking-wider opacity-70">Current Kit Name: </span>
+          <span style={{ color: "#222026" }}>{content.kitName || "—"}</span>
+        </div>
+        <div>
+          <span className="uppercase tracking-wider opacity-70">Last Saved: </span>
+          <span style={{ color: "#222026" }}>
+            {lastSaved ? new Date(lastSaved).toLocaleString() : "Not saved yet"}
+            {dirty && lastSaved ? " (unsaved changes)" : ""}
+          </span>
+        </div>
+        <div>
+          <span className="uppercase tracking-wider opacity-70">Preview Source: </span>
+          <span style={{ color: "#222026" }}>
+            {source === "sample" ? "Sample Content" : "Current Kit"}
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-8 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
