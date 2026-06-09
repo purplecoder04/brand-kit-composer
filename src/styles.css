@@ -181,4 +181,11 @@
     page-break-after: auto;
     break-after: auto;
   }
+  .print-stack,
+  .print-stack-inner {
+    padding: 0 !important;
+    gap: 0 !important;
+    background: #ffffff !important;
+    min-height: 0 !important;
+  }
 }
