@@ -264,7 +264,6 @@ export function CornerWash({
       preserveAspectRatio="none"
       style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
     >
-      <rect width="850" height="1100" fill={CREAM_PAPER} />
       {showTL && (
         <>
           <path d="M0,0 L276,0 C226,86 162,124 114,202 C60,290 28,350 0,392 Z" fill={lilacColor} opacity={0.58} />
