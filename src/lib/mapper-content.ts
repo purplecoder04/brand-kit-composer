@@ -1,4 +1,5 @@
-import type { Block } from "./kit-types";
+import { BRAND_PROFILE } from "./branch-profile";
+import type { Block, Kit } from "./kit-types";
 import { SAMPLE_KIT } from "./sample-kit";
 
 export type MapperTableRow = [string, string, string];
@@ -97,6 +98,27 @@ export function loadMapperDraft(): MapperDraft | null {
 /** Back-compat helper used by the print route. */
 export function loadMapperContentFromStorage(): MapperContent | null {
   return loadMapperDraft()?.content ?? null;
+}
+
+export function buildMapperKit(content: MapperContent): Kit {
+  return {
+    id: RESERVED_MAPPER_KIT_ID,
+    name: content.kitName || "Kit Content Mapper",
+    branch: content.branch || "Brand",
+    audience: content.audience,
+    tone: content.tone,
+    description: content.kitTagline,
+    lessonGuide: "",
+    workbook: "",
+    tracker: "",
+    branchProfile: BRAND_PROFILE,
+    blocks: buildBlocksFromMapper(content),
+    version: "v1",
+    status: "Template Test",
+    qcStatus: "Needs Review",
+    dochubStatus: "Not Ready",
+    updatedAt: new Date().toISOString(),
+  };
 }
 
 export function encodeMapperDraftForUrl(

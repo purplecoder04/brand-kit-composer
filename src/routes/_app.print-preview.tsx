@@ -1,9 +1,15 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { useMemo } from "react";
 import { useKitStore } from "@/lib/kit-store";
 import { PageRenderer } from "@/components/PageRenderer";
 import { PagePreview } from "@/components/PagePreview";
+import {
+  RESERVED_MAPPER_KIT_ID,
+  buildMapperKit,
+  encodeMapperDraftForUrl,
+  loadMapperDraft,
+} from "@/lib/mapper-content";
 
 const searchSchema = z.object({
   kitId: z.string().optional(),
@@ -18,10 +24,26 @@ export const Route = createFileRoute("/_app/print-preview")({
 function PrintPreviewPage() {
   const { kitId } = Route.useSearch();
   const { state } = useKitStore();
-  const kit = useMemo(
-    () => (kitId ? state.kits.find((k) => k.id === kitId) : state.kits[0]) ?? state.kits[0],
-    [kitId, state.kits],
+  const mapperDraft = useMemo(() => loadMapperDraft(), []);
+  const mapperKit = useMemo(
+    () => (mapperDraft ? buildMapperKit(mapperDraft.content) : null),
+    [mapperDraft],
   );
+  const kit = useMemo(() => {
+    if (kitId === RESERVED_MAPPER_KIT_ID) {
+      return mapperKit ?? state.kits.find((k) => k.id === kitId);
+    }
+
+    if (kitId) return state.kits.find((k) => k.id === kitId) ?? state.kits[0];
+
+    if (mapperDraft?.source === "current" && mapperKit) return mapperKit;
+
+    return state.kits[0];
+  }, [kitId, mapperDraft?.source, mapperKit, state.kits]);
+  const mapperPayload = useMemo(() => {
+    if (kit?.id !== RESERVED_MAPPER_KIT_ID || !mapperDraft) return undefined;
+    return encodeMapperDraftForUrl(mapperDraft.content, mapperDraft.source);
+  }, [kit?.id, mapperDraft]);
 
   if (!kit) return <div className="p-10">No kits yet.</div>;
 
@@ -44,10 +66,31 @@ function PrintPreviewPage() {
       </p>
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <PrintLink kitId={kit.id} filter="all" label="Print / Save as PDF" primary />
-        <PrintLink kitId={kit.id} filter="lesson" label="Export Lesson Guide" />
-        <PrintLink kitId={kit.id} filter="workbook" label="Export Workbook" />
-        <PrintLink kitId={kit.id} filter="all" label="Export Full Kit" />
+        <PrintLink
+          kitId={kit.id}
+          filter="all"
+          label="Print / Save as PDF"
+          mapperPayload={mapperPayload}
+          primary
+        />
+        <PrintLink
+          kitId={kit.id}
+          filter="lesson"
+          label="Export Lesson Guide"
+          mapperPayload={mapperPayload}
+        />
+        <PrintLink
+          kitId={kit.id}
+          filter="workbook"
+          label="Export Workbook"
+          mapperPayload={mapperPayload}
+        />
+        <PrintLink
+          kitId={kit.id}
+          filter="all"
+          label="Export Full Kit"
+          mapperPayload={mapperPayload}
+        />
       </div>
 
       <div className="mt-10 space-y-8">
@@ -70,18 +113,22 @@ function PrintLink({
   kitId,
   filter,
   label,
+  mapperPayload,
   primary = false,
 }: {
   kitId: string;
   filter: "all" | "lesson" | "workbook";
   label: string;
+  mapperPayload?: string;
   primary?: boolean;
 }) {
+  const href = mapperPayload
+    ? `/print/${kitId}?filter=${filter}&mapper=${mapperPayload}#mapper=${mapperPayload}`
+    : `/print/${kitId}?filter=${filter}`;
+
   return (
-    <Link
-      to="/print/$kitId"
-      params={{ kitId }}
-      search={{ filter }}
+    <a
+      href={href}
       target="_blank"
       rel="noreferrer"
       className="inline-flex items-center rounded-md px-3 py-2 text-xs font-medium"
@@ -92,6 +139,6 @@ function PrintLink({
       }
     >
       {label}
-    </Link>
+    </a>
   );
 }

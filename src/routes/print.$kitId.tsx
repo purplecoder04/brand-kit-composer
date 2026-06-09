@@ -6,11 +6,10 @@ import { useKitStore } from "@/lib/kit-store";
 import { SAMPLE_KIT } from "@/lib/sample-kit";
 import { PageRenderer } from "@/components/PageRenderer";
 import type { Block, Kit, PageType } from "@/lib/kit-types";
-import { BRAND_PROFILE } from "@/lib/branch-profile";
 import {
   EMPTY_MAPPER_CONTENT,
   RESERVED_MAPPER_KIT_ID,
-  buildBlocksFromMapper,
+  buildMapperKit,
   loadMapperContentFromStorage,
   loadMapperContentFromUrlHash,
   loadMapperContentFromWindowName,
@@ -31,26 +30,7 @@ const LESSON_TYPES: PageType[] = ["cover", "divider", "lesson"];
 const WORKBOOK_TYPES: PageType[] = ["cover", "divider", "workbook"];
 
 function buildMapperKitFromContent(content: MapperContent | null): Kit | null {
-  if (!content) return null;
-
-  return {
-    id: RESERVED_MAPPER_KIT_ID,
-    name: content.kitName || "Kit Content Mapper",
-    branch: content.branch || "Brand",
-    audience: content.audience,
-    tone: content.tone,
-    description: content.kitTagline,
-    lessonGuide: "",
-    workbook: "",
-    tracker: "",
-    branchProfile: BRAND_PROFILE,
-    blocks: buildBlocksFromMapper(content),
-    version: "v1",
-    status: "Template Test",
-    qcStatus: "Needs Review",
-    dochubStatus: "Not Ready",
-    updatedAt: new Date().toISOString(),
-  };
+  return content ? buildMapperKit(content) : null;
 }
 
 function PrintRoute() {

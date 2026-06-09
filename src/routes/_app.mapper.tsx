@@ -13,6 +13,7 @@ import { PageRenderer } from "@/components/PageRenderer";
 import { useKitStore } from "@/lib/kit-store";
 import {
   EMPTY_MAPPER_CONTENT,
+  RESERVED_MAPPER_KIT_ID,
   SAMPLE_MAPPER_CONTENT,
   buildBlocksFromMapper,
   getOverflowWarnings,
@@ -79,7 +80,7 @@ function MapperPage() {
     if (typeof window === "undefined") return;
     const printSource = source === "sample" && dirty ? "current" : source;
     persist(content, printSource);
-    window.print();
+    window.location.href = `/print-preview?kitId=${RESERVED_MAPPER_KIT_ID}`;
   };
 
   const onReset = () => {

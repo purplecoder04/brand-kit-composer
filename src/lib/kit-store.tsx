@@ -16,8 +16,7 @@ import type {
 import { SAMPLE_KIT } from "./sample-kit";
 import { BRAND_PROFILE } from "./branch-profile";
 import {
-  RESERVED_MAPPER_KIT_ID,
-  buildBlocksFromMapper,
+  buildMapperKit,
   type MapperContent,
 } from "./mapper-content";
 
@@ -196,25 +195,7 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const upsertMapperKit = useCallback<StoreCtx["upsertMapperKit"]>((content) => {
-    const kit: Kit = {
-      id: RESERVED_MAPPER_KIT_ID,
-      name: content.kitName || "Kit Content Mapper",
-      branch: content.branch || "Brand",
-      audience: content.audience,
-      tone: content.tone,
-      description: content.kitTagline,
-      lessonGuide: "",
-      workbook: "",
-      tracker: "",
-      branchProfile: BRAND_PROFILE,
-      blocks: buildBlocksFromMapper(content),
-      version: "v1",
-      status: "Template Test",
-      qcStatus: "Needs Review",
-      dochubStatus: "Not Ready",
-      updatedAt: new Date().toISOString(),
-    };
-    dispatch({ type: "upsertMapperKit", kit });
+    dispatch({ type: "upsertMapperKit", kit: buildMapperKit(content) });
   }, []);
 
   const value = useMemo<StoreCtx>(
