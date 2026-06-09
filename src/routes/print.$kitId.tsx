@@ -83,14 +83,16 @@ function PrintRoute() {
       const found = state.kits.find((k) => k.id === kitId);
       if (found) return found;
 
-      return undefined;
+      if (!mapperStorageChecked) return undefined;
+
+      return buildMapperKitFromContent(EMPTY_MAPPER_CONTENT);
     }
 
     const found = state.kits.find((k) => k.id === kitId);
     if (found) return found;
 
     return kitId === SAMPLE_KIT.id ? SAMPLE_KIT : state.kits[0];
-  }, [kitId, state.kits, storedMapperKit]);
+  }, [kitId, mapperStorageChecked, state.kits, storedMapperKit]);
 
   const blocks: Block[] = useMemo(() => {
     if (!kit) return [];
@@ -102,18 +104,6 @@ function PrintRoute() {
   }, [filter, kit]);
 
   if (!kit) {
-    if (kitId === RESERVED_MAPPER_KIT_ID && mapperStorageChecked) {
-      const emptyMapperKit = buildMapperKitFromContent(EMPTY_MAPPER_CONTENT);
-      if (emptyMapperKit) {
-        return (
-          <PrintKitDocument
-            kit={emptyMapperKit}
-            blocks={filterBlocks(emptyMapperKit.blocks, filter)}
-          />
-        );
-      }
-    }
-
     const message =
       kitId === RESERVED_MAPPER_KIT_ID && !mapperStorageChecked
         ? "Loading print preview..."

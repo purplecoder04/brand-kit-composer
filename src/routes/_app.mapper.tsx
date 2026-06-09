@@ -79,12 +79,9 @@ function MapperPage() {
 
   const onPrint = () => {
     if (typeof window === "undefined") return;
-    if (dirty || !lastSaved) {
-      toast.warning("Please click Generate Preview or Save Draft before printing.");
-      return;
-    }
-    persist(content, source);
-    const mapperPayload = encodeMapperDraftForUrl(content, source);
+    const printSource = source === "sample" && dirty ? "current" : source;
+    persist(content, printSource);
+    const mapperPayload = encodeMapperDraftForUrl(content, printSource);
     window.open(
       `/print/${RESERVED_MAPPER_KIT_ID}?filter=all&mapper=${mapperPayload}#mapper=${mapperPayload}`,
       "_blank",
