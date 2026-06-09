@@ -80,22 +80,22 @@ export function PageCanvas({
       {bleed ? (
         <div style={{ position: "absolute", inset: 0 }}>{children}</div>
       ) : (
-      <div
-        ref={contentRef}
-        data-page-content
-        style={{
-          position: "absolute",
-          top: PAGE_PADDING,
-          left: PAGE_PADDING,
-          right: PAGE_PADDING,
-          bottom: showFooter
-            ? `calc(${PAGE_PADDING} + ${FOOTER_HEIGHT})`
-            : PAGE_PADDING,
-          overflow: "hidden",
-        }}
-      >
-        {children}
-      </div>
+        <div
+          ref={contentRef}
+          data-page-content
+          style={{
+            position: "absolute",
+            top: PAGE_PADDING,
+            left: PAGE_PADDING,
+            right: PAGE_PADDING,
+            bottom: showFooter
+              ? `calc(${PAGE_PADDING} + ${FOOTER_HEIGHT})`
+              : PAGE_PADDING,
+            overflow: "hidden",
+          }}
+        >
+          {children}
+        </div>
       )}
 
       {showFooter ? (
