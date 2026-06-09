@@ -7,6 +7,8 @@ export type BranchProfile = {
   textColor: string;
   goldAccent: string;
   footerLabel: string;
+  blushColor: string;
+  lilacColor: string;
 };
 
 export const BRAND_PROFILE: BranchProfile = {
@@ -18,6 +20,8 @@ export const BRAND_PROFILE: BranchProfile = {
   textColor: "#222026",
   goldAccent: "#B89B5E",
   footerLabel: "Best Collective | Brand",
+  blushColor: "#E8C8C0",
+  lilacColor: "#C9B6D9",
 };
 
 export const BRANCH_PROFILES: Record<string, BranchProfile> = {
