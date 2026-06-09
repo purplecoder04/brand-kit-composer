@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Printer } from "lucide-react";
 import { useKitStore } from "@/lib/kit-store";
 import { SAMPLE_KIT } from "@/lib/sample-kit";
@@ -26,46 +26,65 @@ export const Route = createFileRoute("/print/$kitId")({
 const LESSON_TYPES: PageType[] = ["cover", "divider", "lesson"];
 const WORKBOOK_TYPES: PageType[] = ["cover", "divider", "workbook"];
 
+function buildMapperKitFromStorage(): Kit | null {
+  const content = loadMapperContentFromStorage();
+  if (!content) return null;
+
+  return {
+    id: RESERVED_MAPPER_KIT_ID,
+    name: content.kitName || "Kit Content Mapper",
+    branch: content.branch || "Brand",
+    audience: content.audience,
+    tone: content.tone,
+    description: content.kitTagline,
+    lessonGuide: "",
+    workbook: "",
+    tracker: "",
+    branchProfile: BRAND_PROFILE,
+    blocks: buildBlocksFromMapper(content),
+    version: "v1",
+    status: "Template Test",
+    qcStatus: "Needs Review",
+    dochubStatus: "Not Ready",
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 function PrintRoute() {
   const { kitId } = Route.useParams();
   const { filter = "all" } = Route.useSearch();
   const { state } = useKitStore();
+  const [storedMapperKit, setStoredMapperKit] = useState<Kit | null>(null);
+  const [mapperStorageChecked, setMapperStorageChecked] = useState(false);
+
+  useEffect(() => {
+    if (kitId !== RESERVED_MAPPER_KIT_ID) {
+      setStoredMapperKit(null);
+      setMapperStorageChecked(false);
+      return;
+    }
+
+    setStoredMapperKit(buildMapperKitFromStorage());
+    setMapperStorageChecked(true);
+  }, [kitId]);
 
   // Mapper preview: the new tab has a fresh in-memory store. Rebuild from
-  // localStorage first so mapped content prints instead of a stale/sample kit.
+  // localStorage after hydration so mapped content prints instead of sample.
   const kit = useMemo(() => {
     if (kitId === RESERVED_MAPPER_KIT_ID) {
-      const content = loadMapperContentFromStorage();
-      if (content) {
-        const rebuilt: Kit = {
-          id: RESERVED_MAPPER_KIT_ID,
-          name: content.kitName || "Kit Content Mapper",
-          branch: content.branch || "Brand",
-          audience: content.audience,
-          tone: content.tone,
-          description: content.kitTagline,
-          lessonGuide: "",
-          workbook: "",
-          tracker: "",
-          branchProfile: BRAND_PROFILE,
-          blocks: buildBlocksFromMapper(content),
-          version: "v1",
-          status: "Template Test",
-          qcStatus: "Needs Review",
-          dochubStatus: "Not Ready",
-          updatedAt: new Date().toISOString(),
-        };
-        return rebuilt;
-      }
+      if (storedMapperKit) return storedMapperKit;
+
+      const found = state.kits.find((k) => k.id === kitId);
+      if (found) return found;
+
+      return undefined;
     }
 
     const found = state.kits.find((k) => k.id === kitId);
     if (found) return found;
 
-    if (kitId === RESERVED_MAPPER_KIT_ID) return undefined;
-
     return kitId === SAMPLE_KIT.id ? SAMPLE_KIT : state.kits[0];
-  }, [kitId, state.kits]);
+  }, [kitId, state.kits, storedMapperKit]);
 
   const blocks: Block[] = useMemo(() => {
     if (!kit) return [];
@@ -74,14 +93,19 @@ function PrintRoute() {
     if (filter === "workbook")
       return kit.blocks.filter((b) => WORKBOOK_TYPES.includes(b.pageType));
     return kit.blocks;
-  }, [filter, kit.blocks]);
+  }, [filter, kit]);
 
   const total = blocks.length;
 
   if (!kit) {
+    const message =
+      kitId === RESERVED_MAPPER_KIT_ID && !mapperStorageChecked
+        ? "Loading print preview..."
+        : "Kit not found.";
+
     return (
       <div style={{ padding: "2rem", fontFamily: "system-ui" }}>
-        Kit not found.
+        {message}
       </div>
     );
   }
