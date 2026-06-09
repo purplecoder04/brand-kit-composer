@@ -88,7 +88,7 @@ function DashboardPage() {
                 <Td><Pill>{k.status}</Pill></Td>
                 <Td><Pill tone={k.qcStatus === "Passed" ? "good" : "warn"}>{k.qcStatus}</Pill></Td>
                 <Td><Pill tone={k.dochubStatus === "Ready" ? "good" : "muted"}>{k.dochubStatus}</Pill></Td>
-                <Td>{new Date(k.updatedAt).toLocaleDateString()}</Td>
+                <Td>{k.updatedAt.slice(0, 10)}</Td>
                 <Td>
                   <div className="flex gap-3">
                     <Link to="/builder" search={{ kitId: k.id }} className="underline" style={{ color: "#4F2D68" }}>
