@@ -23,6 +23,8 @@ export function WorkbookTemplate({
       pageNumber={pageNumber}
       totalPages={totalPages}
     >
+      <div aria-hidden style={{ position: "absolute", top: "-0.9in", left: "-0.9in", width: "2.4in", height: "2.4in", borderRadius: "50%", background: branchProfile.blushColor, opacity: 0.35 }} />
+      <div aria-hidden style={{ position: "absolute", bottom: "-0.8in", right: "-0.8in", width: "2in", height: "2in", borderRadius: "50%", background: branchProfile.lilacColor, opacity: 0.35 }} />
       {block.subtitle ? (
         <div
           style={{
@@ -60,18 +62,21 @@ export function WorkbookTemplate({
       />
 
       {block.prompt ? (
-        <p
-          style={{
-            fontSize: "13px",
-            lineHeight: 1.7,
-            color: branchProfile.textColor,
-            maxWidth: "6.5in",
-            margin: "0 0 0.35in",
-            fontStyle: "italic",
-          }}
-        >
-          {block.prompt}
-        </p>
+        <div style={{
+          maxWidth: "6.5in",
+          background: "#FFFDF8",
+          border: `1px solid ${branchProfile.stoneColor}`,
+          borderLeft: `3px solid ${branchProfile.goldAccent}`,
+          padding: "0.22in 0.3in",
+          margin: "0 0 0.3in",
+        }}>
+          <div style={{ fontSize: "9.5px", letterSpacing: "0.28em", textTransform: "uppercase", color: branchProfile.primaryColor, marginBottom: "0.08in" }}>
+            Prompt
+          </div>
+          <p style={{ fontSize: "13px", lineHeight: 1.7, color: branchProfile.textColor, margin: 0, fontStyle: "italic" }}>
+            {block.prompt}
+          </p>
+        </div>
       ) : null}
 
       <div
