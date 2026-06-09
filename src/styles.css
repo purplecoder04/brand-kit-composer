@@ -174,12 +174,6 @@
   }
   .page-canvas {
     box-shadow: none !important;
-    page-break-after: always;
-    break-after: page;
-  }
-  .page-canvas:last-child {
-    page-break-after: auto;
-    break-after: auto;
   }
   .print-stack,
   .print-stack-inner {
@@ -187,5 +181,13 @@
     gap: 0 !important;
     background: #ffffff !important;
     min-height: 0 !important;
+  }
+  .print-page {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .print-page.page-break {
+    break-after: page;
+    page-break-after: always;
   }
 }
