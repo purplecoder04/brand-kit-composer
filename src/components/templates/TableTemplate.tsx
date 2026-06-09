@@ -55,9 +55,11 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
         }}
       />
 
+      <div style={{ width: "100%", maxWidth: "6.9in", marginLeft: "auto", marginRight: "auto" }}>
       <table
         style={{
           width: "100%",
+          tableLayout: "fixed",
           borderCollapse: "collapse",
           fontSize: "12px",
           color: branchProfile.textColor,
@@ -103,6 +105,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                         : "none",
                     verticalAlign: "top",
                     lineHeight: 1.55,
+                  wordWrap: "break-word",
                   }}
                 >
                   {cell}
@@ -112,6 +115,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
           ))}
         </tbody>
       </table>
+      </div>
     </PageCanvas>
   );
 }
