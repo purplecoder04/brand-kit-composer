@@ -18,6 +18,8 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
       pageNumber={pageNumber}
       totalPages={totalPages}
     >
+      <div aria-hidden style={{ position: "absolute", top: "-0.9in", right: "-0.9in", width: "2.4in", height: "2.4in", borderRadius: "50%", background: branchProfile.lilacColor, opacity: 0.35 }} />
+      <div aria-hidden style={{ position: "absolute", bottom: "-0.8in", left: "-0.8in", width: "2in", height: "2in", borderRadius: "50%", background: branchProfile.blushColor, opacity: 0.35 }} />
       {block.subtitle ? (
         <div
           style={{
@@ -54,7 +56,14 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
         }}
       />
 
-      <div style={{ maxWidth: "6.5in" }}>
+      <div style={{
+        position: "relative",
+        maxWidth: "6.5in",
+        background: "#FFFDF8",
+        border: `1px solid ${branchProfile.stoneColor}`,
+        borderLeft: `3px solid ${branchProfile.goldAccent}`,
+        padding: "0.35in 0.4in 0.2in",
+      }}>
         {paragraphs.map((p, i) => (
           <p
             key={i}
