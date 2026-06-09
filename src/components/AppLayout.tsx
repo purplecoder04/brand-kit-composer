@@ -1,4 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Toaster } from "@/components/ui/sonner";
 import {
   LayoutDashboard,
   FilePlus2,
@@ -73,6 +74,7 @@ export function AppLayout() {
           <Outlet />
         </main>
       </div>
+      <Toaster />
     </div>
   );
 }
