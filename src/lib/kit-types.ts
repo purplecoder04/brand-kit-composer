@@ -17,6 +17,13 @@ export type Block = {
   prompt?: string;
   lines?: number;
   tableData?: TableData;
+  /**
+   * Optional cover keyword/pillar list. When present on a cover block,
+   * CoverTemplate renders these in place of the default
+   * "Structure / Legitimacy / Foundation" pillars. Additive — every other
+   * template ignores this field.
+   */
+  keywords?: string[];
 };
 
 export type KitStatus = "Draft" | "Template Test" | "QC Needed" | "Sale Ready";
