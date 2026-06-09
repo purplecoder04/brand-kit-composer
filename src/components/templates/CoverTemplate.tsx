@@ -105,12 +105,12 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "76px",
-            lineHeight: 0.93,
+            fontSize: "72px",
+            lineHeight: 0.98,
             fontWeight: 500,
             color: PLUM_DEEP,
             margin: 0,
-            letterSpacing: "0",
+            letterSpacing: "0.005em",
           }}
         >
           {titleLines.map((line) => (

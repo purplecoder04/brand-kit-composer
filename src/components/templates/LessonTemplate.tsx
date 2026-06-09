@@ -113,10 +113,10 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
             <p
               key={i}
               style={{
-                fontSize: "13px",
-                lineHeight: 1.8,
+                fontSize: "14.5px",
+                lineHeight: 1.72,
                 color: TEXT_INK,
-                margin: "0 0 0.22in",
+                margin: "0 0 0.24in",
               }}
             >
               {p}
