@@ -224,4 +224,22 @@
     break-after: page;
     page-break-after: always;
   }
+
+  /* PDF-safe font stacks — prevent Type 3 font embedding from web fonts.
+     Force every printed glyph onto a system font that the PDF generator
+     can embed as TrueType/Type 1. Screen preview is unaffected. */
+  html,
+  body,
+  .page-canvas,
+  .page-canvas * {
+    font-family: Arial, Helvetica, system-ui, sans-serif !important;
+  }
+  .page-canvas h1,
+  .page-canvas h2,
+  .page-canvas h3,
+  .page-canvas h4,
+  .page-canvas [data-font-display],
+  .page-canvas .font-display {
+    font-family: Georgia, Cambria, "Times New Roman", serif !important;
+  }
 }
