@@ -113,7 +113,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
               tableLayout: "fixed",
               borderCollapse: "separate",
               borderSpacing: 0,
-              fontSize: "12px",
+              fontSize: "13px",
               color: TEXT_INK,
             }}
           >
@@ -126,8 +126,8 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                       textAlign: "left",
                       background: PLUM_DEEP,
                       color: PAPER_PANEL,
-                      padding: "0.13in 0.17in",
-                      fontSize: "10px",
+                      padding: "0.18in 0.2in",
+                      fontSize: "11px",
                       letterSpacing: "0.22em",
                       textTransform: "uppercase",
                       fontWeight: 600,
@@ -150,14 +150,14 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                     <td
                       key={ci}
                       style={{
-                        padding: "0.18in 0.17in",
+                        padding: "0.24in 0.2in",
                         borderTop: ri === 0 ? `1px solid ${branchProfile.stoneColor}` : "none",
                         borderBottom:
                           ri < rows.length - 1 ? `1px solid ${branchProfile.stoneColor}` : "none",
                         borderRight:
                           ci < row.length - 1 ? `1px solid ${branchProfile.stoneColor}` : "none",
                         verticalAlign: "top",
-                        lineHeight: 1.5,
+                        lineHeight: 1.6,
                         wordWrap: "break-word",
                       }}
                     >
