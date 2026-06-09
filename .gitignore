@@ -15,6 +15,7 @@ dist-ssr
 .tanstack/**
 .nitro
 *.local
+.codex_ssh/
 
 # Wrangler / Cloudflare
 .wrangler/
