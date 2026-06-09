@@ -31,14 +31,9 @@ function PrintRoute() {
   const { filter = "all" } = Route.useSearch();
   const { state } = useKitStore();
 
-  // Fall back to the sample kit so the print URL works even after a hard refresh
-  // (the in-memory store is reset; sample kit id is stable).
+  // Mapper preview: the new tab has a fresh in-memory store. Rebuild from
+  // localStorage first so mapped content prints instead of a stale/sample kit.
   const kit = useMemo(() => {
-    const found = state.kits.find((k) => k.id === kitId);
-    if (found) return found;
-
-    // Mapper preview: the new tab has a fresh in-memory store. Rebuild from
-    // localStorage so we render the mapped content, not the sample kit.
     if (kitId === RESERVED_MAPPER_KIT_ID) {
       const content = loadMapperContentFromStorage();
       if (content) {
@@ -64,18 +59,16 @@ function PrintRoute() {
       }
     }
 
+    const found = state.kits.find((k) => k.id === kitId);
+    if (found) return found;
+
+    if (kitId === RESERVED_MAPPER_KIT_ID) return undefined;
+
     return kitId === SAMPLE_KIT.id ? SAMPLE_KIT : state.kits[0];
   }, [kitId, state.kits]);
 
-  if (!kit) {
-    return (
-      <div style={{ padding: "2rem", fontFamily: "system-ui" }}>
-        Kit not found.
-      </div>
-    );
-  }
-
   const blocks: Block[] = useMemo(() => {
+    if (!kit) return [];
     if (filter === "lesson")
       return kit.blocks.filter((b) => LESSON_TYPES.includes(b.pageType));
     if (filter === "workbook")
@@ -84,6 +77,14 @@ function PrintRoute() {
   }, [filter, kit.blocks]);
 
   const total = blocks.length;
+
+  if (!kit) {
+    return (
+      <div style={{ padding: "2rem", fontFamily: "system-ui" }}>
+        Kit not found.
+      </div>
+    );
+  }
 
   return (
     <div
