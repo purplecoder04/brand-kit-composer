@@ -42,6 +42,7 @@ export type MapperContent = {
 export const RESERVED_MAPPER_KIT_ID = "mapper-preview";
 
 export const MAPPER_CONTENT_STORAGE_KEY = "best_collective_current_kit";
+const MAPPER_PRINT_WINDOW_PREFIX = "best_collective_mapper_print:";
 
 export type MapperDraftSource = "current" | "sample";
 
@@ -110,13 +111,41 @@ export function encodeMapperDraftForUrl(
   return encodeURIComponent(JSON.stringify(draft));
 }
 
+export function encodeMapperDraftForWindowName(
+  content: MapperContent,
+  source: MapperDraftSource = "current",
+): string {
+  return `${MAPPER_PRINT_WINDOW_PREFIX}${encodeMapperDraftForUrl(content, source)}`;
+}
+
 export function loadMapperContentFromUrlHash(): MapperContent | null {
   if (typeof window === "undefined") return null;
   try {
     const raw = getMapperPayloadFromParams(window.location.search)
       ?? getMapperPayloadFromParams(window.location.hash.replace(/^#/, ""));
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as
+    return parseMapperContentPayload(raw);
+  } catch {
+    return null;
+  }
+}
+
+export function loadMapperContentFromWindowName(): MapperContent | null {
+  if (typeof window === "undefined") return null;
+  const name = window.name;
+  if (!name.startsWith(MAPPER_PRINT_WINDOW_PREFIX)) return null;
+  return parseMapperContentPayload(name.slice(MAPPER_PRINT_WINDOW_PREFIX.length));
+}
+
+function getMapperPayloadFromParams(params: string): string | null {
+  if (!params) return null;
+  return new URLSearchParams(params).get("mapper");
+}
+
+function parseMapperContentPayload(raw: string): MapperContent | null {
+  try {
+    const json = raw.trim().startsWith("{") ? raw : decodeURIComponent(raw);
+    const parsed = JSON.parse(json) as
       | Partial<MapperDraft>
       | Partial<MapperContent>;
 
@@ -128,11 +157,6 @@ export function loadMapperContentFromUrlHash(): MapperContent | null {
   } catch {
     return null;
   }
-}
-
-function getMapperPayloadFromParams(params: string): string | null {
-  if (!params) return null;
-  return new URLSearchParams(params).get("mapper");
 }
 
 export function parseKeywords(raw: string): string[] {

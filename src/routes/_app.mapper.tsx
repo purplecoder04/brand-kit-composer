@@ -17,6 +17,7 @@ import {
   SAMPLE_MAPPER_CONTENT,
   buildBlocksFromMapper,
   encodeMapperDraftForUrl,
+  encodeMapperDraftForWindowName,
   getOverflowWarnings,
   loadMapperDraft,
   saveMapperDraft,
@@ -82,11 +83,16 @@ function MapperPage() {
     const printSource = source === "sample" && dirty ? "current" : source;
     persist(content, printSource);
     const mapperPayload = encodeMapperDraftForUrl(content, printSource);
-    window.open(
-      `/print/${RESERVED_MAPPER_KIT_ID}?filter=all&mapper=${mapperPayload}#mapper=${mapperPayload}`,
-      "_blank",
-      "noreferrer",
-    );
+    const printUrl = `/print/${RESERVED_MAPPER_KIT_ID}?filter=all#mapper=${mapperPayload}`;
+    const printWindow = window.open("about:blank", "_blank");
+
+    if (!printWindow) {
+      window.location.href = printUrl;
+      return;
+    }
+
+    printWindow.name = encodeMapperDraftForWindowName(content, printSource);
+    printWindow.location.href = printUrl;
   };
 
   const onReset = () => {

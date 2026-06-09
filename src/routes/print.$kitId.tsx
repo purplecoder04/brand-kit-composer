@@ -13,6 +13,7 @@ import {
   buildBlocksFromMapper,
   loadMapperContentFromStorage,
   loadMapperContentFromUrlHash,
+  loadMapperContentFromWindowName,
   type MapperContent,
 } from "@/lib/mapper-content";
 
@@ -68,7 +69,9 @@ function PrintRoute() {
 
     setStoredMapperKit(
       buildMapperKitFromContent(
-        loadMapperContentFromUrlHash() ?? loadMapperContentFromStorage(),
+        loadMapperContentFromWindowName()
+          ?? loadMapperContentFromUrlHash()
+          ?? loadMapperContentFromStorage(),
       ),
     );
     setMapperStorageChecked(true);
