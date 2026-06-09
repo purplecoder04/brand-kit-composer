@@ -17,3 +17,29 @@ Approved behavior:
 
 Do not redesign the locked Brand Template V1.
 Do not change the save, preview, or print flow unless fixing bugs.
+
+---
+
+# Best Collective Kit Factory V1 - Level 3A Multi-Page Builder
+
+Approved on: 2026-06-09
+
+This version is locked as the approved Level 3A Multi-Page Builder checkpoint.
+
+Approved behavior:
+- /builder exists as Multi-Page Kit Builder.
+- /mapper remains locked as Level 2.
+- Multiple blocks can be added.
+- Blocks can be edited, duplicated, deleted, moved up, and moved down.
+- Draft saves to localStorage key best_collective_level_3_kit.
+- Preview and print use buildPagesFromKitDraft(draft).
+- PDF prints all blocks in order.
+- Page numbers update automatically.
+- Blank fields stay blank.
+- Sample content only loads when Reset to Sample Content is clicked.
+- Brand Template V1 styling remains locked.
+- No Supabase yet.
+- No AI generation yet.
+- No new branch support yet.
+
+Do not change Level 3A unless fixing a confirmed bug.
