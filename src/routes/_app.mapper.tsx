@@ -79,7 +79,7 @@ function MapperPage() {
     if (typeof window === "undefined") return;
     const printSource = source === "sample" && dirty ? "current" : source;
     persist(content, printSource);
-    window.requestAnimationFrame(() => window.print());
+    window.print();
   };
 
   const onReset = () => {
