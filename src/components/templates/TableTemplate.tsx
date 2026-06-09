@@ -55,7 +55,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
         }}
       />
 
-      <div style={{ width: "100%", maxWidth: "6.9in", marginLeft: "auto", marginRight: "auto" }}>
+      <div style={{ width: "100%", maxWidth: "6.65in", marginLeft: "auto", marginRight: "auto" }}>
       <table
         style={{
           width: "100%",
@@ -63,6 +63,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
           borderCollapse: "collapse",
           fontSize: "12px",
           color: branchProfile.textColor,
+          border: `1.5px solid ${branchProfile.primaryColor}`,
         }}
       >
         <thead>
