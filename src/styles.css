@@ -161,6 +161,11 @@
 }
 
 @media print {
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
   html,
   body {
     background: #ffffff !important;
@@ -169,11 +174,26 @@
   }
   .app-chrome,
   .print-only-hide,
-  .overflow-warning {
+  .overflow-warning,
+  .screen-only {
     display: none !important;
   }
   .page-canvas {
     box-shadow: none !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .page-canvas,
+  [data-page-canvas],
+  .organic-shape,
+  .page-accent,
+  .gold-rule,
+  .brand-decoration {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .print-page {
+    background: transparent !important;
   }
   .print-stack,
   .print-stack-inner {
