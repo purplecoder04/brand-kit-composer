@@ -70,7 +70,7 @@ function VersionsPage() {
                   <td className="px-4 py-3" style={{ fontWeight: 600 }}>{v.kitName}</td>
                   <td className="px-4 py-3">{v.branch}</td>
                   <td className="px-4 py-3">{v.version}</td>
-                  <td className="px-4 py-3">{new Date(v.exportDate).toLocaleString()}</td>
+                  <td className="px-4 py-3">{v.exportDate.replace("T", " ").slice(0, 16)}</td>
                   <td className="px-4 py-3">{v.qcStatus}</td>
                   <td className="px-4 py-3">{v.saleReady ? "Yes" : "No"}</td>
                   <td className="px-4 py-3">{v.dochubReady ? "Yes" : "No"}</td>
