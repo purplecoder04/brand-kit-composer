@@ -1,403 +1,837 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { z } from "zod";
-import { useMemo, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  Copy,
+  Eraser,
+  Plus,
+  Printer,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
-import { Trash2, Plus, Save, GitBranch, Printer } from "lucide-react";
-import { useKitStore } from "@/lib/kit-store";
-import { PageRenderer } from "@/components/PageRenderer";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { PagePreview } from "@/components/PagePreview";
-import type { Block, PageType } from "@/lib/kit-types";
-
-const searchSchema = z.object({
-  kitId: z.string().optional(),
-});
+import { PageRenderer } from "@/components/PageRenderer";
+import {
+  BUILDER_BLOCK_TYPES,
+  RESERVED_BUILDER_KIT_ID,
+  buildBuilderKit,
+  createBlankBuilderDraft,
+  createBuilderBlock,
+  createSampleBuilderDraft,
+  duplicateBuilderBlock,
+  getBuilderWarnings,
+  loadBuilderDraft,
+  normalizeDraft,
+  pageTypeLabel,
+  saveBuilderDraft,
+  type BuilderBlock,
+  type BuilderDraft,
+  type BuilderDraftSource,
+  type BuilderWarning,
+} from "@/lib/builder-content";
+import type { PageType } from "@/lib/kit-types";
 
 export const Route = createFileRoute("/_app/builder")({
-  validateSearch: searchSchema,
-  head: () => ({ meta: [{ title: "Kit Builder | Kit Factory" }] }),
+  head: () => ({ meta: [{ title: "Multi-Page Kit Builder | Kit Factory" }] }),
   component: BuilderPage,
 });
 
 function BuilderPage() {
-  const search = Route.useSearch();
-  const { state, updateBlock, addBlock, removeBlock, saveVersion, updateKit } = useKitStore();
   const navigate = useNavigate();
+  const initialDraft = useMemo(() => loadBuilderDraft(), []);
+  const [draft, setDraft] = useState<BuilderDraft>(() => initialDraft ?? createBlankBuilderDraft());
+  const [dirty, setDirty] = useState(false);
+  const previewRef = useRef<HTMLDivElement | null>(null);
 
-  const kit = useMemo(() => {
-    if (search.kitId) return state.kits.find((k) => k.id === search.kitId) ?? state.kits[0];
-    return state.kits[0];
-  }, [search.kitId, state.kits]);
+  const normalizedDraft = useMemo(() => normalizeDraft(draft), [draft]);
+  const kit = useMemo(() => buildBuilderKit(normalizedDraft), [normalizedDraft]);
+  const warnings = useMemo(() => getBuilderWarnings(normalizedDraft), [normalizedDraft]);
+  const selectedBlock =
+    normalizedDraft.blocks.find((block) => block.id === normalizedDraft.selectedBlockId) ??
+    normalizedDraft.blocks[0] ??
+    null;
 
-  if (!kit) return <div className="p-10">No kits yet.</div>;
+  const commitDraft = (
+    updater: BuilderDraft | ((current: BuilderDraft) => BuilderDraft),
+    source: BuilderDraftSource = "current",
+  ) => {
+    setDraft((current) => {
+      const next = typeof updater === "function" ? updater(current) : updater;
+      return normalizeDraft({ ...next, source });
+    });
+    setDirty(true);
+  };
+
+  const persist = (nextDraft = normalizedDraft) => {
+    const saved = saveBuilderDraft(nextDraft);
+    setDraft(saved);
+    setDirty(false);
+    return saved;
+  };
+
+  const updateDraftInfo = (patch: Partial<BuilderDraft>) => {
+    commitDraft((current) => ({ ...current, ...patch }));
+  };
+
+  const updateBlock = (blockId: string, patch: Partial<BuilderBlock>) => {
+    commitDraft((current) => ({
+      ...current,
+      selectedBlockId: blockId,
+      blocks: current.blocks.map((block) =>
+        block.id === blockId ? { ...block, ...patch } : block,
+      ),
+    }));
+  };
+
+  const addBlock = (pageType: PageType) => {
+    commitDraft((current) => {
+      const block = createBuilderBlock(pageType, current.blocks.length + 1);
+      return {
+        ...current,
+        selectedBlockId: block.id,
+        blocks: [...current.blocks, block],
+      };
+    });
+  };
+
+  const duplicateBlock = (blockId: string) => {
+    commitDraft((current) => {
+      const index = current.blocks.findIndex((block) => block.id === blockId);
+      if (index < 0) return current;
+      const copy = duplicateBuilderBlock(current.blocks[index], index + 2);
+      const blocks = [
+        ...current.blocks.slice(0, index + 1),
+        copy,
+        ...current.blocks.slice(index + 1),
+      ].map((block, order) => ({ ...block, order: order + 1 }));
+      return { ...current, selectedBlockId: copy.id, blocks };
+    });
+  };
+
+  const deleteBlock = (blockId: string) => {
+    commitDraft((current) => {
+      const blocks = current.blocks
+        .filter((block) => block.id !== blockId)
+        .map((block, order) => ({ ...block, order: order + 1 }));
+      return {
+        ...current,
+        selectedBlockId: blocks[0]?.id ?? null,
+        blocks,
+      };
+    });
+  };
+
+  const moveBlock = (blockId: string, direction: -1 | 1) => {
+    commitDraft((current) => {
+      const blocks = current.blocks.slice().sort((a, b) => a.order - b.order);
+      const index = blocks.findIndex((block) => block.id === blockId);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= blocks.length) return current;
+      const [block] = blocks.splice(index, 1);
+      blocks.splice(nextIndex, 0, block);
+      return {
+        ...current,
+        selectedBlockId: blockId,
+        blocks: blocks.map((item, order) => ({ ...item, order: order + 1 })),
+      };
+    });
+  };
+
+  const saveDraft = () => {
+    persist();
+    toast.success("Level 3A draft saved");
+  };
+
+  const generatePreview = () => {
+    persist();
+    previewRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    toast.success("Builder preview generated");
+  };
+
+  const printDraft = () => {
+    persist();
+    navigate({
+      to: "/print-preview",
+      search: { kitId: RESERVED_BUILDER_KIT_ID },
+    });
+  };
+
+  const resetToSample = () => {
+    const sample = saveBuilderDraft(createSampleBuilderDraft());
+    setDraft(sample);
+    setDirty(false);
+    toast.message("Reset to sample content");
+  };
+
+  const clearAll = () => {
+    const blank = saveBuilderDraft(createBlankBuilderDraft());
+    setDraft(blank);
+    setDirty(false);
+    toast.message("Cleared Level 3A builder");
+  };
 
   return (
-    <div className="flex h-screen">
-      {/* Left: editor */}
+    <div className="screen-only p-8">
+      <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
+        Level 3A · Local Multi-Page Kit Builder
+      </div>
+      <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
+        Multi-Page Kit Builder
+      </h1>
+      <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
+        Build multiple ordered content blocks using the locked Brand Template V1 pages.
+      </p>
+
       <div
-        className="w-[520px] shrink-0 overflow-y-auto p-6 border-r"
-        style={{ borderColor: "#D8CEC2", background: "#FAF6F0" }}
+        className="sticky top-0 z-20 -mx-8 mt-6 mb-4 flex flex-wrap items-center gap-2 border-y px-8 py-3"
+        style={{ background: "#FAF6F0", borderColor: "#D8CEC2" }}
       >
-        <div
-          className="text-[10px] uppercase tracking-[0.28em]"
-          style={{ color: "#4F2D68" }}
-        >
-          Kit Builder
+        <Button onClick={generatePreview} style={{ background: "#4F2D68", color: "#fff" }}>
+          <RefreshCw className="mr-2 h-4 w-4" /> Generate Preview
+        </Button>
+        <Button onClick={saveDraft} variant="outline">
+          <Save className="mr-2 h-4 w-4" /> Save Draft
+        </Button>
+        <Button onClick={printDraft} variant="outline">
+          <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
+        </Button>
+        <Button onClick={resetToSample} variant="outline">
+          <RotateCcw className="mr-2 h-4 w-4" /> Reset to Sample Content
+        </Button>
+        <Button onClick={clearAll} variant="outline">
+          <Eraser className="mr-2 h-4 w-4" /> Clear All
+        </Button>
+        {warnings.length > 0 ? (
+          <span
+            className="ml-auto inline-flex items-center gap-2 text-xs"
+            style={{ color: "#7a4a00" }}
+          >
+            <AlertTriangle className="h-4 w-4" /> {warnings.length} warning
+            {warnings.length === 1 ? "" : "s"}
+          </span>
+        ) : null}
+      </div>
+
+      <div
+        className="mb-6 grid grid-cols-1 gap-2 rounded-md border px-4 py-3 text-xs lg:grid-cols-4"
+        style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#4F2D68" }}
+      >
+        <StatusItem label="Current Kit Name" value={normalizedDraft.kitName} />
+        <StatusItem
+          label="Last Saved"
+          value={
+            normalizedDraft.lastSaved
+              ? `${new Date(normalizedDraft.lastSaved).toLocaleString()}${dirty ? " (unsaved changes)" : ""}`
+              : "Not saved yet"
+          }
+        />
+        <StatusItem
+          label="Preview Source"
+          value={
+            normalizedDraft.source === "sample"
+              ? "Sample Content"
+              : normalizedDraft.source === "blank"
+                ? "Blank / New Draft"
+                : "Current Kit"
+          }
+        />
+        <StatusItem label="Pages" value={`${kit.blocks.length}`} />
+      </div>
+
+      {warnings.length > 0 ? (
+        <Alert className="mb-6" style={{ borderColor: "#E0B040", background: "#FFF8E1" }}>
+          <AlertTriangle className="h-4 w-4" style={{ color: "#7a4a00" }} />
+          <AlertTitle style={{ color: "#7a4a00" }}>Builder warnings</AlertTitle>
+          <AlertDescription>
+            <ul className="mt-1 list-disc pl-5 text-sm">
+              {warnings.map((warning, index) => (
+                <li key={`${warning.blockId ?? "kit"}-${index}`}>
+                  <span className="mr-2 text-xs font-medium uppercase tracking-wider">
+                    {warning.scope}
+                  </span>
+                  {warning.message}
+                </li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[320px_minmax(420px,0.9fr)_minmax(0,1fr)]">
+        <div className="space-y-4">
+          <KitInfoCard draft={normalizedDraft} onChange={updateDraftInfo} />
+          <BlockListCard
+            blocks={normalizedDraft.blocks}
+            selectedBlockId={selectedBlock?.id ?? null}
+            warnings={warnings}
+            onSelect={(id) => updateDraftInfo({ selectedBlockId: id })}
+            onAdd={addBlock}
+            onDuplicate={duplicateBlock}
+            onDelete={deleteBlock}
+            onMove={moveBlock}
+          />
         </div>
 
-        <div className="mt-1 flex items-baseline gap-3">
+        <CurrentBlockEditor
+          block={selectedBlock}
+          onAdd={addBlock}
+          onChange={updateBlock}
+          onDuplicate={duplicateBlock}
+          onDelete={deleteBlock}
+          onMove={moveBlock}
+        />
+
+        <div ref={previewRef} className="space-y-6">
+          {kit.blocks.length === 0 ? (
+            <div
+              className="rounded-md border px-4 py-6 text-sm"
+              style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#6b6470" }}
+            >
+              Add a block to begin the Level 3A preview.
+            </div>
+          ) : (
+            kit.blocks.map((block, index) => (
+              <div key={block.id}>
+                <div
+                  className="mb-2 text-[10px] uppercase tracking-[0.28em]"
+                  style={{ color: "#4F2D68" }}
+                >
+                  Page {index + 1} of {kit.blocks.length} · {pageTypeLabel(block.pageType)}
+                </div>
+                <PagePreview scale={0.5}>
+                  <PageRenderer
+                    block={block}
+                    branchProfile={kit.branchProfile}
+                    pageNumber={index + 1}
+                    totalPages={kit.blocks.length}
+                  />
+                </PagePreview>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function StatusItem({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <span className="uppercase tracking-wider opacity-70">{label}: </span>
+      <span style={{ color: "#222026" }}>{value || "—"}</span>
+    </div>
+  );
+}
+
+function KitInfoCard({
+  draft,
+  onChange,
+}: {
+  draft: BuilderDraft;
+  onChange: (patch: Partial<BuilderDraft>) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Kit Info</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Field label="Kit Name">
+          <Input
+            value={draft.kitName}
+            onChange={(event) => onChange({ kitName: event.target.value })}
+          />
+        </Field>
+        <Field label="Subtitle">
+          <Input
+            value={draft.subtitle}
+            onChange={(event) => onChange({ subtitle: event.target.value })}
+          />
+        </Field>
+        <Field label="Branch">
+          <Input
+            value={draft.branch}
+            onChange={(event) => onChange({ branch: event.target.value })}
+          />
+        </Field>
+        <Field label="Audience">
+          <Input
+            value={draft.audience}
+            onChange={(event) => onChange({ audience: event.target.value })}
+          />
+        </Field>
+        <Field label="Tone">
+          <Input value={draft.tone} onChange={(event) => onChange({ tone: event.target.value })} />
+        </Field>
+        <Field label="Tagline">
+          <Textarea
+            rows={2}
+            value={draft.tagline}
+            onChange={(event) => onChange({ tagline: event.target.value })}
+          />
+        </Field>
+      </CardContent>
+    </Card>
+  );
+}
+
+function BlockListCard({
+  blocks,
+  selectedBlockId,
+  warnings,
+  onSelect,
+  onAdd,
+  onDuplicate,
+  onDelete,
+  onMove,
+}: {
+  blocks: BuilderBlock[];
+  selectedBlockId: string | null;
+  warnings: BuilderWarning[];
+  onSelect: (id: string) => void;
+  onAdd: (type: PageType) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
+  onMove: (id: string, direction: -1 | 1) => void;
+}) {
+  const warningsByBlock = new Map<string, number>();
+  for (const warning of warnings) {
+    if (!warning.blockId) continue;
+    warningsByBlock.set(warning.blockId, (warningsByBlock.get(warning.blockId) ?? 0) + 1);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Blocks</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div className="flex flex-wrap gap-2">
+          {BUILDER_BLOCK_TYPES.map((item) => (
+            <Button
+              key={item.type}
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onAdd(item.type)}
+            >
+              <Plus className="mr-1 h-3 w-3" /> {item.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="space-y-2">
+          {blocks.length === 0 ? (
+            <div
+              className="rounded-md border px-3 py-4 text-sm"
+              style={{ borderColor: "#D8CEC2", color: "#6b6470" }}
+            >
+              No blocks yet.
+            </div>
+          ) : (
+            blocks.map((block, index) => {
+              const selected = block.id === selectedBlockId;
+              const warningCount = warningsByBlock.get(block.id) ?? 0;
+              return (
+                <div
+                  key={block.id}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => onSelect(block.id)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      onSelect(block.id);
+                    }
+                  }}
+                  className="w-full rounded-md border px-3 py-2 text-left text-sm"
+                  style={{
+                    borderColor: selected ? "#4F2D68" : "#D8CEC2",
+                    background: selected ? "#F4EFE6" : "#fff",
+                    color: "#222026",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="text-[10px] uppercase tracking-[0.18em]"
+                      style={{ color: "#4F2D68" }}
+                    >
+                      #{index + 1}
+                    </span>
+                    <span className="font-medium">
+                      {block.title || pageTypeLabel(block.pageType)}
+                    </span>
+                    {warningCount > 0 ? (
+                      <span className="ml-auto text-[10px]" style={{ color: "#7a4a00" }}>
+                        {warningCount} warning{warningCount === 1 ? "" : "s"}
+                      </span>
+                    ) : null}
+                  </div>
+                  <div
+                    className="mt-1 flex items-center gap-1 text-xs"
+                    style={{ color: "#6b6470" }}
+                  >
+                    <span>{pageTypeLabel(block.pageType)}</span>
+                    <span>·</span>
+                    <IconButton
+                      label="Move up"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onMove(block.id, -1);
+                      }}
+                    >
+                      <ArrowUp className="h-3 w-3" />
+                    </IconButton>
+                    <IconButton
+                      label="Move down"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onMove(block.id, 1);
+                      }}
+                    >
+                      <ArrowDown className="h-3 w-3" />
+                    </IconButton>
+                    <IconButton
+                      label="Duplicate"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDuplicate(block.id);
+                      }}
+                    >
+                      <Copy className="h-3 w-3" />
+                    </IconButton>
+                    <IconButton
+                      label="Delete"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onDelete(block.id);
+                      }}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </IconButton>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CurrentBlockEditor({
+  block,
+  onAdd,
+  onChange,
+  onDuplicate,
+  onDelete,
+  onMove,
+}: {
+  block: BuilderBlock | null;
+  onAdd: (type: PageType) => void;
+  onChange: (blockId: string, patch: Partial<BuilderBlock>) => void;
+  onDuplicate: (id: string) => void;
+  onDelete: (id: string) => void;
+  onMove: (id: string, direction: -1 | 1) => void;
+}) {
+  if (!block) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Current Block</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="text-sm" style={{ color: "#6b6470" }}>
+            Add a block to start building your kit.
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {BUILDER_BLOCK_TYPES.map((item) => (
+              <Button
+                key={item.type}
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onAdd(item.type)}
+              >
+                <Plus className="mr-1 h-3 w-3" /> {item.label}
+              </Button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle className="text-base">Current Block</CardTitle>
+          <div className="flex gap-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Move block up"
+              onClick={() => onMove(block.id, -1)}
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Move block down"
+              onClick={() => onMove(block.id, 1)}
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Duplicate block"
+              onClick={() => onDuplicate(block.id)}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Delete block"
+              onClick={() => onDelete(block.id)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Field label="Page Type">
           <select
-            value={kit.id}
-            onChange={(e) =>
-              navigate({ to: "/builder", search: { kitId: e.target.value } })
-            }
-            className="text-2xl bg-transparent outline-none"
-            style={{ fontFamily: "var(--font-display)", color: "#4F2D68" }}
+            value={block.pageType}
+            onChange={(event) => onChange(block.id, { pageType: event.target.value as PageType })}
+            className="w-full rounded-md border px-3 py-2 text-sm"
+            style={{ borderColor: "#D8CEC2", background: "#fff" }}
           >
-            {state.kits.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.name}
+            {BUILDER_BLOCK_TYPES.map((item) => (
+              <option key={item.type} value={item.type}>
+                {item.label}
               </option>
             ))}
           </select>
-        </div>
-        <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
-          {kit.branch} | {kit.version} | {kit.blocks.length} pages
-        </div>
+        </Field>
+        <Field label="Order Number">
+          <Input value={String(block.order)} readOnly />
+        </Field>
+        <Field label="Block Title">
+          <Input
+            value={block.title}
+            onChange={(event) => onChange(block.id, { title: event.target.value })}
+          />
+        </Field>
+        <Field label="Subtitle">
+          <Input
+            value={block.subtitle}
+            onChange={(event) => onChange(block.id, { subtitle: event.target.value })}
+          />
+        </Field>
 
-        <div className="mt-5 flex flex-wrap gap-2">
-          <Link
-            to="/print-preview"
-            search={{ kitId: kit.id }}
-            className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-xs font-medium text-white"
-            style={{ background: "#4F2D68" }}
-          >
-            <Printer className="h-3.5 w-3.5" /> Open Print Preview
-          </Link>
-          <button
-            onClick={() => {
-              saveVersion(kit.id, "Snapshot from Kit Builder");
-              toast.success("Version saved");
-            }}
-            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium"
-            style={{ borderColor: "#4F2D68", color: "#4F2D68" }}
-          >
-            <GitBranch className="h-3.5 w-3.5" /> Save Version
-          </button>
-          <button
-            onClick={() => {
-              updateKit(kit.id, {});
-              toast.success("Draft saved");
-            }}
-            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-xs font-medium"
-            style={{ borderColor: "#D8CEC2", color: "#4F2D68" }}
-          >
-            <Save className="h-3.5 w-3.5" /> Save Draft
-          </button>
-        </div>
-
-        <div className="mt-7 space-y-4">
-          {kit.blocks.map((b) => (
-            <BlockEditor
-              key={b.id}
-              block={b}
-              onChange={(patch) => updateBlock(kit.id, b.id, patch)}
-              onRemove={() => removeBlock(kit.id, b.id)}
-            />
-          ))}
-        </div>
-
-        <AddBlockMenu onAdd={(t) => addBlock(kit.id, t)} />
-      </div>
-
-      {/* Right: live preview stack */}
-      <div
-        className="flex-1 overflow-y-auto"
-        style={{ background: "#EFE9DD" }}
-      >
-        <div className="mx-auto max-w-[5.5in] py-10 space-y-8">
-          {kit.blocks.map((b, i) => (
-            <PagePreview key={b.id} scale={0.6}>
-              <PageRenderer
-                block={b}
-                branchProfile={kit.branchProfile}
-                pageNumber={i + 1}
-                totalPages={kit.blocks.length}
+        {block.pageType === "cover" ? (
+          <>
+            <Field label="Cover Keywords" hint="Comma-separated. Leave blank to print no keywords.">
+              <Input
+                value={block.keywords}
+                onChange={(event) => onChange(block.id, { keywords: event.target.value })}
               />
-            </PagePreview>
-          ))}
-        </div>
-      </div>
-    </div>
+            </Field>
+            <Field label="Body Text">
+              <Textarea
+                rows={3}
+                value={block.body}
+                onChange={(event) => onChange(block.id, { body: event.target.value })}
+              />
+            </Field>
+          </>
+        ) : null}
+
+        {block.pageType === "divider" || block.pageType === "lesson" ? (
+          <Field label="Body Text">
+            <Textarea
+              rows={block.pageType === "lesson" ? 9 : 4}
+              value={block.body}
+              onChange={(event) => onChange(block.id, { body: event.target.value })}
+            />
+          </Field>
+        ) : null}
+
+        {block.pageType === "table" ? (
+          <BuilderTableEditor
+            block={block}
+            onChange={(tableData) => onChange(block.id, { tableData })}
+          />
+        ) : null}
+
+        {block.pageType === "workbook" ? (
+          <>
+            <Field label="Workbook Prompt">
+              <Textarea
+                rows={5}
+                value={block.prompt}
+                onChange={(event) => onChange(block.id, { prompt: event.target.value })}
+              />
+            </Field>
+            <Field label="Writing Lines Count">
+              <Input
+                type="number"
+                min={4}
+                max={20}
+                value={block.lines}
+                onChange={(event) =>
+                  onChange(block.id, {
+                    lines:
+                      event.target.value === "" ? "" : Number.parseInt(event.target.value, 10) || 0,
+                  })
+                }
+              />
+            </Field>
+          </>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
-function BlockEditor({
+function BuilderTableEditor({
   block,
   onChange,
-  onRemove,
 }: {
-  block: Block;
-  onChange: (patch: Partial<Block>) => void;
-  onRemove: () => void;
+  block: BuilderBlock;
+  onChange: (tableData: BuilderBlock["tableData"]) => void;
 }) {
-  return (
-    <div
-      className="rounded-md border p-4 bg-white"
-      style={{ borderColor: "#D8CEC2" }}
-    >
-      <div className="flex items-center gap-2">
-        <span
-          className="text-[10px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-full"
-          style={{ background: "#EDE5D7", color: "#4F2D68" }}
-        >
-          #{block.order}
-        </span>
-        <select
-          value={block.pageType}
-          onChange={(e) => onChange({ pageType: e.target.value as PageType })}
-          className="text-xs border rounded px-2 py-1"
-          style={{ borderColor: "#D8CEC2" }}
-        >
-          <option value="cover">Cover</option>
-          <option value="divider">Section Divider</option>
-          <option value="lesson">Lesson</option>
-          <option value="table">Table</option>
-          <option value="workbook">Workbook</option>
-        </select>
-        <input
-          type="number"
-          value={block.order}
-          onChange={(e) => onChange({ order: Number(e.target.value) || 1 })}
-          className="ml-auto w-14 text-xs border rounded px-2 py-1"
-          style={{ borderColor: "#D8CEC2" }}
-        />
-        <button
-          onClick={onRemove}
-          className="rounded p-1.5 hover:bg-[#F4EFE6]"
-          aria-label="Remove block"
-        >
-          <Trash2 className="h-3.5 w-3.5" color="#7a1f1f" />
-        </button>
-      </div>
+  const table = block.tableData;
 
-      <div className="mt-3 space-y-2">
-        <Input label="Title" value={block.title} onChange={(v) => onChange({ title: v })} />
-        <Input
-          label="Subtitle"
-          value={block.subtitle ?? ""}
-          onChange={(v) => onChange({ subtitle: v })}
-        />
-        {(block.pageType === "cover" ||
-          block.pageType === "lesson" ||
-          block.pageType === "divider") && (
-          <Textarea
-            label="Body"
-            value={block.body ?? ""}
-            onChange={(v) => onChange({ body: v })}
-            rows={block.pageType === "lesson" ? 6 : 3}
-          />
-        )}
-        {block.pageType === "workbook" && (
-          <>
-            <Textarea
-              label="Prompt"
-              value={block.prompt ?? ""}
-              onChange={(v) => onChange({ prompt: v })}
-              rows={3}
-            />
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2">
+        {table.headers.map((header, index) => (
+          <Field key={index} label={`Column ${index + 1} Header`}>
             <Input
-              label="Lines"
-              type="number"
-              value={String(block.lines ?? 12)}
-              onChange={(v) => onChange({ lines: Math.max(4, Math.min(20, Number(v) || 12)) })}
+              value={header}
+              onChange={(event) => {
+                const headers = table.headers.slice();
+                headers[index] = event.target.value;
+                onChange({ ...table, headers });
+              }}
             />
-          </>
-        )}
-        {block.pageType === "table" && (
-          <TableEditor
-            value={block.tableData ?? { headers: [], rows: [] }}
-            onChange={(t) => onChange({ tableData: t })}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-function Input({
-  label,
-  value,
-  onChange,
-  type = "text",
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  type?: string;
-}) {
-  return (
-    <label className="block">
-      <div
-        className="mb-1 text-[10px] uppercase tracking-[0.16em]"
-        style={{ color: "#6b6470" }}
-      >
-        {label}
-      </div>
-      <input
-        type={type}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded border px-2.5 py-1.5 text-sm"
-        style={{ borderColor: "#D8CEC2" }}
-      />
-    </label>
-  );
-}
-
-function Textarea({
-  label,
-  value,
-  onChange,
-  rows = 3,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  rows?: number;
-}) {
-  return (
-    <label className="block">
-      <div
-        className="mb-1 text-[10px] uppercase tracking-[0.16em]"
-        style={{ color: "#6b6470" }}
-      >
-        {label}
-      </div>
-      <textarea
-        rows={rows}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded border px-2.5 py-1.5 text-sm leading-relaxed"
-        style={{ borderColor: "#D8CEC2" }}
-      />
-    </label>
-  );
-}
-
-function TableEditor({
-  value,
-  onChange,
-}: {
-  value: { headers: string[]; rows: string[][] };
-  onChange: (v: { headers: string[]; rows: string[][] }) => void;
-}) {
-  return (
-    <div>
-      <div
-        className="mb-1 text-[10px] uppercase tracking-[0.16em]"
-        style={{ color: "#6b6470" }}
-      >
-        Table
-      </div>
-      <table className="w-full text-xs">
-        <thead>
-          <tr>
-            {value.headers.map((h, i) => (
-              <th key={i} className="p-1">
-                <input
-                  value={h}
-                  onChange={(e) => {
-                    const headers = [...value.headers];
-                    headers[i] = e.target.value;
-                    onChange({ ...value, headers });
-                  }}
-                  className="w-full rounded border px-1.5 py-1 text-xs"
-                  style={{ borderColor: "#D8CEC2", background: "#F4EFE6" }}
-                />
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {value.rows.map((row, ri) => (
-            <tr key={ri}>
-              {row.map((cell, ci) => (
-                <td key={ci} className="p-1">
-                  <input
-                    value={cell}
-                    onChange={(e) => {
-                      const rows = value.rows.map((r) => [...r]);
-                      rows[ri][ci] = e.target.value;
-                      onChange({ ...value, rows });
-                    }}
-                    className="w-full rounded border px-1.5 py-1 text-xs"
-                    style={{ borderColor: "#D8CEC2" }}
-                  />
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <div className="mt-2 flex gap-2">
-        <button
-          onClick={() =>
-            onChange({
-              ...value,
-              rows: [...value.rows, value.headers.map(() => "")],
-            })
-          }
-          className="text-[11px] rounded border px-2 py-1"
-          style={{ borderColor: "#D8CEC2", color: "#4F2D68" }}
-        >
-          + Row
-        </button>
-        <button
-          onClick={() =>
-            value.rows.length > 1 &&
-            onChange({ ...value, rows: value.rows.slice(0, -1) })
-          }
-          className="text-[11px] rounded border px-2 py-1"
-          style={{ borderColor: "#D8CEC2", color: "#7a1f1f" }}
-        >
-          - Row
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function AddBlockMenu({ onAdd }: { onAdd: (t: PageType) => void }) {
-  const opts: { t: PageType; label: string }[] = [
-    { t: "cover", label: "Cover" },
-    { t: "divider", label: "Section Divider" },
-    { t: "lesson", label: "Lesson" },
-    { t: "table", label: "Table" },
-    { t: "workbook", label: "Workbook" },
-  ];
-  return (
-    <div
-      className="mt-5 rounded-md border p-3"
-      style={{ borderColor: "#D8CEC2", background: "#F4EFE6" }}
-    >
-      <div
-        className="mb-2 text-[10px] uppercase tracking-[0.18em]"
-        style={{ color: "#4F2D68" }}
-      >
-        Add block
-      </div>
-      <div className="flex flex-wrap gap-2">
-        {opts.map((o) => (
-          <button
-            key={o.t}
-            onClick={() => onAdd(o.t)}
-            className="inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-xs"
-            style={{ borderColor: "#D8CEC2", background: "#fff", color: "#4F2D68" }}
-          >
-            <Plus className="h-3 w-3" /> {o.label}
-          </button>
+          </Field>
         ))}
       </div>
+      <div>
+        <Label className="text-xs uppercase tracking-wide" style={{ color: "#4F2D68" }}>
+          Row Entries
+        </Label>
+        <div className="mt-2 space-y-2">
+          {table.rows.map((row, rowIndex) => (
+            <div key={rowIndex} className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
+              {row.map((cell, cellIndex) => (
+                <Input
+                  key={cellIndex}
+                  value={cell}
+                  onChange={(event) => {
+                    const rows = table.rows.map((item) => item.slice());
+                    rows[rowIndex][cellIndex] = event.target.value;
+                    onChange({ ...table, rows });
+                  }}
+                  placeholder=""
+                />
+              ))}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Remove row"
+                onClick={() => {
+                  const rows = table.rows.filter((_, index) => index !== rowIndex);
+                  onChange({ ...table, rows: rows.length > 0 ? rows : [["", "", ""]] });
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+        <Button
+          type="button"
+          className="mt-2"
+          variant="outline"
+          size="sm"
+          onClick={() => onChange({ ...table, rows: [...table.rows, ["", "", ""]] })}
+        >
+          <Plus className="mr-1 h-3 w-3" /> Add Row
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function IconButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick: React.MouseEventHandler<HTMLSpanElement>;
+  children: ReactNode;
+}) {
+  return (
+    <span
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          onClick(event as unknown as React.MouseEvent<HTMLSpanElement>);
+        }
+      }}
+      className="inline-flex h-6 w-6 items-center justify-center rounded hover:bg-[#F4EFE6]"
+      style={{ color: "#4F2D68" }}
+    >
+      {children}
+    </span>
+  );
+}
+
+function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs uppercase tracking-wide" style={{ color: "#4F2D68" }}>
+        {label}
+      </Label>
+      {children}
+      {hint ? (
+        <div className="text-xs" style={{ color: "#6b6470" }}>
+          {hint}
+        </div>
+      ) : null}
     </div>
   );
 }

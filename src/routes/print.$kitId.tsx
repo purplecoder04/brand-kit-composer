@@ -15,6 +15,13 @@ import {
   loadMapperContentFromWindowName,
   type MapperContent,
 } from "@/lib/mapper-content";
+import {
+  RESERVED_BUILDER_KIT_ID,
+  buildBuilderKit,
+  loadBuilderDraft,
+  loadBuilderDraftFromUrlHash,
+  loadBuilderDraftFromWindowName,
+} from "@/lib/builder-content";
 
 const searchSchema = z.object({
   filter: z.enum(["all", "lesson", "workbook"]).optional(),
@@ -39,6 +46,8 @@ function PrintRoute() {
   const { state } = useKitStore();
   const [storedMapperKit, setStoredMapperKit] = useState<Kit | null>(null);
   const [mapperStorageChecked, setMapperStorageChecked] = useState(false);
+  const [storedBuilderKit, setStoredBuilderKit] = useState<Kit | null>(null);
+  const [builderStorageChecked, setBuilderStorageChecked] = useState(false);
 
   useEffect(() => {
     if (kitId !== RESERVED_MAPPER_KIT_ID) {
@@ -49,12 +58,25 @@ function PrintRoute() {
 
     setStoredMapperKit(
       buildMapperKitFromContent(
-        loadMapperContentFromWindowName()
-          ?? loadMapperContentFromUrlHash()
-          ?? loadMapperContentFromStorage(),
+        loadMapperContentFromWindowName() ??
+          loadMapperContentFromUrlHash() ??
+          loadMapperContentFromStorage(),
       ),
     );
     setMapperStorageChecked(true);
+  }, [kitId]);
+
+  useEffect(() => {
+    if (kitId !== RESERVED_BUILDER_KIT_ID) {
+      setStoredBuilderKit(null);
+      setBuilderStorageChecked(false);
+      return;
+    }
+
+    const draft =
+      loadBuilderDraftFromWindowName() ?? loadBuilderDraftFromUrlHash() ?? loadBuilderDraft();
+    setStoredBuilderKit(draft ? buildBuilderKit(draft) : null);
+    setBuilderStorageChecked(true);
   }, [kitId]);
 
   // Mapper preview: the new tab has a fresh in-memory store. Rebuild from
@@ -71,18 +93,34 @@ function PrintRoute() {
       return buildMapperKitFromContent(EMPTY_MAPPER_CONTENT);
     }
 
+    if (kitId === RESERVED_BUILDER_KIT_ID) {
+      if (storedBuilderKit) return storedBuilderKit;
+
+      const found = state.kits.find((k) => k.id === kitId);
+      if (found) return found;
+
+      if (!builderStorageChecked) return undefined;
+
+      return undefined;
+    }
+
     const found = state.kits.find((k) => k.id === kitId);
     if (found) return found;
 
     return kitId === SAMPLE_KIT.id ? SAMPLE_KIT : state.kits[0];
-  }, [kitId, mapperStorageChecked, state.kits, storedMapperKit]);
+  }, [
+    builderStorageChecked,
+    kitId,
+    mapperStorageChecked,
+    state.kits,
+    storedBuilderKit,
+    storedMapperKit,
+  ]);
 
   const blocks: Block[] = useMemo(() => {
     if (!kit) return [];
-    if (filter === "lesson")
-      return kit.blocks.filter((b) => LESSON_TYPES.includes(b.pageType));
-    if (filter === "workbook")
-      return kit.blocks.filter((b) => WORKBOOK_TYPES.includes(b.pageType));
+    if (filter === "lesson") return kit.blocks.filter((b) => LESSON_TYPES.includes(b.pageType));
+    if (filter === "workbook") return kit.blocks.filter((b) => WORKBOOK_TYPES.includes(b.pageType));
     return kit.blocks;
   }, [filter, kit]);
 
@@ -90,25 +128,19 @@ function PrintRoute() {
     const message =
       kitId === RESERVED_MAPPER_KIT_ID && !mapperStorageChecked
         ? "Loading print preview..."
-        : "Kit not found.";
+        : kitId === RESERVED_BUILDER_KIT_ID && !builderStorageChecked
+          ? "Loading print preview..."
+          : "Kit not found.";
 
-    return (
-      <div style={{ padding: "2rem", fontFamily: "system-ui" }}>
-        {message}
-      </div>
-    );
+    return <div style={{ padding: "2rem", fontFamily: "system-ui" }}>{message}</div>;
   }
 
-  return (
-    <PrintKitDocument kit={kit} blocks={blocks} />
-  );
+  return <PrintKitDocument kit={kit} blocks={blocks} />;
 }
 
 function filterBlocks(blocks: Block[], filter: "all" | "lesson" | "workbook") {
-  if (filter === "lesson")
-    return blocks.filter((b) => LESSON_TYPES.includes(b.pageType));
-  if (filter === "workbook")
-    return blocks.filter((b) => WORKBOOK_TYPES.includes(b.pageType));
+  if (filter === "lesson") return blocks.filter((b) => LESSON_TYPES.includes(b.pageType));
+  if (filter === "workbook") return blocks.filter((b) => WORKBOOK_TYPES.includes(b.pageType));
   return blocks;
 }
 
@@ -167,9 +199,7 @@ function PrintKitDocument({ kit, blocks }: { kit: Kit; blocks: Block[] }) {
         {blocks.map((b, i) => (
           <div
             key={b.id}
-            className={
-              i < blocks.length - 1 ? "print-page page-break" : "print-page"
-            }
+            className={i < blocks.length - 1 ? "print-page page-break" : "print-page"}
           >
             <PageRenderer
               block={b}
