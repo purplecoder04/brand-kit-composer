@@ -6,6 +6,7 @@ type PageCanvasProps = {
   pageNumber?: number;
   totalPages?: number;
   showFooter?: boolean;
+  bleed?: boolean;
   children: ReactNode;
 };
 
@@ -17,6 +18,7 @@ export function PageCanvas({
   pageNumber,
   totalPages,
   showFooter = true,
+  bleed = false,
   children,
 }: PageCanvasProps) {
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -53,7 +55,7 @@ export function PageCanvas({
         overflow: "hidden",
       }}
     >
-      {overflow ? (
+      {!bleed && overflow ? (
         <div
           className="overflow-warning"
           style={{
@@ -75,22 +77,26 @@ export function PageCanvas({
         </div>
       ) : null}
 
-      <div
-        ref={contentRef}
-        data-page-content
-        style={{
-          position: "absolute",
-          top: PAGE_PADDING,
-          left: PAGE_PADDING,
-          right: PAGE_PADDING,
-          bottom: showFooter
-            ? `calc(${PAGE_PADDING} + ${FOOTER_HEIGHT})`
-            : PAGE_PADDING,
-          overflow: "hidden",
-        }}
-      >
-        {children}
-      </div>
+      {bleed ? (
+        <div style={{ position: "absolute", inset: 0 }}>{children}</div>
+      ) : (
+        <div
+          ref={contentRef}
+          data-page-content
+          style={{
+            position: "absolute",
+            top: PAGE_PADDING,
+            left: PAGE_PADDING,
+            right: PAGE_PADDING,
+            bottom: showFooter
+              ? `calc(${PAGE_PADDING} + ${FOOTER_HEIGHT})`
+              : PAGE_PADDING,
+            overflow: "hidden",
+          }}
+        >
+          {children}
+        </div>
+      )}
 
       {showFooter ? (
         <div
