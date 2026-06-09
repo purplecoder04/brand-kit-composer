@@ -4,6 +4,17 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@theme inline {
+  --font-display: "Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-brand-plum: #4F2D68;
+  --color-brand-accent: #9A7BB0;
+  --color-brand-bg: #FAF6F0;
+  --color-brand-stone: #D8CEC2;
+  --color-brand-text: #222026;
+  --color-brand-gold: #B89B5E;
+
 /*
  * Design system definition.
  *
