@@ -15,6 +15,11 @@ import type {
 } from "./kit-types";
 import { SAMPLE_KIT } from "./sample-kit";
 import { BRAND_PROFILE } from "./branch-profile";
+import {
+  RESERVED_MAPPER_KIT_ID,
+  buildBlocksFromMapper,
+  type MapperContent,
+} from "./mapper-content";
 
 type State = {
   kits: Kit[];
@@ -29,7 +34,8 @@ type Action =
   | { type: "addBlock"; kitId: string; block: Block }
   | { type: "removeBlock"; kitId: string; blockId: string }
   | { type: "saveVersion"; entry: VersionEntry }
-  | { type: "saveQCReport"; report: QCReport };
+  | { type: "saveQCReport"; report: QCReport }
+  | { type: "upsertMapperKit"; kit: Kit };
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -96,6 +102,15 @@ function reducer(state: State, action: Action): State {
         ...state,
         qcReports: { ...state.qcReports, [action.report.kitId]: action.report },
       };
+    case "upsertMapperKit": {
+      const exists = state.kits.some((k) => k.id === action.kit.id);
+      return {
+        ...state,
+        kits: exists
+          ? state.kits.map((k) => (k.id === action.kit.id ? action.kit : k))
+          : [...state.kits, action.kit],
+      };
+    }
     default:
       return state;
   }
@@ -125,6 +140,7 @@ type StoreCtx = {
   removeBlock: (kitId: string, blockId: string) => void;
   saveVersion: (kitId: string, notes: string) => void;
   saveQCReport: (report: QCReport) => void;
+  upsertMapperKit: (content: MapperContent) => void;
 };
 
 const KitStoreContext = createContext<StoreCtx | null>(null);
@@ -237,6 +253,27 @@ export function KitStoreProvider({ children }: { children: ReactNode }) {
         dispatch({ type: "saveVersion", entry });
       },
       saveQCReport: (report) => dispatch({ type: "saveQCReport", report }),
+      upsertMapperKit: (content: MapperContent) => {
+        const kit: Kit = {
+          id: RESERVED_MAPPER_KIT_ID,
+          name: content.kitName || "Kit Content Mapper",
+          branch: content.branch || "Brand",
+          audience: content.audience,
+          tone: content.tone,
+          description: content.kitTagline,
+          lessonGuide: "",
+          workbook: "",
+          tracker: "",
+          branchProfile: BRAND_PROFILE,
+          blocks: buildBlocksFromMapper(content),
+          version: "v1",
+          status: "Template Test",
+          qcStatus: "Needs Review",
+          dochubStatus: "Not Ready",
+          updatedAt: new Date().toISOString(),
+        };
+        dispatch({ type: "upsertMapperKit", kit });
+      },
     }),
     [state, createKit],
   );
