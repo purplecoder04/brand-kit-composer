@@ -181,10 +181,24 @@
     gap: 0 !important;
     background: #ffffff !important;
     min-height: 0 !important;
+    display: block !important;
+    align-items: initial !important;
+  }
+  .print-stack > *,
+  .print-stack-inner > * {
+    margin: 0 !important;
   }
   .print-page {
     break-inside: avoid;
     page-break-inside: avoid;
+    display: block;
+    width: 8.5in;
+    height: 11in;
+    overflow: hidden;
+  }
+  .print-page .page-canvas {
+    box-shadow: none !important;
+    margin: 0 !important;
   }
   .print-page.page-break {
     break-after: page;
