@@ -154,3 +154,31 @@
     color: var(--color-foreground);
   }
 }
+
+@page {
+  size: Letter;
+  margin: 0;
+}
+
+@media print {
+  html,
+  body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .app-chrome,
+  .print-only-hide,
+  .overflow-warning {
+    display: none !important;
+  }
+  .page-canvas {
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page-canvas:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+}
