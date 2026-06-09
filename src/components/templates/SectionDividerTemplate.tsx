@@ -21,9 +21,13 @@ export function SectionDividerTemplate({
       pageNumber={pageNumber}
       totalPages={totalPages}
     >
+      <div aria-hidden style={{ position: "absolute", top: "-1in", left: "-1in", width: "2.6in", height: "2.6in", borderRadius: "50%", background: branchProfile.lilacColor, opacity: 0.45 }} />
+      <div aria-hidden style={{ position: "absolute", bottom: "-1in", right: "-1in", width: "2.6in", height: "2.6in", borderRadius: "50%", background: branchProfile.blushColor, opacity: 0.45 }} />
+      <div aria-hidden style={{ position: "absolute", top: "1.4in", right: "0.9in", width: "0.9in", height: "0.9in", borderRadius: "50%", background: branchProfile.stoneColor, opacity: 0.55 }} />
       <div
         style={{
           height: "100%",
+          position: "relative",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
@@ -45,8 +49,8 @@ export function SectionDividerTemplate({
 
         <div
           style={{
-            width: "0.9in",
-            height: "1px",
+            width: "1.4in",
+            height: "2px",
             background: branchProfile.goldAccent,
             marginBottom: "0.35in",
           }}
@@ -65,6 +69,8 @@ export function SectionDividerTemplate({
         >
           {block.subtitle || "Section"}
         </h2>
+
+        <div style={{ width: "1.4in", height: "2px", background: branchProfile.goldAccent, marginTop: "0.35in" }} />
 
         {block.body ? (
           <p
