@@ -1,6 +1,15 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
+import {
+  BotanicalSprig,
+  CoverOrganicFrame,
+  Diamond,
+  KitFooterBand,
+  PLUM_DEEP,
+  SparkleRule,
+  TEXT_INK,
+} from "./_decor";
 
 type Props = {
   block: Block;
@@ -10,8 +19,20 @@ type Props = {
 };
 
 export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
-  const plum = branchProfile.primaryColor;
   const gold = branchProfile.goldAccent;
+  const titleLines =
+    block.title === "Get Your Business Straight"
+      ? ["Get Your", "Business", "Straight"]
+      : block.title.split(/\s+/).reduce<string[]>(
+          (lines, word) => {
+            const current = lines[lines.length - 1] ?? "";
+            if (!current || `${current} ${word}`.length <= 12)
+              lines[lines.length - 1] = current ? `${current} ${word}` : word;
+            else lines.push(word);
+            return lines;
+          },
+          [""],
+        );
 
   return (
     <PageCanvas
@@ -21,67 +42,160 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
       showFooter={false}
       bleed
     >
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: branchProfile.backgroundColor }} />
+      <CoverOrganicFrame branchProfile={branchProfile} />
 
-      {/* Reference-style soft organic accents */}
-      <div aria-hidden style={{ position: "absolute", top: "0.26in", right: "-0.62in", width: "3.45in", height: "1.74in", borderRadius: "0 0 0 1.1in", background: branchProfile.lilacColor, opacity: 0.62 }} />
-      <div aria-hidden style={{ position: "absolute", top: "0.26in", right: "1.24in", width: "1.36in", height: "1.08in", borderRadius: "0 0 999px 999px", background: branchProfile.blushColor, opacity: 0.52 }} />
-      <div aria-hidden style={{ position: "absolute", left: "0.34in", bottom: "1.02in", width: "2.55in", height: "1.4in", borderRadius: "52% 48% 0 0 / 12% 14% 0 0", background: branchProfile.stoneColor, opacity: 0.56 }} />
-      <div aria-hidden style={{ position: "absolute", left: "2.38in", bottom: "1.48in", width: "1.42in", height: "1.42in", borderRadius: "50%", background: branchProfile.accentColor, opacity: 0.16 }} />
+      <BotanicalSprig
+        color={gold}
+        width="1.7in"
+        height="3.95in"
+        style={{
+          position: "absolute",
+          left: "0.45in",
+          top: "3.22in",
+          transform: "rotate(-12deg)",
+          opacity: 0.95,
+        }}
+      />
 
-      {/* Brand header */}
-      <div style={{ position: "absolute", top: "0.56in", left: "0.68in", right: "0.68in", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: "8.5px", letterSpacing: "0.36em", textTransform: "uppercase", color: plum, fontWeight: 600 }}>
-        <span>Best Collective</span>
-        <span>{branchProfile.name}</span>
-      </div>
-      <div style={{ position: "absolute", top: "0.78in", left: "0.68in", right: "0.68in", height: "1px", background: gold, opacity: 0.65 }} />
-
-      {/* Centered cream panel */}
-      <div style={{ position: "absolute", top: "1.56in", left: "0", right: "0", display: "flex", justifyContent: "center" }}>
-        <div style={{
-          position: "relative",
-          width: "6.04in",
-          minHeight: "3.03in",
-          background: "#FFFDF8",
-          border: `1px solid ${branchProfile.stoneColor}`,
-          boxShadow: "0 1px 0 rgba(0,0,0,0.03), 0 20px 38px rgba(79,45,104,0.06)",
-          padding: "0.54in 0.68in 0.48in",
+      <main
+        style={{
+          position: "absolute",
+          top: "0.78in",
+          left: "1.42in",
+          right: "1.15in",
+          bottom: "1.02in",
           textAlign: "center",
-        }}>
-          <div style={{ fontSize: "7.5px", letterSpacing: "0.46em", textTransform: "uppercase", color: plum, marginBottom: "0.26in", fontWeight: 600 }}>
-            Brand Kit · Volume One
-          </div>
-          <h1 style={{
+          color: PLUM_DEEP,
+        }}
+      >
+        <div
+          style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "36px",
-            lineHeight: 1.05,
+            fontSize: "52px",
+            lineHeight: 1,
             fontWeight: 500,
-            color: plum,
+            letterSpacing: "0",
+          }}
+        >
+          Best Collective
+        </div>
+
+        <SparkleRule
+          color={branchProfile.accentColor}
+          width="3.05in"
+          marginTop="0.18in"
+          marginBottom="0.2in"
+        />
+
+        <p
+          style={{
+            margin: "0 auto 0.58in",
+            maxWidth: "3.7in",
+            color: TEXT_INK,
+            fontSize: "14px",
+            lineHeight: 1.35,
+            fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+          }}
+        >
+          Helping people build stronger brands,
+          <br />
+          with confidence and clarity.
+        </p>
+
+        <h1
+          style={{
+            fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+            fontSize: "76px",
+            lineHeight: 0.93,
+            fontWeight: 500,
+            color: PLUM_DEEP,
             margin: 0,
             letterSpacing: "0",
-          }}>
-            {block.title}
-          </h1>
-          <div style={{ width: "0.98in", height: "1px", background: gold, margin: "0.3in auto 0.24in" }} />
-          {block.subtitle ? (
-            <div style={{ fontSize: "11px", color: branchProfile.textColor, opacity: 0.82, fontStyle: "italic" }}>
-              {block.subtitle}
-            </div>
-          ) : null}
-          {block.body ? (
-            <p style={{ marginTop: "0.26in", fontSize: "9.5px", lineHeight: 1.65, color: branchProfile.textColor, maxWidth: "3.9in", marginLeft: "auto", marginRight: "auto" }}>
-              {block.body}
-            </p>
-          ) : null}
-        </div>
-      </div>
+          }}
+        >
+          {titleLines.map((line) => (
+            <span key={line} style={{ display: "block" }}>
+              {line}
+            </span>
+          ))}
+        </h1>
 
-      {/* Brand footer */}
-      <div style={{ position: "absolute", bottom: "1.1in", left: "0.68in", right: "0.68in", height: "1px", background: gold, opacity: 0.65 }} />
-      <div style={{ position: "absolute", bottom: "0.84in", left: "0.68in", right: "0.68in", display: "flex", justifyContent: "space-between", fontSize: "7.8px", letterSpacing: "0.22em", textTransform: "uppercase", color: plum, fontWeight: 600 }}>
-        <span>{branchProfile.footerLabel}</span>
-        <span>Est. 2026</span>
-      </div>
+        <div
+          style={{
+            margin: "0.38in auto 0.12in",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.26in",
+          }}
+        >
+          <div
+            style={{
+              width: "1.15in",
+              height: "1px",
+              background: branchProfile.accentColor,
+              opacity: 0.72,
+            }}
+          />
+          <div
+            style={{
+              fontSize: "31px",
+              letterSpacing: "0.38em",
+              color: branchProfile.accentColor,
+              fontWeight: 500,
+            }}
+          >
+            KIT
+          </div>
+          <div
+            style={{
+              width: "1.15in",
+              height: "1px",
+              background: branchProfile.accentColor,
+              opacity: 0.72,
+            }}
+          />
+        </div>
+
+        <Diamond color={gold} size={14} style={{ margin: "0 auto 0.2in" }} />
+
+        <div
+          style={{
+            fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+            color: PLUM_DEEP,
+            fontSize: "20px",
+            fontStyle: "italic",
+            fontWeight: 600,
+            marginBottom: "0.24in",
+          }}
+        >
+          Structure <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Legitimacy{" "}
+          <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Foundation
+        </div>
+
+        {block.body ? (
+          <p
+            style={{
+              margin: "0 auto",
+              maxWidth: "4.1in",
+              fontSize: "15px",
+              lineHeight: 1.62,
+              color: TEXT_INK,
+            }}
+          >
+            {block.body}
+          </p>
+        ) : null}
+      </main>
+
+      <KitFooterBand
+        branchProfile={branchProfile}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+        label="A Best Collective Brand Kit"
+        showPageNumber={false}
+        height="0.72in"
+      />
     </PageCanvas>
   );
 }

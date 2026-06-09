@@ -1,6 +1,10 @@
+import type { CSSProperties } from "react";
 import type { BranchProfile } from "@/lib/branch-profile";
 
-export const PLUM_DEEP = "#3A1F4F";
+export const PLUM_DEEP = "#2F1746";
+export const CREAM_PAPER = "#FAF4EA";
+export const PAPER_PANEL = "#FFFDF8";
+export const TEXT_INK = "#28242C";
 
 export function Diamond({
   color,
@@ -11,7 +15,7 @@ export function Diamond({
   color: string;
   size?: number;
   inline?: boolean;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }) {
   const svg = (
     <svg width={size} height={size} viewBox="0 0 10 10" aria-hidden style={style}>
@@ -65,14 +69,10 @@ export function BotanicalSprig({
   color: string;
   width?: string;
   height?: string;
-  style?: React.CSSProperties;
+  style?: CSSProperties;
 }) {
   return (
-    <svg
-      aria-hidden
-      viewBox="0 0 100 220"
-      style={{ width, height, ...style }}
-    >
+    <svg aria-hidden viewBox="0 0 100 220" style={{ width, height, ...style }}>
       <path d="M50 10 C 50 60 50 140 50 210" stroke={color} strokeWidth="1.2" fill="none" />
       {[35, 75, 120, 165].map((y, i) => {
         const left = i % 2 === 0;
@@ -101,7 +101,154 @@ export function BotanicalSprig({
   );
 }
 
-/** Subtle plum/lilac/blush corner wash for interior pages — full-bleed when used inside a `bleed` canvas. */
+/** Full-bleed organic cover artwork inspired by the reference image. */
+export function CoverOrganicFrame({ branchProfile }: { branchProfile: BranchProfile }) {
+  const plum = PLUM_DEEP;
+  const { lilacColor, blushColor, stoneColor, goldAccent } = branchProfile;
+
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 850 1100"
+      preserveAspectRatio="none"
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
+    >
+      <rect width="850" height="1100" fill={CREAM_PAPER} />
+      <path
+        d="M0,0 C78,150 142,245 102,380 C68,494 34,590 92,720 C142,832 228,896 344,934 C426,960 474,1002 506,1100 L0,1100 Z"
+        fill={plum}
+      />
+      <path
+        d="M45,0 C92,120 146,206 136,318 C126,426 68,514 92,638 C118,774 234,827 274,911 C143,836 68,747 38,622 C12,516 54,414 60,326 C68,214 28,104 0,0 Z"
+        fill={lilacColor}
+        opacity={0.78}
+      />
+      <path
+        d="M850,0 L850,375 C795,317 750,270 756,190 C762,104 720,48 648,0 Z"
+        fill={stoneColor}
+        opacity={0.82}
+      />
+      <path
+        d="M850,292 C792,382 760,475 790,594 C822,720 768,835 668,923 C596,985 566,1042 548,1100 L850,1100 Z"
+        fill={stoneColor}
+        opacity={0.72}
+      />
+      <path
+        d="M850,362 C802,408 764,486 778,590 C790,682 745,767 680,836 C686,710 638,654 666,548 C698,424 780,380 850,362 Z"
+        fill={blushColor}
+        opacity={0.78}
+      />
+      <path
+        d="M620,0 C704,72 746,150 724,248 C704,338 752,402 850,466 L850,0 Z"
+        fill={PAPER_PANEL}
+        opacity={0.72}
+      />
+      <path
+        d="M0,128 C52,228 76,310 53,412 C25,536 24,660 86,767 C143,866 210,906 334,943 C408,965 457,1014 488,1100"
+        fill="none"
+        stroke={goldAccent}
+        strokeWidth="2"
+        opacity={0.95}
+      />
+      <path
+        d="M724,0 C770,66 790,138 775,219 C760,306 798,368 850,423"
+        fill="none"
+        stroke={goldAccent}
+        strokeWidth="1.5"
+        opacity={0.85}
+      />
+      <path
+        d="M696,852 C742,768 750,690 728,612 C700,510 742,421 850,336"
+        fill="none"
+        stroke="#ffffff"
+        strokeWidth="1.4"
+        opacity={0.7}
+      />
+    </svg>
+  );
+}
+
+export function KitFooterBand({
+  branchProfile,
+  pageNumber,
+  totalPages,
+  label,
+  showPageNumber = true,
+  height = "0.62in",
+}: {
+  branchProfile: BranchProfile;
+  pageNumber?: number;
+  totalPages?: number;
+  label?: string;
+  showPageNumber?: boolean;
+  height?: string;
+}) {
+  const gold = branchProfile.goldAccent;
+  const footerText = label ?? branchProfile.footerLabel;
+
+  return (
+    <div
+      className="brand-decoration"
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height,
+        background: `linear-gradient(90deg, ${PLUM_DEEP}, ${branchProfile.primaryColor})`,
+        borderTop: `1px solid ${gold}`,
+        color: CREAM_PAPER,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: "0.62in",
+          right: "0.62in",
+          top: "0.18in",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: showPageNumber ? "space-between" : "center",
+          gap: "0.2in",
+          fontSize: "8px",
+          letterSpacing: "0.32em",
+          textTransform: "uppercase",
+          fontWeight: 600,
+        }}
+      >
+        <span>{footerText}</span>
+        {showPageNumber && typeof pageNumber === "number" && typeof totalPages === "number" ? (
+          <span>
+            {pageNumber} / {totalPages}
+          </span>
+        ) : null}
+      </div>
+      <div
+        style={{
+          position: "absolute",
+          left: "0.16in",
+          right: "0.16in",
+          bottom: "0.15in",
+          display: "flex",
+          alignItems: "center",
+          gap: "0.14in",
+        }}
+      >
+        <div style={{ flex: 1, height: "1px", background: gold }} />
+        <Diamond color={gold} inline size={12} />
+        <div style={{ flex: 1, height: "1px", background: gold }} />
+      </div>
+    </div>
+  );
+}
+
+/** Subtle plum/lilac/blush organic washes for interior pages — full-bleed when used inside a `bleed` canvas. */
 export function CornerWash({
   branchProfile,
   variant = "topRight",
@@ -119,32 +266,96 @@ export function CornerWash({
       aria-hidden
       viewBox="0 0 850 1100"
       preserveAspectRatio="none"
-      style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none" }}
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
     >
       {showTL && (
         <>
-          <path d="M0,0 L260,0 C220,90 150,140 90,210 C40,270 10,330 0,360 Z" fill={lilacColor} opacity={0.55} />
-          <path d="M0,0 L150,0 C130,70 70,110 30,170 C10,210 0,240 0,250 Z" fill={primaryColor} opacity={0.55} />
-          <path d="M20,180 C40,140 80,110 120,80" stroke={goldAccent} strokeWidth="1" fill="none" opacity={0.7} />
+          <path
+            d="M0,0 L276,0 C226,86 162,124 114,202 C60,290 28,350 0,392 Z"
+            fill={lilacColor}
+            opacity={0.58}
+          />
+          <path
+            d="M0,0 L126,0 C144,82 88,144 44,216 C18,258 4,304 0,338 Z"
+            fill={primaryColor}
+            opacity={0.5}
+          />
+          <path
+            d="M24,238 C46,176 82,122 146,72"
+            stroke={goldAccent}
+            strokeWidth="1.25"
+            fill="none"
+            opacity={0.82}
+          />
         </>
       )}
       {showTR && (
         <>
-          <path d="M850,0 L600,0 C640,90 720,140 770,210 C810,270 840,330 850,360 Z" fill={blushColor} opacity={0.55} />
-          <path d="M850,0 L720,0 C740,70 790,110 820,170 C840,210 850,240 850,250 Z" fill={stoneColor} opacity={0.7} />
-          <path d="M830,180 C810,140 770,110 730,80" stroke={goldAccent} strokeWidth="1" fill="none" opacity={0.7} />
+          <path
+            d="M850,0 L586,0 C622,82 706,126 762,206 C812,278 838,342 850,394 Z"
+            fill={blushColor}
+            opacity={0.58}
+          />
+          <path
+            d="M850,0 L704,0 C754,78 782,138 770,216 C758,296 808,348 850,384 Z"
+            fill={stoneColor}
+            opacity={0.76}
+          />
+          <path
+            d="M828,226 C810,162 774,112 708,66"
+            stroke={goldAccent}
+            strokeWidth="1.25"
+            fill="none"
+            opacity={0.82}
+          />
         </>
       )}
       {showBL && (
         <>
-          <path d="M0,1100 L0,820 C40,860 90,920 140,970 C200,1030 240,1070 260,1100 Z" fill={blushColor} opacity={0.5} />
-          <path d="M0,1100 L0,900 C30,930 70,970 110,1010 C150,1050 170,1080 180,1100 Z" fill={stoneColor} opacity={0.65} />
+          <path
+            d="M0,1100 L0,780 C44,850 98,902 158,960 C220,1020 260,1066 284,1100 Z"
+            fill={blushColor}
+            opacity={0.5}
+          />
+          <path
+            d="M0,1100 L0,902 C34,938 72,978 118,1016 C164,1054 192,1082 208,1100 Z"
+            fill={stoneColor}
+            opacity={0.68}
+          />
+          <path
+            d="M20,1016 C78,972 124,932 154,874"
+            stroke={goldAccent}
+            strokeWidth="1.1"
+            fill="none"
+            opacity={0.72}
+          />
         </>
       )}
       {showBR && (
         <>
-          <path d="M850,1100 L850,820 C810,860 760,920 710,970 C650,1030 610,1070 590,1100 Z" fill={lilacColor} opacity={0.5} />
-          <path d="M850,1100 L850,900 C820,930 780,970 740,1010 C700,1050 680,1080 670,1100 Z" fill={primaryColor} opacity={0.45} />
+          <path
+            d="M850,1100 L850,780 C806,850 752,902 692,960 C630,1020 590,1066 566,1100 Z"
+            fill={lilacColor}
+            opacity={0.5}
+          />
+          <path
+            d="M850,1100 L850,902 C816,938 778,978 732,1016 C686,1054 658,1082 642,1100 Z"
+            fill={primaryColor}
+            opacity={0.42}
+          />
+          <path
+            d="M830,1016 C772,972 726,932 696,874"
+            stroke={goldAccent}
+            strokeWidth="1.1"
+            fill="none"
+            opacity={0.72}
+          />
         </>
       )}
     </svg>
