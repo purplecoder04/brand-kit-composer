@@ -41,6 +41,32 @@ export type MapperContent = {
 
 export const RESERVED_MAPPER_KIT_ID = "mapper-preview";
 
+export const MAPPER_CONTENT_STORAGE_KEY = "best-collective:mapper-content:v1";
+
+export function saveMapperContentToStorage(content: MapperContent): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(
+      MAPPER_CONTENT_STORAGE_KEY,
+      JSON.stringify(content),
+    );
+  } catch {
+    // ignore quota / privacy-mode errors
+  }
+}
+
+export function loadMapperContentFromStorage(): MapperContent | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(MAPPER_CONTENT_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<MapperContent>;
+    return { ...EMPTY_MAPPER_CONTENT, ...parsed } as MapperContent;
+  } catch {
+    return null;
+  }
+}
+
 export function parseKeywords(raw: string): string[] {
   return raw
     .split(/[,•·|]/)
