@@ -54,10 +54,10 @@ function PrintRoute() {
 
   return (
     <div
+      className="print-stack"
       style={{
         background: "#EFE9DD",
         minHeight: "100vh",
-        padding: "0.5in 0",
       }}
     >
       <button
@@ -92,11 +92,13 @@ function PrintRoute() {
       </button>
 
       <div
+        className="print-stack-inner"
         style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           gap: "0.5in",
+          padding: "0.5in 0",
         }}
       >
         {blocks.map((b, i) => (

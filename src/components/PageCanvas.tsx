@@ -49,8 +49,6 @@ export function PageCanvas({
         color: branchProfile.textColor,
         boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08)",
         fontFamily: "var(--font-body, Inter, system-ui, sans-serif)",
-        pageBreakAfter: "always",
-        breakAfter: "page",
         position: "relative",
         overflow: "hidden",
       }}
