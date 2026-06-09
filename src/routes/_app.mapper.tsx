@@ -369,7 +369,7 @@ function MapperPage() {
         </div>
       </div>
     </div>
-    <div className="print-stack" style={{ display: "none" }}>
+    <div className="mapper-print-only print-stack">
       <div className="print-stack-inner">
         {blocks.map((b, i) => (
           <div

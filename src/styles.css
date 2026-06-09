@@ -160,6 +160,17 @@
   margin: 0;
 }
 
+.mapper-print-only {
+  height: 0;
+  left: -10000px;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  visibility: hidden;
+  width: 0;
+}
+
 @media print {
   * {
     -webkit-print-color-adjust: exact !important;
@@ -203,6 +214,16 @@
     min-height: 0 !important;
     display: block !important;
     align-items: initial !important;
+  }
+  .mapper-print-only {
+    height: auto !important;
+    left: auto !important;
+    overflow: visible !important;
+    pointer-events: auto !important;
+    position: static !important;
+    top: auto !important;
+    visibility: visible !important;
+    width: auto !important;
   }
   .print-stack > *,
   .print-stack-inner > * {
