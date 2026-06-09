@@ -86,7 +86,7 @@ function MapperPage() {
     persist(content, source);
     const mapperPayload = encodeMapperDraftForUrl(content, source);
     window.open(
-      `/print/${RESERVED_MAPPER_KIT_ID}?filter=all#mapper=${mapperPayload}`,
+      `/print/${RESERVED_MAPPER_KIT_ID}?filter=all&mapper=${mapperPayload}#mapper=${mapperPayload}`,
       "_blank",
       "noreferrer",
     );

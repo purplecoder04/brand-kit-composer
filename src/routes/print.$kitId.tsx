@@ -8,6 +8,7 @@ import { PageRenderer } from "@/components/PageRenderer";
 import type { Block, Kit, PageType } from "@/lib/kit-types";
 import { BRAND_PROFILE } from "@/lib/branch-profile";
 import {
+  EMPTY_MAPPER_CONTENT,
   RESERVED_MAPPER_KIT_ID,
   buildBlocksFromMapper,
   loadMapperContentFromStorage,
@@ -100,9 +101,19 @@ function PrintRoute() {
     return kit.blocks;
   }, [filter, kit]);
 
-  const total = blocks.length;
-
   if (!kit) {
+    if (kitId === RESERVED_MAPPER_KIT_ID && mapperStorageChecked) {
+      const emptyMapperKit = buildMapperKitFromContent(EMPTY_MAPPER_CONTENT);
+      if (emptyMapperKit) {
+        return (
+          <PrintKitDocument
+            kit={emptyMapperKit}
+            blocks={filterBlocks(emptyMapperKit.blocks, filter)}
+          />
+        );
+      }
+    }
+
     const message =
       kitId === RESERVED_MAPPER_KIT_ID && !mapperStorageChecked
         ? "Loading print preview..."
@@ -114,6 +125,22 @@ function PrintRoute() {
       </div>
     );
   }
+
+  return (
+    <PrintKitDocument kit={kit} blocks={blocks} />
+  );
+}
+
+function filterBlocks(blocks: Block[], filter: "all" | "lesson" | "workbook") {
+  if (filter === "lesson")
+    return blocks.filter((b) => LESSON_TYPES.includes(b.pageType));
+  if (filter === "workbook")
+    return blocks.filter((b) => WORKBOOK_TYPES.includes(b.pageType));
+  return blocks;
+}
+
+function PrintKitDocument({ kit, blocks }: { kit: Kit; blocks: Block[] }) {
+  const total = blocks.length;
 
   return (
     <div

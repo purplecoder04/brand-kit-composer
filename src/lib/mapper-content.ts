@@ -113,9 +113,8 @@ export function encodeMapperDraftForUrl(
 export function loadMapperContentFromUrlHash(): MapperContent | null {
   if (typeof window === "undefined") return null;
   try {
-    const hash = window.location.hash.replace(/^#/, "");
-    if (!hash) return null;
-    const raw = new URLSearchParams(hash).get("mapper");
+    const raw = getMapperPayloadFromParams(window.location.search)
+      ?? getMapperPayloadFromParams(window.location.hash.replace(/^#/, ""));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as
       | Partial<MapperDraft>
@@ -129,6 +128,11 @@ export function loadMapperContentFromUrlHash(): MapperContent | null {
   } catch {
     return null;
   }
+}
+
+function getMapperPayloadFromParams(params: string): string | null {
+  if (!params) return null;
+  return new URLSearchParams(params).get("mapper");
 }
 
 export function parseKeywords(raw: string): string[] {
