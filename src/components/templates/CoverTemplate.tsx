@@ -167,10 +167,17 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             fontStyle: "italic",
             fontWeight: 600,
             marginBottom: "0.24in",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: "0.09in",
           }}
         >
-          Structure <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Legitimacy{" "}
-          <span style={{ color: gold, padding: "0 0.09in" }}>◆</span> Foundation
+          <span>Structure</span>
+          <Diamond color={gold} size={9} inline />
+          <span>Legitimacy</span>
+          <Diamond color={gold} size={9} inline />
+          <span>Foundation</span>
         </div>
 
         {block.body ? (
