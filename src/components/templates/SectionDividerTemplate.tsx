@@ -1,7 +1,7 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
-import { BotanicalSprig, CornerWash, Diamond, PLUM_DEEP, SparkleRule } from "./_decor";
+import { BotanicalSprig, CornerWash, Diamond, KitFooterBand, PLUM_DEEP, SparkleRule, TEXT_INK } from "./_decor";
 
 type Props = {
   block: Block;
@@ -22,21 +22,26 @@ export function SectionDividerTemplate({
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
+      showFooter={false}
       bleed
     >
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "#F5EFE3" }} />
       <CornerWash branchProfile={branchProfile} variant="both" />
+
+      <div aria-hidden style={{ position: "absolute", left: "0.65in", right: "0.65in", top: "0.62in", height: "1px", background: gold, opacity: 0.7 }} />
 
       <div
         style={{
           position: "absolute",
-          inset: 0,
+          top: "0.74in",
+          left: "0.78in",
+          right: "0.78in",
+          bottom: "0.98in",
           display: "flex",
           flexDirection: "column",
           alignItems: "center",
           justifyContent: "center",
           textAlign: "center",
-          padding: "1.2in",
+          padding: "0.4in 0.72in",
         }}
       >
         <div
@@ -46,7 +51,7 @@ export function SectionDividerTemplate({
             textTransform: "uppercase",
             color: PLUM_DEEP,
             fontWeight: 600,
-            marginBottom: "0.28in",
+            marginBottom: "0.24in",
           }}
         >
           {block.title}
@@ -62,7 +67,7 @@ export function SectionDividerTemplate({
             fontWeight: 500,
             color: PLUM_DEEP,
             margin: 0,
-            letterSpacing: "-0.01em",
+            letterSpacing: "0",
             maxWidth: "6in",
           }}
         >
@@ -78,7 +83,7 @@ export function SectionDividerTemplate({
               marginTop: "0.3in",
               fontSize: "14px",
               lineHeight: 1.7,
-              color: PLUM_DEEP,
+              color: TEXT_INK,
               maxWidth: "4.2in",
               fontStyle: "italic",
               opacity: 0.85,
@@ -89,6 +94,7 @@ export function SectionDividerTemplate({
           </p>
         ) : null}
       </div>
+      <KitFooterBand branchProfile={branchProfile} pageNumber={pageNumber} totalPages={totalPages} />
     </PageCanvas>
   );
 }
