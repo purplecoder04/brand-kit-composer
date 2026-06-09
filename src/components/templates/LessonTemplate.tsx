@@ -1,7 +1,7 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
-import { BotanicalSprig, CornerWash, Diamond, PLUM_DEEP, SparkleRule } from "./_decor";
+import { BotanicalSprig, CornerWash, Diamond, KitFooterBand, PAPER_PANEL, PLUM_DEEP, SparkleRule, TEXT_INK } from "./_decor";
 
 type Props = {
   block: Block;
@@ -19,9 +19,9 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
+      showFooter={false}
       bleed
     >
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "#F5EFE3" }} />
       <CornerWash branchProfile={branchProfile} variant="topRight" />
       <CornerWash branchProfile={branchProfile} variant="bottomLeft" />
 
@@ -29,16 +29,18 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
         color={gold}
         width="0.5in"
         height="1.4in"
-        style={{ position: "absolute", left: "0.35in", top: "3.6in" }}
+        style={{ position: "absolute", left: "0.36in", top: "3.55in", opacity: 0.88 }}
       />
+
+      <div aria-hidden style={{ position: "absolute", left: "0.62in", top: "0.62in", width: "2.1in", height: "1px", background: gold, opacity: 0.72 }} />
 
       <div
         style={{
           position: "absolute",
-          top: "0.6in",
-          left: "0.95in",
-          right: "0.6in",
-          bottom: "1.05in",
+          top: "0.88in",
+          left: "0.98in",
+          right: "0.72in",
+          bottom: "1in",
         }}
       >
         {block.subtitle ? (
@@ -49,7 +51,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
               textTransform: "uppercase",
               color: PLUM_DEEP,
               fontWeight: 600,
-              marginBottom: "0.18in",
+              marginBottom: "0.16in",
             }}
           >
             {block.subtitle}
@@ -64,7 +66,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
             fontWeight: 500,
             color: PLUM_DEEP,
             margin: 0,
-            letterSpacing: "-0.01em",
+            letterSpacing: "0",
           }}
         >
           {block.title}
@@ -76,8 +78,9 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
           style={{
             position: "relative",
             maxWidth: "5.9in",
-            paddingLeft: "0.3in",
+            padding: "0.08in 0.34in 0.08in 0.34in",
             borderLeft: `2px solid ${gold}`,
+            background: `linear-gradient(90deg, ${PAPER_PANEL} 0%, rgba(255,253,248,0) 92%)`,
           }}
         >
           {paragraphs.map((p, i) => (
@@ -86,7 +89,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
               style={{
                 fontSize: "13px",
                 lineHeight: 1.8,
-                color: PLUM_DEEP,
+                color: TEXT_INK,
                 margin: "0 0 0.22in",
               }}
             >
@@ -100,6 +103,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
           <div style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }} />
         </div>
       </div>
+      <KitFooterBand branchProfile={branchProfile} pageNumber={pageNumber} totalPages={totalPages} />
     </PageCanvas>
   );
 }
