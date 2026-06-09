@@ -5,7 +5,13 @@ import { Printer } from "lucide-react";
 import { useKitStore } from "@/lib/kit-store";
 import { SAMPLE_KIT } from "@/lib/sample-kit";
 import { PageRenderer } from "@/components/PageRenderer";
-import type { Block, PageType } from "@/lib/kit-types";
+import type { Block, Kit, PageType } from "@/lib/kit-types";
+import { BRAND_PROFILE } from "@/lib/branch-profile";
+import {
+  RESERVED_MAPPER_KIT_ID,
+  buildBlocksFromMapper,
+  loadMapperContentFromStorage,
+} from "@/lib/mapper-content";
 
 const searchSchema = z.object({
   filter: z.enum(["all", "lesson", "workbook"]).optional(),
@@ -28,10 +34,37 @@ function PrintRoute() {
   // Fall back to the sample kit so the print URL works even after a hard refresh
   // (the in-memory store is reset; sample kit id is stable).
   const kit = useMemo(() => {
-    return (
-      state.kits.find((k) => k.id === kitId) ||
-      (kitId === SAMPLE_KIT.id ? SAMPLE_KIT : state.kits[0])
-    );
+    const found = state.kits.find((k) => k.id === kitId);
+    if (found) return found;
+
+    // Mapper preview: the new tab has a fresh in-memory store. Rebuild from
+    // localStorage so we render the mapped content, not the sample kit.
+    if (kitId === RESERVED_MAPPER_KIT_ID) {
+      const content = loadMapperContentFromStorage();
+      if (content) {
+        const rebuilt: Kit = {
+          id: RESERVED_MAPPER_KIT_ID,
+          name: content.kitName || "Kit Content Mapper",
+          branch: content.branch || "Brand",
+          audience: content.audience,
+          tone: content.tone,
+          description: content.kitTagline,
+          lessonGuide: "",
+          workbook: "",
+          tracker: "",
+          branchProfile: BRAND_PROFILE,
+          blocks: buildBlocksFromMapper(content),
+          version: "v1",
+          status: "Template Test",
+          qcStatus: "Needs Review",
+          dochubStatus: "Not Ready",
+          updatedAt: new Date().toISOString(),
+        };
+        return rebuilt;
+      }
+    }
+
+    return kitId === SAMPLE_KIT.id ? SAMPLE_KIT : state.kits[0];
   }, [kitId, state.kits]);
 
   if (!kit) {
