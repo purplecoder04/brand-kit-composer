@@ -13,11 +13,8 @@ import { PageRenderer } from "@/components/PageRenderer";
 import { useKitStore } from "@/lib/kit-store";
 import {
   EMPTY_MAPPER_CONTENT,
-  RESERVED_MAPPER_KIT_ID,
   SAMPLE_MAPPER_CONTENT,
   buildBlocksFromMapper,
-  encodeMapperDraftForUrl,
-  encodeMapperDraftForWindowName,
   getOverflowWarnings,
   loadMapperDraft,
   saveMapperDraft,
@@ -82,17 +79,7 @@ function MapperPage() {
     if (typeof window === "undefined") return;
     const printSource = source === "sample" && dirty ? "current" : source;
     persist(content, printSource);
-    const mapperPayload = encodeMapperDraftForUrl(content, printSource);
-    const printUrl = `/print/${RESERVED_MAPPER_KIT_ID}?filter=all#mapper=${mapperPayload}`;
-    const printWindow = window.open("about:blank", "_blank");
-
-    if (!printWindow) {
-      window.location.href = printUrl;
-      return;
-    }
-
-    printWindow.name = encodeMapperDraftForWindowName(content, printSource);
-    printWindow.location.href = printUrl;
+    window.requestAnimationFrame(() => window.print());
   };
 
   const onReset = () => {
@@ -107,7 +94,8 @@ function MapperPage() {
   };
 
   return (
-    <div className="p-8">
+    <>
+    <div className="screen-only p-8">
       <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
         Phase 2 · Content Mapping System
       </div>
@@ -381,6 +369,24 @@ function MapperPage() {
         </div>
       </div>
     </div>
+    <div className="print-stack" style={{ display: "none" }}>
+      <div className="print-stack-inner">
+        {blocks.map((b, i) => (
+          <div
+            key={b.id}
+            className={i < blocks.length - 1 ? "print-page page-break" : "print-page"}
+          >
+            <PageRenderer
+              block={b}
+              branchProfile={BRAND_PROFILE}
+              pageNumber={i + 1}
+              totalPages={blocks.length}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+    </>
   );
 }
 
