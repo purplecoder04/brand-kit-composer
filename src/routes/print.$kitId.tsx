@@ -102,13 +102,19 @@ function PrintRoute() {
         }}
       >
         {blocks.map((b, i) => (
-          <PageRenderer
+          <div
             key={b.id}
-            block={b}
-            branchProfile={kit.branchProfile}
-            pageNumber={i + 1}
-            totalPages={total}
-          />
+            className={
+              i < blocks.length - 1 ? "print-page page-break" : "print-page"
+            }
+          >
+            <PageRenderer
+              block={b}
+              branchProfile={kit.branchProfile}
+              pageNumber={i + 1}
+              totalPages={total}
+            />
+          </div>
         ))}
       </div>
     </div>
