@@ -35,7 +35,9 @@ function MapperPage() {
   // Live-sync mapper content into the reserved kit so /print/mapper-preview works.
   useEffect(() => {
     upsertMapperKit(content);
-  }, [content, upsertMapperKit]);
+    // upsertMapperKit identity changes with store state; intentionally omitted to avoid loops.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [content]);
 
   const blocks = useMemo(() => buildBlocksFromMapper(content), [content, refreshKey]);
   const warnings = useMemo(() => getOverflowWarnings(content), [content]);
