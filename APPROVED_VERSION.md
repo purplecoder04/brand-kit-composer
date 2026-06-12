@@ -1,3 +1,33 @@
+# Best Collective Kit Factory V1 - Internal Production Tool Scope Lock
+
+Approved on: 2026-06-12
+
+This app is locked as an internal production tool for building, saving, versioning, QC-tracking, and exporting Best Collective kit PDFs.
+
+Product scope:
+- Internal kit-building and production system only.
+- The app is not a customer-facing website.
+- The app is not a buyer dashboard, marketplace, checkout, customer portal, or delivery system.
+- Website, sales pages, checkout, and customer delivery belong outside the Kit Factory app.
+
+Locked rules:
+- Do not redesign the locked Brand Template V1.
+- Do not change /mapper unless fixing a confirmed Level 2 bug.
+- Do not change /builder unless fixing a confirmed Level 3 bug.
+- Do not change print CSS, fonts, page sizing, or approved PDF styling unless fixing a confirmed export bug.
+- Do not add customer login, customer dashboard, marketplace, checkout, or buyer-facing delivery features.
+- Do not add AI generation yet.
+- Do not add new branch design support yet.
+- Blank fields stay blank.
+- Sample content only appears when Reset to Sample Content is clicked.
+
+Next approved direction:
+- Level 5 Supabase is for private internal save/load only.
+- Level 5 should persist Version Library records and full builder drafts beyond localStorage.
+- Level 5 should not add customer accounts, public access, buyer delivery, checkout, or marketplace behavior.
+
+---
+
 # Best Collective Kit Factory V1 - Level 2 Content Mapper
 
 Approved on: 2026-06-09
