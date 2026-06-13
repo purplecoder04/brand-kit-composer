@@ -158,12 +158,16 @@ export function parseImportedKitText(raw: string): BuilderDraft {
 
 function createSection(rawType: string, rawTitle: string): ParsedSection {
   const type = normalizeSectionType(rawType);
+  const lowerType = rawType.toLowerCase().trim();
+  const title = lowerType === "workbook prompt" ? "Workbook" : rawTitle.trim();
+  const prompt = lowerType === "workbook prompt" ? rawTitle.trim() : "";
+
   return {
     type,
-    title: rawTitle.trim(),
+    title,
     subtitle: "",
     body: "",
-    prompt: "",
+    prompt,
     checklistItems: [],
     tableHeaders: [],
     tableRows: [],
