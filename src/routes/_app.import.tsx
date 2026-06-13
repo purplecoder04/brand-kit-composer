@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ClipboardPaste, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowRight, ClipboardPaste, FileText, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -52,6 +52,7 @@ Row: Run QC, Erica, Next`;
 function ImportPage() {
   const navigate = useNavigate();
   const [rawText, setRawText] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState("");
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
   const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(detected.draft);
   const warnings = useMemo(() => getImportWarnings(reviewDraft), [reviewDraft]);
@@ -97,24 +98,72 @@ function ImportPage() {
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
   };
 
+  const loadUploadedFile = async (file: File | undefined) => {
+    if (!file) return;
+
+    const extension = file.name.split(".").pop()?.toLowerCase();
+    const isAllowedType =
+      extension === "txt" ||
+      extension === "md" ||
+      file.type === "text/plain" ||
+      file.type === "text/markdown";
+
+    if (!isAllowedType) {
+      toast.error("Upload a .txt or .md file for Level 9A");
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      setRawText(text);
+      setUploadedFileName(file.name);
+      toast.success("File loaded into importer");
+    } catch {
+      toast.error("Could not read that file");
+    }
+  };
+
   return (
     <div className="p-8">
       <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Level 8B Paste Import Review
+        Level 9A Text File Import
       </div>
       <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
         Paste Content Importer
       </h1>
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Paste rough kit content, review the detected blocks, then send the cleaned draft to Builder.
+        Upload a .txt or .md file, or paste rough kit content, then review the detected blocks
+        before sending the cleaned draft to Builder.
       </p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(420px,0.8fr)_minmax(0,1fr)]">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Paste Kit Content</CardTitle>
+            <CardTitle className="text-base">Import Kit Content</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
+            <div className="rounded-md border p-3" style={{ borderColor: "#D8CEC2" }}>
+              <Label
+                htmlFor="kit-file-upload"
+                className="text-[10px] uppercase tracking-[0.18em]"
+                style={{ color: "#4F2D68" }}
+              >
+                Upload .txt or .md
+              </Label>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <Input
+                  id="kit-file-upload"
+                  type="file"
+                  accept=".txt,.md,text/plain,text/markdown"
+                  onChange={(event) => loadUploadedFile(event.target.files?.[0])}
+                />
+                {uploadedFileName ? (
+                  <div className="flex items-center text-xs" style={{ color: "#6b6470" }}>
+                    <FileText className="mr-1 h-3.5 w-3.5" /> {uploadedFileName}
+                  </div>
+                ) : null}
+              </div>
+            </div>
             <Textarea
               rows={24}
               value={rawText}
@@ -131,10 +180,24 @@ function ImportPage() {
               >
                 <ArrowRight className="mr-2 h-4 w-4" /> Create Builder Draft
               </Button>
-              <Button type="button" variant="outline" onClick={() => setRawText(SAMPLE_IMPORT)}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRawText(SAMPLE_IMPORT);
+                  setUploadedFileName("");
+                }}
+              >
                 <ClipboardPaste className="mr-2 h-4 w-4" /> Load Test Text
               </Button>
-              <Button type="button" variant="outline" onClick={() => setRawText("")}>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setRawText("");
+                  setUploadedFileName("");
+                }}
+              >
                 <RefreshCw className="mr-2 h-4 w-4" /> Clear
               </Button>
             </div>

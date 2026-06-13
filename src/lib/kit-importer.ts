@@ -48,6 +48,7 @@ const TABLE_ROW_RE = /^(row|table row)\s*:\s*(.+)$/i;
 const CHECKLIST_ITEM_RE = /^[-*]\s+(.+)$/;
 const NUMBERED_ITEM_RE = /^\d+[).]\s+(.+)$/;
 const QUESTION_RE = /^(what|why|how|when|where|who|which)\b.+\?$/i;
+const MARKDOWN_HEADING_RE = /^(#{1,6})\s+(.+)$/;
 
 export function parseImportedKitText(raw: string): BuilderDraft {
   return detectImportedKitText(raw).draft;
@@ -62,6 +63,28 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
+
+    const markdownHeading = line.match(MARKDOWN_HEADING_RE);
+    if (markdownHeading) {
+      const level = markdownHeading[1]?.length ?? 1;
+      const headingText = markdownHeading[2]?.trim() ?? "";
+      const typedHeading = matchTypedHeading(headingText);
+
+      if (typedHeading) {
+        current = createSection(typedHeading.type, typedHeading.title);
+        sections.push(current);
+        continue;
+      }
+
+      if (level === 1 && !draft.kitName.trim()) {
+        draft.kitName = headingText;
+        continue;
+      }
+
+      current = createSection(level <= 2 ? "divider" : "lesson", headingText);
+      sections.push(current);
+      continue;
+    }
 
     const kitTitle = line.match(KIT_TITLE_RE);
     if (kitTitle) {
