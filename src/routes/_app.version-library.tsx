@@ -8,11 +8,16 @@ import {
   RotateCcw,
   StickyNote,
 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  duplicateVersionLibraryRecord,
+  listVersionLibraryRecords,
+  updateVersionLibraryRecord,
+} from "@/lib/api/version-library.functions";
 import {
   displayKitName,
   duplicateVersionRecord,
@@ -38,12 +43,43 @@ const STATUS_OPTIONS: VersionStatus[] = [
   "Archived",
 ];
 const QC_STATUS_OPTIONS: VersionQcStatus[] = ["Not Reviewed", "Needs Repair", "Passed"];
+type StorageMode = "checking" | "supabase" | "local";
 
 function VersionLibraryPage() {
   const navigate = useNavigate();
   const [records, setRecords] = useState<KitVersionRecord[]>(() => loadVersionLibrary());
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
+  const [storageMode, setStorageMode] = useState<StorageMode>("checking");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRecords() {
+      try {
+        const result = await listVersionLibraryRecords();
+        if (cancelled) return;
+        if (result.ok) {
+          const saved = saveVersionLibrary(result.data.records);
+          setRecords(saved);
+          setStorageMode("supabase");
+          return;
+        }
+      } catch {
+        // Keep the existing local records below.
+      }
+
+      if (!cancelled) {
+        setStorageMode("local");
+      }
+    }
+
+    void loadRecords();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const summary = useMemo(() => {
     return {
@@ -55,9 +91,10 @@ function VersionLibraryPage() {
     };
   }, [records]);
 
-  const persist = (next: KitVersionRecord[]) => {
+  const persistLocal = (next: KitVersionRecord[]) => {
     const saved = saveVersionLibrary(next);
     setRecords(saved);
+    return saved;
   };
 
   const openInBuilder = (record: KitVersionRecord) => {
@@ -66,18 +103,44 @@ function VersionLibraryPage() {
     navigate({ to: "/builder" });
   };
 
-  const duplicateRecord = (record: KitVersionRecord) => {
+  const duplicateRecord = async (record: KitVersionRecord) => {
+    if (storageMode === "supabase") {
+      try {
+        const result = await duplicateVersionLibraryRecord({ data: { id: record.id } });
+        if (result.ok) {
+          persistLocal([result.data.record, ...records]);
+          toast.success("Version duplicated");
+          return;
+        }
+      } catch {
+        setStorageMode("local");
+      }
+    }
+
     const copy = duplicateVersionRecord(records, record);
-    persist([copy, ...records]);
+    persistLocal([copy, ...records]);
     toast.success("Version duplicated");
   };
 
-  const patchRecord = (
+  const patchRecord = async (
     id: string,
     patch: Parameters<typeof updateVersionRecord>[2],
     message: string,
   ) => {
-    persist(updateVersionRecord(records, id, patch));
+    if (storageMode === "supabase") {
+      try {
+        const result = await updateVersionLibraryRecord({ data: { id, patch } });
+        if (result.ok) {
+          persistLocal(records.map((record) => (record.id === id ? result.data.record : record)));
+          toast.success(message);
+          return;
+        }
+      } catch {
+        setStorageMode("local");
+      }
+    }
+
+    persistLocal(updateVersionRecord(records, id, patch));
     toast.success(message);
   };
 
@@ -87,7 +150,7 @@ function VersionLibraryPage() {
   };
 
   const saveNotes = (id: string) => {
-    patchRecord(id, { notes: notesDraft }, "Notes saved");
+    void patchRecord(id, { notes: notesDraft }, "Notes saved");
     setEditingNotesId(null);
     setNotesDraft("");
   };
@@ -102,6 +165,14 @@ function VersionLibraryPage() {
       </h1>
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
         Track saved builder snapshots, QC status, sale readiness, and DocHub readiness.
+        <span className="ml-2">
+          Storage:{" "}
+          {storageMode === "checking"
+            ? "Checking private Supabase..."
+            : storageMode === "supabase"
+              ? "Private Supabase"
+              : "Local fallback"}
+        </span>
       </p>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -196,7 +267,11 @@ function VersionLibraryPage() {
                       value={record.status}
                       options={STATUS_OPTIONS}
                       onChange={(value) =>
-                        patchRecord(record.id, { status: value as VersionStatus }, "Status updated")
+                        void patchRecord(
+                          record.id,
+                          { status: value as VersionStatus },
+                          "Status updated",
+                        )
                       }
                     />
                   </td>
@@ -205,7 +280,7 @@ function VersionLibraryPage() {
                       value={record.qcStatus}
                       options={QC_STATUS_OPTIONS}
                       onChange={(value) =>
-                        patchRecord(
+                        void patchRecord(
                           record.id,
                           { qcStatus: value as VersionQcStatus },
                           "QC status updated",
@@ -218,7 +293,7 @@ function VersionLibraryPage() {
                       value={record.saleReady ? "Yes" : "No"}
                       options={["No", "Yes"]}
                       onChange={(value) =>
-                        patchRecord(
+                        void patchRecord(
                           record.id,
                           { saleReady: value === "Yes" },
                           "Sale readiness updated",
@@ -231,7 +306,7 @@ function VersionLibraryPage() {
                       value={record.docHubReady ? "Yes" : "No"}
                       options={["No", "Yes"]}
                       onChange={(value) =>
-                        patchRecord(
+                        void patchRecord(
                           record.id,
                           { docHubReady: value === "Yes" },
                           "DocHub readiness updated",
@@ -249,14 +324,14 @@ function VersionLibraryPage() {
                       </ActionButton>
                       <ActionButton
                         label="Duplicate Version"
-                        onClick={() => duplicateRecord(record)}
+                        onClick={() => void duplicateRecord(record)}
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </ActionButton>
                       <ActionButton
                         label="Archive Version"
                         onClick={() =>
-                          patchRecord(record.id, { status: "Archived" }, "Version archived")
+                          void patchRecord(record.id, { status: "Archived" }, "Version archived")
                         }
                       >
                         <Archive className="h-3.5 w-3.5" />
@@ -264,7 +339,7 @@ function VersionLibraryPage() {
                       <ActionButton
                         label="Mark QC Passed"
                         onClick={() =>
-                          patchRecord(
+                          void patchRecord(
                             record.id,
                             { qcStatus: "Passed", status: "Approved" },
                             "QC marked passed",
@@ -276,7 +351,7 @@ function VersionLibraryPage() {
                       <ActionButton
                         label="Mark Needs Repair"
                         onClick={() =>
-                          patchRecord(
+                          void patchRecord(
                             record.id,
                             { qcStatus: "Needs Repair", status: "In Review" },
                             "Marked needs repair",
@@ -288,7 +363,7 @@ function VersionLibraryPage() {
                       <ActionButton
                         label="Mark Sale Ready"
                         onClick={() =>
-                          patchRecord(record.id, { saleReady: true }, "Marked sale ready")
+                          void patchRecord(record.id, { saleReady: true }, "Marked sale ready")
                         }
                       >
                         <FileCheck2 className="h-3.5 w-3.5" />
@@ -296,7 +371,7 @@ function VersionLibraryPage() {
                       <ActionButton
                         label="Mark DocHub Ready"
                         onClick={() =>
-                          patchRecord(record.id, { docHubReady: true }, "Marked DocHub ready")
+                          void patchRecord(record.id, { docHubReady: true }, "Marked DocHub ready")
                         }
                       >
                         <FileCheck2 className="h-3.5 w-3.5" />

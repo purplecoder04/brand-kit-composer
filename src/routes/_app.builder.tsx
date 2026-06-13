@@ -24,6 +24,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PagePreview } from "@/components/PagePreview";
 import { PageRenderer } from "@/components/PageRenderer";
+import { createVersionLibraryRecord } from "@/lib/api/version-library.functions";
 import {
   BUILDER_BLOCK_TYPES,
   RESERVED_BUILDER_KIT_ID,
@@ -59,6 +60,7 @@ function BuilderPage() {
   const initialDraft = useMemo(() => loadBuilderDraft(), []);
   const [draft, setDraft] = useState<BuilderDraft>(() => initialDraft ?? createBlankBuilderDraft());
   const [dirty, setDirty] = useState(false);
+  const [savingVersion, setSavingVersion] = useState(false);
   const previewRef = useRef<HTMLDivElement | null>(null);
 
   const normalizedDraft = useMemo(() => normalizeDraft(draft), [draft]);
@@ -160,12 +162,27 @@ function BuilderPage() {
     toast.success("Level 3B draft saved");
   };
 
-  const saveToVersionLibrary = () => {
+  const saveToVersionLibrary = async () => {
+    if (savingVersion) return;
+    setSavingVersion(true);
     const savedDraft = persist();
     const records = loadVersionLibrary();
+    try {
+      const result = await createVersionLibraryRecord({ data: { draft: savedDraft } });
+      if (result.ok) {
+        saveVersionLibrary([result.data.record, ...records]);
+        toast.success("Saved to Version Library");
+        return;
+      }
+    } catch {
+      // Fall back to local version storage below.
+    } finally {
+      setSavingVersion(false);
+    }
+
     const version = createVersionFromDraft(records, savedDraft);
     saveVersionLibrary([version, ...records]);
-    toast.success("Saved to Version Library");
+    toast.success("Saved to Version Library locally");
   };
 
   const generatePreview = () => {
@@ -218,7 +235,7 @@ function BuilderPage() {
         <Button onClick={saveDraft} variant="outline">
           <Save className="mr-2 h-4 w-4" /> Save Draft
         </Button>
-        <Button onClick={saveToVersionLibrary} variant="outline">
+        <Button onClick={saveToVersionLibrary} variant="outline" disabled={savingVersion}>
           <Library className="mr-2 h-4 w-4" /> Save to Version Library
         </Button>
         <Button onClick={printDraft} variant="outline">
