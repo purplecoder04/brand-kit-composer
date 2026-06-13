@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ClipboardPaste, FileText, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowRight, ClipboardPaste, FileText, History, RefreshCw, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -17,6 +17,14 @@ import {
   type BuilderDraft,
 } from "@/lib/builder-content";
 import { extractDocxText } from "@/lib/docx-text";
+import {
+  addImportHistoryRecord,
+  clearImportHistory,
+  detectImportFileType,
+  loadImportHistory,
+  markImportCreated,
+  type ImportHistoryRecord,
+} from "@/lib/import-history";
 import { detectImportedKitText, getImportWarnings } from "@/lib/kit-importer";
 import type { PageType } from "@/lib/kit-types";
 
@@ -54,6 +62,10 @@ function ImportPage() {
   const navigate = useNavigate();
   const [rawText, setRawText] = useState("");
   const [uploadedFileName, setUploadedFileName] = useState("");
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
+  const [importHistory, setImportHistory] = useState<ImportHistoryRecord[]>(() =>
+    loadImportHistory(),
+  );
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
   const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(detected.draft);
   const warnings = useMemo(() => getImportWarnings(reviewDraft), [reviewDraft]);
@@ -95,6 +107,20 @@ function ImportPage() {
       toast.message("Paste kit content before creating a builder draft");
       return;
     }
+    if (currentHistoryId) {
+      setImportHistory(markImportCreated(currentHistoryId));
+    } else {
+      setImportHistory(
+        addImportHistoryRecord({
+          fileName: uploadedFileName || "Pasted content",
+          fileType: uploadedFileName ? detectImportFileType(uploadedFileName) : "paste",
+          rawText,
+          draft: saved,
+          warningCount: warnings.length,
+          createdBuilderDraft: true,
+        }),
+      );
+    }
     toast.success("Builder draft created");
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
   };
@@ -119,12 +145,36 @@ function ImportPage() {
 
     try {
       const text = isDocx ? await extractDocxText(file) : await file.text();
+      const imported = detectImportedKitText(text);
+      const records = addImportHistoryRecord({
+        fileName: file.name,
+        fileType: detectImportFileType(file.name),
+        rawText: text,
+        draft: imported.draft,
+        warningCount: imported.warnings.length,
+      });
       setRawText(text);
       setUploadedFileName(file.name);
+      setImportHistory(records);
+      setCurrentHistoryId(records[0]?.id ?? null);
       toast.success("File loaded into importer");
     } catch {
       toast.error("Could not read that file");
     }
+  };
+
+  const loadHistoryRecord = (record: ImportHistoryRecord) => {
+    setRawText(record.rawText);
+    setUploadedFileName(record.fileType === "paste" ? "" : record.fileName);
+    setReviewDraft(record.draft);
+    setCurrentHistoryId(record.id);
+    toast.success("Import loaded");
+  };
+
+  const clearHistory = () => {
+    setImportHistory(clearImportHistory());
+    setCurrentHistoryId(null);
+    toast.message("Import history cleared");
   };
 
   return (
@@ -136,77 +186,87 @@ function ImportPage() {
         Paste Content Importer
       </h1>
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Upload a .txt, .md, or .docx file, or paste rough kit content, then review the detected blocks
-        before sending the cleaned draft to Builder.
+        Upload a .txt, .md, or .docx file, or paste rough kit content, then review the detected
+        blocks before sending the cleaned draft to Builder.
       </p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(420px,0.8fr)_minmax(0,1fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Import Kit Content</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-md border p-3" style={{ borderColor: "#D8CEC2" }}>
-              <Label
-                htmlFor="kit-file-upload"
-                className="text-[10px] uppercase tracking-[0.18em]"
-                style={{ color: "#4F2D68" }}
-              >
-                Upload .txt, .md, or .docx
-              </Label>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <Input
-                  id="kit-file-upload"
-                  type="file"
-                  accept=".txt,.md,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={(event) => loadUploadedFile(event.target.files?.[0])}
-                />
-                {uploadedFileName ? (
-                  <div className="flex items-center text-xs" style={{ color: "#6b6470" }}>
-                    <FileText className="mr-1 h-3.5 w-3.5" /> {uploadedFileName}
-                  </div>
-                ) : null}
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Import Kit Content</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="rounded-md border p-3" style={{ borderColor: "#D8CEC2" }}>
+                <Label
+                  htmlFor="kit-file-upload"
+                  className="text-[10px] uppercase tracking-[0.18em]"
+                  style={{ color: "#4F2D68" }}
+                >
+                  Upload .txt, .md, or .docx
+                </Label>
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <Input
+                    id="kit-file-upload"
+                    type="file"
+                    accept=".txt,.md,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                    onChange={(event) => loadUploadedFile(event.target.files?.[0])}
+                  />
+                  {uploadedFileName ? (
+                    <div className="flex items-center text-xs" style={{ color: "#6b6470" }}>
+                      <FileText className="mr-1 h-3.5 w-3.5" /> {uploadedFileName}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            </div>
-            <Textarea
-              rows={24}
-              value={rawText}
-              onChange={(event) => setRawText(event.target.value)}
-              placeholder="Paste kit title, modules, lessons, worksheets, prompts, checklists, and trackers here."
-              className="font-mono text-xs leading-5"
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                onClick={createDraft}
-                disabled={!hasContent || reviewDraft.blocks.length === 0}
-                style={{ background: "#4F2D68", color: "#fff" }}
-              >
-                <ArrowRight className="mr-2 h-4 w-4" /> Create Builder Draft
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setRawText(SAMPLE_IMPORT);
-                  setUploadedFileName("");
-                }}
-              >
-                <ClipboardPaste className="mr-2 h-4 w-4" /> Load Test Text
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setRawText("");
-                  setUploadedFileName("");
-                }}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" /> Clear
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+              <Textarea
+                rows={24}
+                value={rawText}
+                onChange={(event) => setRawText(event.target.value)}
+                placeholder="Paste kit title, modules, lessons, worksheets, prompts, checklists, and trackers here."
+                className="font-mono text-xs leading-5"
+              />
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  onClick={createDraft}
+                  disabled={!hasContent || reviewDraft.blocks.length === 0}
+                  style={{ background: "#4F2D68", color: "#fff" }}
+                >
+                  <ArrowRight className="mr-2 h-4 w-4" /> Create Builder Draft
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRawText(SAMPLE_IMPORT);
+                    setUploadedFileName("");
+                    setCurrentHistoryId(null);
+                  }}
+                >
+                  <ClipboardPaste className="mr-2 h-4 w-4" /> Load Test Text
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRawText("");
+                    setUploadedFileName("");
+                    setCurrentHistoryId(null);
+                  }}
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" /> Clear
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <ImportHistoryCard
+            records={importHistory}
+            onLoad={loadHistoryRecord}
+            onClear={clearHistory}
+          />
+        </div>
 
         <div className="space-y-6">
           <Card>
@@ -307,6 +367,74 @@ function TextField({
       </Label>
       <Input value={value} onChange={(event) => onChange(event.target.value)} />
     </div>
+  );
+}
+
+function ImportHistoryCard({
+  records,
+  onLoad,
+  onClear,
+}: {
+  records: ImportHistoryRecord[];
+  onLoad: (record: ImportHistoryRecord) => void;
+  onClear: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center text-base">
+            <History className="mr-2 h-4 w-4" /> Recent Imports
+          </CardTitle>
+          {records.length > 0 ? (
+            <Button type="button" variant="outline" size="sm" onClick={onClear}>
+              Clear History
+            </Button>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {records.length === 0 ? (
+          <div
+            className="rounded-md border px-4 py-5 text-sm"
+            style={{ borderColor: "#D8CEC2", color: "#6b6470" }}
+          >
+            Imported files will appear here after you upload a .txt, .md, or .docx file.
+          </div>
+        ) : (
+          records.slice(0, 5).map((record) => (
+            <div
+              key={record.id}
+              className="rounded-md border p-3"
+              style={{ borderColor: "#D8CEC2", background: "#fff" }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div
+                    className="text-[10px] uppercase tracking-[0.18em]"
+                    style={{ color: "#4F2D68" }}
+                  >
+                    {record.fileType} import
+                  </div>
+                  <div className="mt-1 font-semibold" style={{ color: "#222026" }}>
+                    {record.kitName || record.fileName || "Untitled"}
+                  </div>
+                  <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                    {new Date(record.importedAt).toLocaleString()} · {record.blockCount} block
+                    {record.blockCount === 1 ? "" : "s"} · {record.warningCount} warning
+                    {record.warningCount === 1 ? "" : "s"} ·{" "}
+                    {record.createdBuilderDraft ? "Draft created" : "Review only"}
+                  </div>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={() => onLoad(record)}>
+                  Load
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
