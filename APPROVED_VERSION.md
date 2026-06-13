@@ -28,6 +28,40 @@ Next approved direction:
 
 ---
 
+# Best Collective Kit Factory V1 - Level 5A Private Supabase Save/Load
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 5A private Supabase save/load checkpoint.
+
+Approved behavior:
+- Supabase is connected as the private internal Version Library database.
+- The `kit_versions` table exists.
+- Row Level Security is enabled on `public.kit_versions`.
+- Save to Version Library creates database version records.
+- Version Library loads saved records from Supabase.
+- Saved versions survive refresh, browser close, and reopen.
+- Versions can reopen in /builder with full builder draft content.
+- Saving the same kit again creates a new version record instead of overwriting.
+- Versions can duplicate.
+- Versions can archive without deleting.
+- QC status can be updated and persists.
+- Sale-ready status can be updated and persists.
+- DocHub-ready status can be updated and persists.
+- Notes can be added/edited and persist.
+- Print/PDF still uses the existing locked builder pipeline.
+- localStorage fallback remains available for testing or missing Supabase env values.
+- /mapper remains untouched.
+- /builder remains stable.
+- Brand Template V1 remains locked.
+
+Do not change Level 5A unless fixing a confirmed bug.
+Do not add customer login, customer dashboard, marketplace, checkout, or buyer-facing delivery features.
+Do not add AI generation yet.
+Do not add branch design support yet.
+
+---
+
 # Best Collective Kit Factory V1 - Level 2 Content Mapper
 
 Approved on: 2026-06-09
