@@ -152,8 +152,9 @@ async function supabaseRequest<T>(path: string, init: RequestInit = {}): Promise
 }
 
 function getSupabaseConfig(): SupabaseConfig {
-  const url = process.env.SUPABASE_URL?.replace(/\/+$/, "");
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = (process.env.KIT_SUPABASE_URL ?? process.env.SUPABASE_URL)?.replace(/\/+$/, "");
+  const serviceRoleKey =
+    process.env.KIT_SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
     throw new SupabaseVersionLibraryUnavailableError();
