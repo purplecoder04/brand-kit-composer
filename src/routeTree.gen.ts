@@ -93,8 +93,8 @@ export interface FileRoutesByFullPath {
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
-  '/mapper': typeof AppMapperRoute
   '/import': typeof AppImportRoute
+  '/mapper': typeof AppMapperRoute
   '/print-preview': typeof AppPrintPreviewRoute
   '/qc': typeof AppQcRoute
   '/templates': typeof AppTemplatesRoute
@@ -107,8 +107,8 @@ export interface FileRoutesByTo {
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
-  '/mapper': typeof AppMapperRoute
   '/import': typeof AppImportRoute
+  '/mapper': typeof AppMapperRoute
   '/print-preview': typeof AppPrintPreviewRoute
   '/qc': typeof AppQcRoute
   '/templates': typeof AppTemplatesRoute
@@ -123,8 +123,8 @@ export interface FileRoutesById {
   '/_app/builder': typeof AppBuilderRoute
   '/_app/create': typeof AppCreateRoute
   '/_app/dashboard': typeof AppDashboardRoute
-  '/_app/mapper': typeof AppMapperRoute
   '/_app/import': typeof AppImportRoute
+  '/_app/mapper': typeof AppMapperRoute
   '/_app/print-preview': typeof AppPrintPreviewRoute
   '/_app/qc': typeof AppQcRoute
   '/_app/templates': typeof AppTemplatesRoute
@@ -139,8 +139,8 @@ export interface FileRouteTypes {
     | '/builder'
     | '/create'
     | '/dashboard'
-    | '/mapper'
     | '/import'
+    | '/mapper'
     | '/print-preview'
     | '/qc'
     | '/templates'
@@ -153,8 +153,8 @@ export interface FileRouteTypes {
     | '/builder'
     | '/create'
     | '/dashboard'
-    | '/mapper'
     | '/import'
+    | '/mapper'
     | '/print-preview'
     | '/qc'
     | '/templates'
@@ -168,8 +168,8 @@ export interface FileRouteTypes {
     | '/_app/builder'
     | '/_app/create'
     | '/_app/dashboard'
-    | '/_app/mapper'
     | '/_app/import'
+    | '/_app/mapper'
     | '/_app/print-preview'
     | '/_app/qc'
     | '/_app/templates'
@@ -284,8 +284,8 @@ interface AppRouteChildren {
   AppBuilderRoute: typeof AppBuilderRoute
   AppCreateRoute: typeof AppCreateRoute
   AppDashboardRoute: typeof AppDashboardRoute
-  AppMapperRoute: typeof AppMapperRoute
   AppImportRoute: typeof AppImportRoute
+  AppMapperRoute: typeof AppMapperRoute
   AppPrintPreviewRoute: typeof AppPrintPreviewRoute
   AppQcRoute: typeof AppQcRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
@@ -297,8 +297,8 @@ const AppRouteChildren: AppRouteChildren = {
   AppBuilderRoute: AppBuilderRoute,
   AppCreateRoute: AppCreateRoute,
   AppDashboardRoute: AppDashboardRoute,
-  AppMapperRoute: AppMapperRoute,
   AppImportRoute: AppImportRoute,
+  AppMapperRoute: AppMapperRoute,
   AppPrintPreviewRoute: AppPrintPreviewRoute,
   AppQcRoute: AppQcRoute,
   AppTemplatesRoute: AppTemplatesRoute,
@@ -316,13 +316,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
