@@ -9,12 +9,14 @@ import {
   ClipboardCheck,
   Library,
   Edit3,
+  Upload,
 } from "lucide-react";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/create", label: "Create Kit", icon: FilePlus2 },
   { to: "/mapper", label: "Kit Content Mapper", icon: Edit3 },
+  { to: "/import", label: "Paste Importer", icon: Upload },
   { to: "/templates", label: "Templates", icon: LayoutTemplate },
   { to: "/builder", label: "Multi-Page Builder", icon: Wrench },
   { to: "/print-preview", label: "Print Preview", icon: Printer },

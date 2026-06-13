@@ -18,6 +18,7 @@ import { Route as AppTemplatesRouteImport } from './routes/_app.templates'
 import { Route as AppQcRouteImport } from './routes/_app.qc'
 import { Route as AppPrintPreviewRouteImport } from './routes/_app.print-preview'
 import { Route as AppMapperRouteImport } from './routes/_app.mapper'
+import { Route as AppImportRouteImport } from './routes/_app.import'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCreateRouteImport } from './routes/_app.create'
 import { Route as AppBuilderRouteImport } from './routes/_app.builder'
@@ -66,6 +67,11 @@ const AppMapperRoute = AppMapperRouteImport.update({
   path: '/mapper',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImportRoute = AppImportRouteImport.update({
+  id: '/import',
+  path: '/import',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -88,6 +94,7 @@ export interface FileRoutesByFullPath {
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
   '/mapper': typeof AppMapperRoute
+  '/import': typeof AppImportRoute
   '/print-preview': typeof AppPrintPreviewRoute
   '/qc': typeof AppQcRoute
   '/templates': typeof AppTemplatesRoute
@@ -101,6 +108,7 @@ export interface FileRoutesByTo {
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
   '/mapper': typeof AppMapperRoute
+  '/import': typeof AppImportRoute
   '/print-preview': typeof AppPrintPreviewRoute
   '/qc': typeof AppQcRoute
   '/templates': typeof AppTemplatesRoute
@@ -116,6 +124,7 @@ export interface FileRoutesById {
   '/_app/create': typeof AppCreateRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/mapper': typeof AppMapperRoute
+  '/_app/import': typeof AppImportRoute
   '/_app/print-preview': typeof AppPrintPreviewRoute
   '/_app/qc': typeof AppQcRoute
   '/_app/templates': typeof AppTemplatesRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/dashboard'
     | '/mapper'
+    | '/import'
     | '/print-preview'
     | '/qc'
     | '/templates'
@@ -144,6 +154,7 @@ export interface FileRouteTypes {
     | '/create'
     | '/dashboard'
     | '/mapper'
+    | '/import'
     | '/print-preview'
     | '/qc'
     | '/templates'
@@ -158,6 +169,7 @@ export interface FileRouteTypes {
     | '/_app/create'
     | '/_app/dashboard'
     | '/_app/mapper'
+    | '/_app/import'
     | '/_app/print-preview'
     | '/_app/qc'
     | '/_app/templates'
@@ -237,6 +249,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMapperRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/import': {
+      id: '/_app/import'
+      path: '/import'
+      fullPath: '/import'
+      preLoaderRoute: typeof AppImportRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -266,6 +285,7 @@ interface AppRouteChildren {
   AppCreateRoute: typeof AppCreateRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppMapperRoute: typeof AppMapperRoute
+  AppImportRoute: typeof AppImportRoute
   AppPrintPreviewRoute: typeof AppPrintPreviewRoute
   AppQcRoute: typeof AppQcRoute
   AppTemplatesRoute: typeof AppTemplatesRoute
@@ -278,6 +298,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCreateRoute: AppCreateRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppMapperRoute: AppMapperRoute,
+  AppImportRoute: AppImportRoute,
   AppPrintPreviewRoute: AppPrintPreviewRoute,
   AppQcRoute: AppQcRoute,
   AppTemplatesRoute: AppTemplatesRoute,
