@@ -7,6 +7,16 @@ import {
 } from "./builder-content";
 import type { PageType } from "./kit-types";
 
+export type ImportWarning = {
+  blockId?: string;
+  message: string;
+};
+
+export type ImportedKitReview = {
+  draft: BuilderDraft;
+  warnings: ImportWarning[];
+};
+
 type ParsedSection = {
   type: PageType;
   title: string;
@@ -25,13 +35,25 @@ const AUDIENCE_RE = /^audience\s*:\s*(.+)$/i;
 const TONE_RE = /^tone\s*:\s*(.+)$/i;
 const TAGLINE_RE = /^tagline\s*:\s*(.+)$/i;
 const HEADING_RE =
-  /^(cover|section|divider|lesson|workbook prompt|workbook|checklist|notes|table|tracker)\s*:\s*(.*)$/i;
-const BODY_RE = /^(body|lesson body)\s*:\s*(.*)$/i;
-const PROMPT_RE = /^(prompt|workbook prompt|notes prompt)\s*:\s*(.*)$/i;
+  /^(cover|section|divider|module|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
+const BARE_HEADING_RE =
+  /^(cover|section|divider|module|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
+const NUMBERED_HEADING_RE =
+  /^(?:\d+[).]\s*)?(lesson|step|module|worksheet|reflection|tracker)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.+)$/i;
+const BODY_RE = /^(body|lesson body|description)\s*:\s*(.*)$/i;
+const PROMPT_RE =
+  /^(prompt|workbook prompt|notes prompt|question|reflection question)\s*:\s*(.*)$/i;
 const TABLE_HEADERS_RE = /^(headers|columns)\s*:\s*(.+)$/i;
 const TABLE_ROW_RE = /^(row|table row)\s*:\s*(.+)$/i;
+const CHECKLIST_ITEM_RE = /^[-*]\s+(.+)$/;
+const NUMBERED_ITEM_RE = /^\d+[).]\s+(.+)$/;
+const QUESTION_RE = /^(what|why|how|when|where|who|which)\b.+\?$/i;
 
 export function parseImportedKitText(raw: string): BuilderDraft {
+  return detectImportedKitText(raw).draft;
+}
+
+export function detectImportedKitText(raw: string): ImportedKitReview {
   const draft = createBlankBuilderDraft();
   const sections: ParsedSection[] = [];
   let current: ParsedSection | null = null;
@@ -77,9 +99,9 @@ export function parseImportedKitText(raw: string): BuilderDraft {
       continue;
     }
 
-    const heading = line.match(HEADING_RE);
-    if (heading) {
-      current = createSection(heading[1] ?? "", heading[2] ?? "");
+    const typedHeading = matchTypedHeading(line);
+    if (typedHeading) {
+      current = createSection(typedHeading.type, typedHeading.title);
       sections.push(current);
       continue;
     }
@@ -97,6 +119,7 @@ export function parseImportedKitText(raw: string): BuilderDraft {
 
     const prompt = line.match(PROMPT_RE);
     if (prompt) {
+      current.type = current.type === "notes" ? "notes" : "workbook";
       appendText(current, "prompt", prompt[2] ?? "");
       continue;
     }
@@ -115,17 +138,30 @@ export function parseImportedKitText(raw: string): BuilderDraft {
       continue;
     }
 
-    if (/^[-*]\s+/.test(line)) {
-      if (current.type !== "table")
-        current.type = current.type === "lesson" ? "checklist" : current.type;
-      current.checklistItems.push(line.replace(/^[-*]\s+/, "").trim());
-      continue;
-    }
-
-    if (line.includes("|") && current.type === "table") {
+    if (line.includes("|") && looksLikeTableLine(line)) {
+      current.type = "table";
       const cells = splitCells(line);
       if (current.tableHeaders.length === 0) current.tableHeaders = cells;
       else current.tableRows.push(cells);
+      continue;
+    }
+
+    const checklistItem = line.match(CHECKLIST_ITEM_RE) ?? line.match(NUMBERED_ITEM_RE);
+    if (checklistItem) {
+      if (current.type === "checklist") {
+        current.checklistItems.push(checklistItem[1]?.trim() ?? "");
+        continue;
+      }
+      appendText(
+        current,
+        current.type === "workbook" || current.type === "notes" ? "prompt" : "body",
+        line,
+      );
+      continue;
+    }
+
+    if ((current.type === "workbook" || current.type === "notes") && QUESTION_RE.test(line)) {
+      appendText(current, "prompt", line);
       continue;
     }
 
@@ -148,19 +184,102 @@ export function parseImportedKitText(raw: string): BuilderDraft {
   }
 
   const orderedBlocks = blocks.map((block, index) => ({ ...block, order: index + 1 }));
-  return normalizeDraft({
+  const normalizedDraft = normalizeDraft({
     ...draft,
     source: orderedBlocks.length > 0 ? "current" : "blank",
     selectedBlockId: orderedBlocks[0]?.id ?? null,
     blocks: orderedBlocks,
   });
+
+  return {
+    draft: normalizedDraft,
+    warnings: getImportWarnings(normalizedDraft),
+  };
+}
+
+export function getImportWarnings(draft: BuilderDraft): ImportWarning[] {
+  const warnings: ImportWarning[] = [];
+
+  if (!draft.kitName.trim()) {
+    warnings.push({ message: "Kit name was not detected." });
+  }
+
+  for (const block of draft.blocks) {
+    if (!block.title.trim()) {
+      warnings.push({
+        blockId: block.id,
+        message: `${pageTypeName(block.pageType)} block has no title.`,
+      });
+    }
+    if (block.pageType === "lesson" && !block.body.trim()) {
+      warnings.push({
+        blockId: block.id,
+        message: `${block.title || "Lesson"} has no lesson body.`,
+      });
+    }
+    if ((block.pageType === "workbook" || block.pageType === "notes") && !block.prompt.trim()) {
+      warnings.push({
+        blockId: block.id,
+        message: `${block.title || pageTypeName(block.pageType)} has no prompt.`,
+      });
+    }
+    if (block.pageType === "checklist" && !block.body.trim()) {
+      warnings.push({
+        blockId: block.id,
+        message: `${block.title || "Checklist"} has no checklist items.`,
+      });
+    }
+    if (block.pageType === "table") {
+      const hasHeaders = block.tableData.headers.some((header) => header.trim());
+      const hasRows = block.tableData.rows.some((row) => row.some((cell) => cell.trim()));
+      if (!hasHeaders) {
+        warnings.push({
+          blockId: block.id,
+          message: `${block.title || "Table"} has no column headers.`,
+        });
+      }
+      if (!hasRows) {
+        warnings.push({
+          blockId: block.id,
+          message: `${block.title || "Table"} has no row entries.`,
+        });
+      }
+    }
+  }
+
+  return warnings;
+}
+
+function matchTypedHeading(line: string): { type: string; title: string } | null {
+  const heading = line.match(HEADING_RE);
+  if (heading) {
+    return { type: heading[1] ?? "lesson", title: heading[2]?.trim() ?? "" };
+  }
+
+  const numbered = line.match(NUMBERED_HEADING_RE);
+  if (numbered) {
+    return { type: numbered[1] ?? "lesson", title: numbered[2]?.trim() ?? "" };
+  }
+
+  const bare = line.match(BARE_HEADING_RE);
+  if (bare) {
+    return { type: bare[1] ?? "lesson", title: "" };
+  }
+
+  return null;
 }
 
 function createSection(rawType: string, rawTitle: string): ParsedSection {
   const type = normalizeSectionType(rawType);
   const lowerType = rawType.toLowerCase().trim();
-  const title = lowerType === "workbook prompt" ? "Workbook" : rawTitle.trim();
-  const prompt = lowerType === "workbook prompt" ? rawTitle.trim() : "";
+  const title =
+    lowerType === "workbook prompt"
+      ? "Workbook"
+      : lowerType === "reflection"
+        ? "Reflection"
+        : rawTitle.trim() || titleFromBareHeading(lowerType);
+  const prompt =
+    lowerType === "workbook prompt" || lowerType === "reflection" ? rawTitle.trim() : "";
 
   return {
     type,
@@ -199,18 +318,37 @@ function toBlock(section: ParsedSection, index: number): BuilderBlock {
 function normalizeSectionType(value: string): PageType {
   const lower = value.toLowerCase().trim();
   if (lower === "cover") return "cover";
-  if (lower === "section" || lower === "divider") return "divider";
-  if (lower === "workbook" || lower === "workbook prompt") return "workbook";
+  if (lower === "section" || lower === "divider" || lower === "module") return "divider";
+  if (
+    lower === "workbook" ||
+    lower === "workbook prompt" ||
+    lower === "worksheet" ||
+    lower === "reflection"
+  )
+    return "workbook";
   if (lower === "checklist") return "checklist";
   if (lower === "notes") return "notes";
   if (lower === "table" || lower === "tracker") return "table";
   return "lesson";
 }
 
+function titleFromBareHeading(lowerType: string): string {
+  if (lowerType === "checklist") return "Checklist";
+  if (lowerType === "notes") return "Notes";
+  if (lowerType === "tracker") return "Tracker";
+  if (lowerType === "table") return "Table";
+  if (lowerType === "workbook" || lowerType === "worksheet") return "Workbook";
+  return "";
+}
+
 function appendText(section: ParsedSection, field: "body" | "prompt", value: string) {
   const trimmed = value.trim();
   if (!trimmed) return;
   section[field] = section[field] ? `${section[field]}\n\n${trimmed}` : trimmed;
+}
+
+function looksLikeTableLine(line: string): boolean {
+  return splitCells(line).length >= 2;
 }
 
 function splitCells(value: string): string[] {
@@ -225,4 +363,23 @@ function normalizeCells(cells: string[]): string[] {
   const next = cells.slice(0, 3);
   while (next.length < 3) next.push("");
   return next;
+}
+
+function pageTypeName(pageType: PageType): string {
+  switch (pageType) {
+    case "cover":
+      return "Cover";
+    case "divider":
+      return "Section Divider";
+    case "lesson":
+      return "Lesson";
+    case "table":
+      return "Table";
+    case "workbook":
+      return "Workbook";
+    case "checklist":
+      return "Checklist";
+    case "notes":
+      return "Notes";
+  }
 }
