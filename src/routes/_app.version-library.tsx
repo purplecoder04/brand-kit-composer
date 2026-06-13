@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Archive,
   CheckCircle2,
+  ClipboardCheck,
   Copy,
   ExternalLink,
   FileCheck2,
@@ -321,6 +322,12 @@ function VersionLibraryPage() {
                     <div className="flex flex-wrap gap-2">
                       <ActionButton label="Open in Builder" onClick={() => openInBuilder(record)}>
                         <ExternalLink className="h-3.5 w-3.5" />
+                      </ActionButton>
+                      <ActionButton
+                        label="Run QC"
+                        onClick={() => navigate({ to: "/qc", search: { versionId: record.id } })}
+                      >
+                        <ClipboardCheck className="h-3.5 w-3.5" />
                       </ActionButton>
                       <ActionButton
                         label="Duplicate Version"
