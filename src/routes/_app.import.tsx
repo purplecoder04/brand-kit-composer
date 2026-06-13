@@ -16,7 +16,6 @@ import {
   type BuilderBlock,
   type BuilderDraft,
 } from "@/lib/builder-content";
-import { extractDocxText } from "@/lib/docx-text";
 import { detectImportedKitText, getImportWarnings } from "@/lib/kit-importer";
 import type { PageType } from "@/lib/kit-types";
 
@@ -103,20 +102,19 @@ function ImportPage() {
     if (!file) return;
 
     const extension = file.name.split(".").pop()?.toLowerCase();
-    const isDocx = extension === "docx";
     const isTextFile =
       extension === "txt" ||
       extension === "md" ||
       file.type === "text/plain" ||
       file.type === "text/markdown";
 
-    if (!isTextFile && !isDocx) {
-      toast.error("Upload a .txt, .md, or .docx file");
+    if (!isTextFile) {
+      toast.error("Upload a .txt or .md file");
       return;
     }
 
     try {
-      const text = isDocx ? await extractDocxText(file) : await file.text();
+      const text = await file.text();
       setRawText(text);
       setUploadedFileName(file.name);
       toast.success("File loaded into importer");
@@ -128,14 +126,14 @@ function ImportPage() {
   return (
     <div className="p-8">
       <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Level 9B Word Doc Import
+        Level 9A Text File Import
       </div>
       <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
         Paste Content Importer
       </h1>
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Upload a .txt, .md, or .docx file, or paste rough kit content, then review the detected
-        blocks before sending the cleaned draft to Builder.
+        Upload a .txt or .md file, or paste rough kit content, then review the detected blocks
+        before sending the cleaned draft to Builder.
       </p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(420px,0.8fr)_minmax(0,1fr)]">
@@ -150,13 +148,13 @@ function ImportPage() {
                 className="text-[10px] uppercase tracking-[0.18em]"
                 style={{ color: "#4F2D68" }}
               >
-                Upload .txt, .md, or .docx
+                Upload .txt or .md
               </Label>
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 <Input
                   id="kit-file-upload"
                   type="file"
-                  accept=".txt,.md,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  accept=".txt,.md,text/plain,text/markdown"
                   onChange={(event) => loadUploadedFile(event.target.files?.[0])}
                 />
                 {uploadedFileName ? (
