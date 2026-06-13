@@ -122,7 +122,7 @@ function QCPage() {
     if (!selectedRecord) return;
     openVersionDraftInBuilder(selectedRecord);
     toast.success("Opened version in builder");
-    navigate({ to: "/builder" });
+    navigate({ to: "/builder", search: { draftReload: Date.now() } });
   };
 
   const copyRepairPrompt = async () => {

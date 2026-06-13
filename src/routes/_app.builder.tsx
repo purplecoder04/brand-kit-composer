@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowDown,
@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,18 +51,35 @@ import {
 } from "@/lib/version-library";
 import type { PageType } from "@/lib/kit-types";
 
+const searchSchema = z.object({
+  draftReload: z.coerce.number().optional(),
+  kitId: z.string().optional(),
+});
+
 export const Route = createFileRoute("/_app/builder")({
+  validateSearch: searchSchema,
   head: () => ({ meta: [{ title: "Multi-Page Kit Builder | Kit Factory" }] }),
   component: BuilderPage,
 });
 
 function BuilderPage() {
   const navigate = useNavigate();
+  const { draftReload } = Route.useSearch();
   const initialDraft = useMemo(() => loadBuilderDraft(), []);
   const [draft, setDraft] = useState<BuilderDraft>(() => initialDraft ?? createBlankBuilderDraft());
   const [dirty, setDirty] = useState(false);
   const [savingVersion, setSavingVersion] = useState(false);
   const previewRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!draftReload) return;
+
+    const reloadedDraft = loadBuilderDraft();
+    if (!reloadedDraft) return;
+
+    setDraft(reloadedDraft);
+    setDirty(false);
+  }, [draftReload]);
 
   const normalizedDraft = useMemo(() => normalizeDraft(draft), [draft]);
   const kit = useMemo(() => buildBuilderKit(normalizedDraft), [normalizedDraft]);

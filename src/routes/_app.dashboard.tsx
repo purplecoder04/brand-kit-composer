@@ -138,7 +138,7 @@ function DashboardPage() {
   const openInBuilder = (record: KitVersionRecord) => {
     openVersionDraftInBuilder(record);
     toast.success("Opened version in builder");
-    navigate({ to: "/builder" });
+    navigate({ to: "/builder", search: { draftReload: Date.now() } });
   };
 
   return (

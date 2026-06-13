@@ -50,7 +50,7 @@ function ImportPage() {
       return;
     }
     toast.success("Builder draft created");
-    navigate({ to: "/builder" });
+    navigate({ to: "/builder", search: { draftReload: Date.now() } });
   };
 
   return (
