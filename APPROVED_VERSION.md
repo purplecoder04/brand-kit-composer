@@ -272,3 +272,35 @@ Do not change Level 8B unless fixing a confirmed bug.
 Do not add AI generation yet.
 Do not add customer-facing features.
 Do not add branch design support yet.
+
+---
+
+# Best Collective Kit Factory V1 - Level 9A Text File Importer
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 9A Text File Importer checkpoint.
+
+Approved behavior:
+- /import accepts .txt uploads.
+- /import accepts .md uploads.
+- Uploaded file text fills the importer text area.
+- Uploaded .txt content flows through the approved Level 8B review screen.
+- Uploaded .md content flows through the approved Level 8B review screen.
+- Markdown headings parse into kit name, section/divider, or lesson blocks when appropriate.
+- Review screen still allows kit info and detected blocks to be edited before Builder.
+- Reviewed uploaded content opens correctly in /builder.
+- Print/PDF pipeline still uses locked Brand Template V1.
+- QC still works on uploaded/imported Builder drafts.
+- /mapper remains untouched.
+- /builder remains stable.
+- /version-library remains stable.
+- /qc remains stable.
+- /dashboard remains stable.
+- Brand Template V1 styling remains locked.
+
+Do not change Level 9A unless fixing a confirmed bug.
+Do not add Word document upload yet.
+Do not add AI generation yet.
+Do not add customer-facing features.
+Do not add branch design support yet.
