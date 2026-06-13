@@ -89,6 +89,33 @@ Do not add customer-facing features.
 
 ---
 
+# Best Collective Kit Factory V1 - Level 7 Production Dashboard
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 7 Production Dashboard checkpoint.
+
+Approved behavior:
+- /dashboard is the internal production command center.
+- Dashboard reads saved Version Library records from Supabase first, with local fallback.
+- Dashboard shows total versions, drafts, needs repair, QC passed, sale-ready, DocHub-ready, and archived counts.
+- Dashboard filters versions by all, drafts, needs repair, QC passed, sale-ready, DocHub-ready, and archived.
+- Dashboard shows recent versions.
+- Dashboard quick actions work for Open, Run QC, Archive, Repair, and Sale Ready.
+- Dashboard status changes persist through the Version Library/Supabase path.
+- /mapper remains untouched.
+- /builder remains stable.
+- /qc remains stable.
+- Brand Template V1 remains locked.
+- Print/PDF pipeline remains unchanged.
+
+Do not change Level 7 unless fixing a confirmed bug.
+Do not add customer-facing features.
+Do not add AI generation yet.
+Do not add branch design support yet.
+
+---
+
 # Best Collective Kit Factory V1 - Level 2 Content Mapper
 
 Approved on: 2026-06-09
