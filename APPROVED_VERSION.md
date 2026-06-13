@@ -210,3 +210,35 @@ Approved behavior:
 - Print/PDF pipeline still works.
 
 Do not change Level 4 unless fixing a confirmed bug.
+
+---
+
+# Best Collective Kit Factory V1 - Level 8A Paste Content Importer
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 8A Paste Content Importer checkpoint.
+
+Approved behavior:
+- /import exists as the Paste Content Importer.
+- Pasted kit content imports into the Builder.
+- Imported drafts reload correctly in /builder.
+- Lesson title and body map correctly.
+- Workbook prompt maps correctly.
+- Checklist items map correctly.
+- Table headers and rows map correctly.
+- Imported drafts keep blank fields blank.
+- No sample content appears unless Reset to Sample Content is clicked.
+- QC can catch real missing fields after import.
+- Print/PDF pipeline still uses locked Brand Template V1.
+- /mapper remains untouched.
+- /builder remains stable.
+- /version-library remains stable.
+- /qc remains stable.
+- /dashboard remains stable.
+- Brand Template V1 styling remains locked.
+
+Do not change Level 8A unless fixing a confirmed bug.
+Do not add AI generation yet.
+Do not add customer-facing features.
+Do not add branch design support yet.
