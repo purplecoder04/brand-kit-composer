@@ -62,6 +62,33 @@ Do not add branch design support yet.
 
 ---
 
+# Best Collective Kit Factory V1 - Level 6 QC Report MVP
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 6 internal QC Report MVP checkpoint.
+
+Approved behavior:
+- /qc runs QC against saved Version Library records.
+- Version Library includes a Run QC action for saved versions.
+- QC runs automatically when a saved version is selected.
+- Clean/simple versions can pass QC.
+- Broken versions correctly return Needs Repair.
+- QC flags missing titles, missing workbook prompts, table issues, checklist issues, sample/placeholder wording, overflow risks, and DocHub readiness concerns.
+- QC shows verdict, top blockers, all issues, and a repair prompt.
+- Save QC Results writes QC status, sale-ready status, DocHub-ready status, and QC notes back to Version Library/Supabase.
+- Print/PDF pipeline remains unchanged.
+- /mapper remains untouched.
+- /builder remains stable.
+- Brand Template V1 remains locked.
+
+Do not change Level 6 unless fixing a confirmed bug.
+Do not add fillable PDF/DocHub field mapping until the next approved level.
+Do not add AI generation yet.
+Do not add customer-facing features.
+
+---
+
 # Best Collective Kit Factory V1 - Level 2 Content Mapper
 
 Approved on: 2026-06-09
