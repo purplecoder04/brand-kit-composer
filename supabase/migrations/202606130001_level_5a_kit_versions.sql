@@ -20,3 +20,5 @@ create index if not exists kit_versions_updated_at_idx
 
 create index if not exists kit_versions_kit_name_idx
   on public.kit_versions (kit_name);
+
+alter table public.kit_versions enable row level security;
