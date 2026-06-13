@@ -242,3 +242,33 @@ Do not change Level 8A unless fixing a confirmed bug.
 Do not add AI generation yet.
 Do not add customer-facing features.
 Do not add branch design support yet.
+
+---
+
+# Best Collective Kit Factory V1 - Level 8B Import Review
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 8B Import Review checkpoint.
+
+Approved behavior:
+- Rough pasted kit content imports into the review screen.
+- Importer detects modules, lessons, worksheets, checklists, trackers, and tables.
+- Importer understands numbered headings, bullets, numbered items, and pipe table rows.
+- Import review screen lets kit info be edited before creating a Builder draft.
+- Import review screen lets block type, title, subtitle, body, prompt, writing lines, table headers, and table rows be edited before Builder.
+- Detected blocks can be deleted before import.
+- Reviewed content opens correctly in /builder.
+- Print/PDF pipeline still uses locked Brand Template V1.
+- QC still works on imported Builder drafts.
+- /mapper remains untouched.
+- /builder remains stable.
+- /version-library remains stable.
+- /qc remains stable.
+- /dashboard remains stable.
+- Brand Template V1 styling remains locked.
+
+Do not change Level 8B unless fixing a confirmed bug.
+Do not add AI generation yet.
+Do not add customer-facing features.
+Do not add branch design support yet.
