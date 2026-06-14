@@ -18,6 +18,7 @@ import {
 import {
   RESERVED_BUILDER_KIT_ID,
   buildBuilderKit,
+  getPageCountWarning,
   loadBuilderDraft,
   loadBuilderDraftFromUrlHash,
   loadBuilderDraftFromWindowName,
@@ -34,7 +35,23 @@ export const Route = createFileRoute("/print/$kitId")({
 });
 
 const LESSON_TYPES: PageType[] = ["cover", "divider", "lesson"];
-const WORKBOOK_TYPES: PageType[] = ["cover", "divider", "workbook", "notes", "back-cover"];
+const WORKBOOK_TYPES: PageType[] = [
+  "cover",
+  "divider",
+  "workbook",
+  "notes",
+  "back-cover",
+  "start-here",
+  "module-intro",
+  "quote",
+  "reflection",
+  "action-plan",
+  "resource",
+  "case-study",
+  "prompt-page",
+  "progress-check",
+  "closing",
+];
 
 function buildMapperKitFromContent(content: MapperContent | null): Kit | null {
   return content ? buildMapperKit(content) : null;
@@ -146,6 +163,7 @@ function filterBlocks(blocks: Block[], filter: "all" | "lesson" | "workbook") {
 
 function PrintKitDocument({ kit, blocks }: { kit: Kit; blocks: Block[] }) {
   const total = blocks.length;
+  const pageCountWarning = getPageCountWarning(total);
 
   return (
     <div
@@ -185,6 +203,30 @@ function PrintKitDocument({ kit, blocks }: { kit: Kit; blocks: Block[] }) {
       >
         <Printer style={{ width: 14, height: 14 }} /> Print / Save as PDF
       </button>
+      {pageCountWarning ? (
+        <div
+          className="print-only-hide"
+          style={{
+            position: "fixed",
+            top: "4rem",
+            right: "1rem",
+            width: "min(24rem, calc(100vw - 2rem))",
+            background: pageCountWarning.level === "review" ? "#fff1f0" : "#fff8e1",
+            color: pageCountWarning.level === "review" ? "#7a211f" : "#7a4a00",
+            border: `1px solid ${pageCountWarning.level === "review" ? "#9f3a38" : "#C6A85B"}`,
+            borderRadius: "0.5rem",
+            padding: "0.75rem 0.9rem",
+            fontSize: "12px",
+            lineHeight: 1.45,
+            boxShadow: "0 6px 18px rgba(0,0,0,0.12)",
+            zIndex: 50,
+            fontFamily: "var(--font-body, Inter, sans-serif)",
+          }}
+        >
+          <div style={{ fontWeight: 700 }}>{pageCountWarning.title}</div>
+          <div style={{ marginTop: "0.25rem" }}>{pageCountWarning.message}</div>
+        </div>
+      ) : null}
 
       <div
         className="print-stack-inner"

@@ -5,11 +5,10 @@ import {
   BotanicalSprig,
   CornerWash,
   Diamond,
+  InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
-  PLUM_DEEP,
   SparkleRule,
-  TEXT_INK,
 } from "./_decor";
 
 type Props = {
@@ -21,7 +20,8 @@ type Props = {
 
 export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
   const paragraphs = (block.body || "").split(/\n\s*\n/).filter(Boolean);
-  const gold = branchProfile.goldAccent;
+  const lineAccent = branchProfile.lineAccentColor;
+  const smallMark = branchProfile.smallMarkColor;
 
   return (
     <PageCanvas
@@ -31,11 +31,12 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
       showFooter={false}
       bleed
     >
+      <InteriorEditorialFrame branchProfile={branchProfile} />
       <CornerWash branchProfile={branchProfile} variant="topRight" />
       <CornerWash branchProfile={branchProfile} variant="bottomLeft" />
 
       <BotanicalSprig
-        color={gold}
+        color={smallMark}
         width="0.5in"
         height="1.4in"
         style={{ position: "absolute", left: "0.36in", top: "3.55in", opacity: 0.88 }}
@@ -49,7 +50,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
           top: "0.62in",
           width: "2.1in",
           height: "1px",
-          background: gold,
+          background: lineAccent,
           opacity: 0.72,
         }}
       />
@@ -69,7 +70,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
               fontSize: "10px",
               letterSpacing: "0.42em",
               textTransform: "uppercase",
-              color: PLUM_DEEP,
+              color: branchProfile.primaryColor,
               fontWeight: 600,
               marginBottom: "0.16in",
             }}
@@ -84,7 +85,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
             fontSize: "44px",
             lineHeight: 1.05,
             fontWeight: 500,
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
           }}
@@ -93,7 +94,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
         </h1>
 
         <SparkleRule
-          color={gold}
+          color={lineAccent}
           width="2in"
           marginTop="0.28in"
           marginBottom="0.4in"
@@ -105,7 +106,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
             position: "relative",
             maxWidth: "5.9in",
             padding: "0.08in 0.34in 0.08in 0.34in",
-            borderLeft: `2px solid ${gold}`,
+            borderLeft: `2px solid ${lineAccent}`,
             background: `linear-gradient(90deg, ${PAPER_PANEL} 0%, rgba(255,253,248,0) 92%)`,
           }}
         >
@@ -115,7 +116,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
               style={{
                 fontSize: "14.5px",
                 lineHeight: 1.72,
-                color: TEXT_INK,
+                color: branchProfile.textColor,
                 margin: "0 0 0.24in",
               }}
             >
@@ -125,9 +126,15 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
         </div>
 
         <div style={{ marginTop: "0.4in", display: "flex", alignItems: "center", gap: "0.12in" }}>
-          <Diamond color={gold} inline />
+          <Diamond color={smallMark} inline />
           <div
-            style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }}
+            style={{
+              flex: 1,
+              height: "1px",
+              background: lineAccent,
+              opacity: 0.5,
+              maxWidth: "1.2in",
+            }}
           />
         </div>
       </div>

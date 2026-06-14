@@ -1,10 +1,24 @@
 import type { CSSProperties } from "react";
 import type { BranchProfile } from "@/lib/branch-profile";
 
-export const PLUM_DEEP = "#2F1746";
 export const CREAM_PAPER = "#FAF4EA";
 export const PAPER_PANEL = "#FFFDF8";
-export const TEXT_INK = "#28242C";
+
+function shapeStrokeWidth(shapeWeight: BranchProfile["shapeWeight"], base = 1.25) {
+  const multiplier =
+    shapeWeight === "light-medium"
+      ? 0.82
+      : shapeWeight === "low-medium"
+        ? 0.9
+        : shapeWeight === "soft-medium" || shapeWeight === "medium-soft"
+          ? 0.96
+          : 1.08;
+  return base * multiplier;
+}
+
+function shapeOpacity(branchProfile: BranchProfile, base: number) {
+  return Math.min(1, Number((base * branchProfile.decorativeOpacity).toFixed(2)));
+}
 
 export function Diamond({
   color,
@@ -101,10 +115,46 @@ export function BotanicalSprig({
   );
 }
 
+function LeafLine({
+  color,
+  opacity = 0.55,
+  transform,
+}: {
+  color: string;
+  opacity?: number;
+  transform?: string;
+}) {
+  return (
+    <g transform={transform} opacity={opacity}>
+      <path d="M0 0 C 10 54 10 132 0 204" stroke={color} strokeWidth="1.05" fill="none" />
+      {[28, 58, 91, 126, 160].map((y, index) => {
+        const left = index % 2 === 0;
+        const tipX = left ? -28 : 28;
+        const ctrlX = left ? -43 : 43;
+        return (
+          <path
+            key={y}
+            d={`M0 ${y} C ${tipX} ${y - 15}, ${ctrlX} ${y + 8}, 0 ${y + 23} C ${left ? -12 : 12} ${y + 8}, ${left ? -13 : 13} ${y - 2}, 0 ${y} Z`}
+            stroke={color}
+            strokeWidth="0.8"
+            fill="none"
+          />
+        );
+      })}
+    </g>
+  );
+}
+
 /** Full-bleed organic cover artwork inspired by the reference image. */
 export function CoverOrganicFrame({ branchProfile }: { branchProfile: BranchProfile }) {
-  const plum = PLUM_DEEP;
-  const { lilacColor, blushColor, stoneColor, goldAccent } = branchProfile;
+  const {
+    dominantShapeColor,
+    secondaryShapeColor,
+    softWashColor,
+    lineAccentColor,
+    smallMarkColor,
+  } = branchProfile;
+  const strokeWidth = shapeStrokeWidth(branchProfile.shapeWeight);
 
   return (
     <svg
@@ -119,57 +169,141 @@ export function CoverOrganicFrame({ branchProfile }: { branchProfile: BranchProf
         pointerEvents: "none",
       }}
     >
-      <rect width="850" height="1100" fill={CREAM_PAPER} />
+      <rect width="850" height="1100" fill={branchProfile.backgroundColor} />
       <path
-        d="M0,0 C78,150 142,245 102,380 C68,494 34,590 92,720 C142,832 228,896 344,934 C426,960 474,1002 506,1100 L0,1100 Z"
-        fill={plum}
+        d="M0,0 L132,0 C166,112 146,204 112,304 C78,405 64,492 98,594 C132,696 126,784 95,884 C64,984 78,1042 132,1100 L0,1100 Z"
+        fill={dominantShapeColor}
       />
       <path
-        d="M45,0 C92,120 146,206 136,318 C126,426 68,514 92,638 C118,774 234,827 274,911 C143,836 68,747 38,622 C12,516 54,414 60,326 C68,214 28,104 0,0 Z"
-        fill={lilacColor}
-        opacity={0.78}
+        d="M118,0 C178,96 174,198 132,310 C92,419 92,508 132,620 C174,736 160,842 118,950 C92,1018 104,1068 152,1100 L72,1100 C36,998 54,910 90,818 C126,726 118,632 83,526 C45,411 70,316 104,226 C138,136 138,62 92,0 Z"
+        fill={secondaryShapeColor}
+        opacity={shapeOpacity(branchProfile, 0.78)}
       />
       <path
-        d="M850,0 L850,375 C795,317 750,270 756,190 C762,104 720,48 648,0 Z"
-        fill={stoneColor}
-        opacity={0.82}
+        d="M850,0 L850,1100 L770,1100 C724,1008 724,908 774,802 C822,698 830,610 792,506 C758,413 768,318 812,222 C848,144 832,70 770,0 Z"
+        fill={secondaryShapeColor}
+        opacity={shapeOpacity(branchProfile, 0.58)}
       />
       <path
-        d="M850,292 C792,382 760,475 790,594 C822,720 768,835 668,923 C596,985 566,1042 548,1100 L850,1100 Z"
-        fill={stoneColor}
-        opacity={0.72}
+        d="M850,210 C792,290 768,382 804,488 C840,594 820,690 772,792 C724,894 714,1004 758,1100 L850,1100 Z"
+        fill={softWashColor}
+        opacity={shapeOpacity(branchProfile, 0.88)}
       />
       <path
-        d="M850,362 C802,408 764,486 778,590 C790,682 745,767 680,836 C686,710 638,654 666,548 C698,424 780,380 850,362 Z"
-        fill={blushColor}
-        opacity={0.78}
+        d="M648,0 C722,86 742,170 716,258 C690,346 718,416 784,500 C846,578 840,650 774,732 C706,818 686,914 724,1020 C734,1050 748,1078 770,1100 L850,1100 L850,0 Z"
+        fill={softWashColor}
+        opacity={shapeOpacity(branchProfile, 0.45)}
       />
       <path
-        d="M620,0 C704,72 746,150 724,248 C704,338 752,402 850,466 L850,0 Z"
+        d="M622,0 C706,72 750,156 728,250 C708,340 754,404 850,466 L850,0 Z"
         fill={PAPER_PANEL}
-        opacity={0.72}
+        opacity={shapeOpacity(branchProfile, 0.42)}
       />
       <path
-        d="M0,128 C52,228 76,310 53,412 C25,536 24,660 86,767 C143,866 210,906 334,943 C408,965 457,1014 488,1100"
+        d="M88,0 C128,104 128,188 96,284 C62,384 54,480 92,586 C130,692 126,792 90,898 C62,982 66,1048 112,1100"
         fill="none"
-        stroke={goldAccent}
-        strokeWidth="2"
+        stroke={lineAccentColor}
+        strokeWidth={strokeWidth * 1.25}
         opacity={0.95}
       />
       <path
-        d="M724,0 C770,66 790,138 775,219 C760,306 798,368 850,423"
+        d="M786,0 C828,94 824,180 790,270 C752,370 756,470 798,578 C840,686 824,786 778,892 C742,976 742,1042 786,1100"
         fill="none"
-        stroke={goldAccent}
-        strokeWidth="1.5"
+        stroke={lineAccentColor}
+        strokeWidth={strokeWidth}
         opacity={0.85}
       />
       <path
-        d="M696,852 C742,768 750,690 728,612 C700,510 742,421 850,336"
+        d="M718,154 C752,244 744,328 706,418 C664,516 668,612 714,712 C758,808 750,910 704,1008"
         fill="none"
         stroke="#ffffff"
-        strokeWidth="1.4"
-        opacity={0.7}
+        strokeWidth={strokeWidth * 0.9}
+        opacity={shapeOpacity(branchProfile, 0.62)}
       />
+      <LeafLine
+        color={lineAccentColor}
+        opacity={shapeOpacity(branchProfile, 0.75)}
+        transform="translate(86 505) rotate(-8)"
+      />
+      <LeafLine
+        color={smallMarkColor}
+        opacity={shapeOpacity(branchProfile, 0.42)}
+        transform="translate(780 584) rotate(8)"
+      />
+      {[128, 360, 640, 890].map((y, index) => (
+        <path
+          key={y}
+          d="M0 -5 L4 0 L0 5 L-4 0 Z"
+          fill={index % 2 === 0 ? lineAccentColor : smallMarkColor}
+          opacity={shapeOpacity(branchProfile, 0.78)}
+          transform={`translate(${index % 2 === 0 ? 758 : 132} ${y})`}
+        />
+      ))}
+    </svg>
+  );
+}
+
+export function InteriorEditorialFrame({
+  branchProfile,
+  density = "quiet",
+}: {
+  branchProfile: BranchProfile;
+  density?: "quiet" | "feature";
+}) {
+  const opacityBoost = density === "feature" ? 1.16 : 0.78;
+  const strokeWidth = shapeStrokeWidth(branchProfile.shapeWeight, 0.95);
+
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 850 1100"
+      preserveAspectRatio="none"
+      style={{
+        position: "absolute",
+        inset: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+      }}
+    >
+      <path
+        d="M0,0 L92,0 C126,110 108,206 72,314 C34,424 36,514 76,618 C118,728 112,828 76,934 C44,1018 52,1070 88,1100 L0,1100 Z"
+        fill={branchProfile.dominantShapeColor}
+        opacity={shapeOpacity(branchProfile, 0.2 * opacityBoost)}
+      />
+      <path
+        d="M72,0 C116,96 114,190 82,286 C48,386 48,486 86,594 C124,702 120,806 84,910 C58,988 58,1052 92,1100"
+        fill="none"
+        stroke={branchProfile.lineAccentColor}
+        strokeWidth={strokeWidth}
+        opacity={shapeOpacity(branchProfile, 0.58 * opacityBoost)}
+      />
+      <path
+        d="M850,0 L850,1100 L766,1100 C724,1002 726,904 772,800 C818,696 822,608 786,506 C752,410 762,316 808,214 C842,138 830,72 766,0 Z"
+        fill={branchProfile.softWashColor}
+        opacity={shapeOpacity(branchProfile, 0.46 * opacityBoost)}
+      />
+      <path
+        d="M792,0 C838,96 836,184 804,278 C768,384 776,478 814,580 C850,674 838,772 792,878 C754,968 754,1038 796,1100"
+        fill="none"
+        stroke={branchProfile.secondaryShapeColor}
+        strokeWidth={strokeWidth}
+        opacity={shapeOpacity(branchProfile, 0.48 * opacityBoost)}
+      />
+      {density === "feature" ? (
+        <>
+          <LeafLine
+            color={branchProfile.lineAccentColor}
+            opacity={shapeOpacity(branchProfile, 0.48)}
+            transform="translate(92 650) rotate(-8)"
+          />
+          <LeafLine
+            color={branchProfile.smallMarkColor}
+            opacity={shapeOpacity(branchProfile, 0.28)}
+            transform="translate(780 190) rotate(9)"
+          />
+        </>
+      ) : null}
     </svg>
   );
 }
@@ -189,7 +323,7 @@ export function KitFooterBand({
   showPageNumber?: boolean;
   height?: string;
 }) {
-  const gold = branchProfile.goldAccent;
+  const gold = branchProfile.lineAccentColor;
   const footerText = label ?? branchProfile.footerLabel;
 
   return (
@@ -201,9 +335,9 @@ export function KitFooterBand({
         right: 0,
         bottom: 0,
         height,
-        background: `linear-gradient(90deg, ${PLUM_DEEP}, ${branchProfile.primaryColor})`,
+        background: `linear-gradient(90deg, ${branchProfile.footerBarColor}, ${branchProfile.secondaryShapeColor})`,
         borderTop: `1px solid ${gold}`,
-        color: CREAM_PAPER,
+        color: branchProfile.footerTextColor,
       }}
     >
       <div
@@ -256,7 +390,8 @@ export function CornerWash({
   branchProfile: BranchProfile;
   variant?: "topRight" | "topLeft" | "bottomLeft" | "bottomRight" | "both";
 }) {
-  const { lilacColor, blushColor, stoneColor, primaryColor, goldAccent } = branchProfile;
+  const { softWashColor, secondaryShapeColor, dominantShapeColor, lineAccentColor } = branchProfile;
+  const strokeWidth = shapeStrokeWidth(branchProfile.shapeWeight, 1.1);
   const showTL = variant === "topLeft" || variant === "both";
   const showTR = variant === "topRight" || variant === "both";
   const showBL = variant === "bottomLeft" || variant === "both";
@@ -278,18 +413,18 @@ export function CornerWash({
         <>
           <path
             d="M0,0 L276,0 C226,86 162,124 114,202 C60,290 28,350 0,392 Z"
-            fill={lilacColor}
-            opacity={0.58}
+            fill={softWashColor}
+            opacity={shapeOpacity(branchProfile, 0.58)}
           />
           <path
             d="M0,0 L126,0 C144,82 88,144 44,216 C18,258 4,304 0,338 Z"
-            fill={primaryColor}
-            opacity={0.5}
+            fill={dominantShapeColor}
+            opacity={shapeOpacity(branchProfile, 0.5)}
           />
           <path
             d="M24,238 C46,176 82,122 146,72"
-            stroke={goldAccent}
-            strokeWidth="1.25"
+            stroke={lineAccentColor}
+            strokeWidth={strokeWidth}
             fill="none"
             opacity={0.82}
           />
@@ -299,18 +434,18 @@ export function CornerWash({
         <>
           <path
             d="M850,0 L586,0 C622,82 706,126 762,206 C812,278 838,342 850,394 Z"
-            fill={blushColor}
-            opacity={0.58}
+            fill={softWashColor}
+            opacity={shapeOpacity(branchProfile, 0.58)}
           />
           <path
             d="M850,0 L704,0 C754,78 782,138 770,216 C758,296 808,348 850,384 Z"
-            fill={stoneColor}
-            opacity={0.76}
+            fill={secondaryShapeColor}
+            opacity={shapeOpacity(branchProfile, 0.76)}
           />
           <path
             d="M828,226 C810,162 774,112 708,66"
-            stroke={goldAccent}
-            strokeWidth="1.25"
+            stroke={lineAccentColor}
+            strokeWidth={strokeWidth}
             fill="none"
             opacity={0.82}
           />
@@ -320,18 +455,18 @@ export function CornerWash({
         <>
           <path
             d="M0,1100 L0,780 C44,850 98,902 158,960 C220,1020 260,1066 284,1100 Z"
-            fill={blushColor}
-            opacity={0.5}
+            fill={softWashColor}
+            opacity={shapeOpacity(branchProfile, 0.5)}
           />
           <path
             d="M0,1100 L0,902 C34,938 72,978 118,1016 C164,1054 192,1082 208,1100 Z"
-            fill={stoneColor}
-            opacity={0.68}
+            fill={secondaryShapeColor}
+            opacity={shapeOpacity(branchProfile, 0.68)}
           />
           <path
             d="M20,1016 C78,972 124,932 154,874"
-            stroke={goldAccent}
-            strokeWidth="1.1"
+            stroke={lineAccentColor}
+            strokeWidth={strokeWidth}
             fill="none"
             opacity={0.72}
           />
@@ -341,18 +476,18 @@ export function CornerWash({
         <>
           <path
             d="M850,1100 L850,780 C806,850 752,902 692,960 C630,1020 590,1066 566,1100 Z"
-            fill={lilacColor}
-            opacity={0.5}
+            fill={softWashColor}
+            opacity={shapeOpacity(branchProfile, 0.5)}
           />
           <path
             d="M850,1100 L850,902 C816,938 778,978 732,1016 C686,1054 658,1082 642,1100 Z"
-            fill={primaryColor}
-            opacity={0.42}
+            fill={dominantShapeColor}
+            opacity={shapeOpacity(branchProfile, 0.42)}
           />
           <path
             d="M830,1016 C772,972 726,932 696,874"
-            stroke={goldAccent}
-            strokeWidth="1.1"
+            stroke={lineAccentColor}
+            strokeWidth={strokeWidth}
             fill="none"
             opacity={0.72}
           />

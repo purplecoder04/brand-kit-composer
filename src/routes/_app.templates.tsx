@@ -17,6 +17,16 @@ const SHARED_PAGE_TYPES = [
   "Checklist Page",
   "Notes Page",
   "Back Cover",
+  "Start Here Page",
+  "Module Intro Page",
+  "Quote / Opening Thought Page",
+  "Reflection Page",
+  "Action Plan Page",
+  "Resource Page",
+  "Case Study / Example Page",
+  "Prompt Page",
+  "Progress Check Page",
+  "Closing / Next Steps Page",
 ];
 
 function BranchTemplatesPage() {
@@ -34,7 +44,7 @@ function BranchTemplatesPage() {
         system.
       </p>
 
-      <div className="mt-8 grid gap-4 lg:grid-cols-4">
+      <div className="mt-8 grid gap-4 lg:grid-cols-3 2xl:grid-cols-5">
         {BRANCH_TEMPLATE_PROFILES.map((profile) => (
           <section
             key={profile.name}
@@ -53,8 +63,13 @@ function BranchTemplatesPage() {
                   className="mt-1 text-2xl"
                   style={{ fontFamily: "var(--font-display)", color: "#222026" }}
                 >
-                  {profile.name}
+                  {profile.displayName}
                 </h2>
+                {profile.displayName !== profile.name ? (
+                  <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                    Branch: {profile.name}
+                  </div>
+                ) : null}
               </div>
               <span
                 className="rounded-full border px-2 py-1 text-[10px] uppercase tracking-[0.18em]"
@@ -78,21 +93,22 @@ function BranchTemplatesPage() {
               <InfoRow icon={<Palette className="h-4 w-4" />} label="Colors">
                 {profile.colorProfilePlaceholder}
               </InfoRow>
+              <InfoRow icon={<Shapes className="h-4 w-4" />} label="Mood">
+                {profile.mood}
+              </InfoRow>
             </div>
 
-            <div className="mt-5 flex gap-2" aria-label={`${profile.name} color profile`}>
-              {[
-                profile.primaryColor,
-                profile.accentColor,
-                profile.goldAccent,
-                profile.blushColor,
-                profile.lilacColor,
-              ].map((color) => (
-                <span
-                  key={color}
-                  className="h-6 w-6 rounded-sm border"
-                  style={{ background: color, borderColor: "#D8CEC2" }}
-                />
+            <div className="mt-5 grid gap-2" aria-label={`${profile.name} color profile`}>
+              {profile.colorSwatches.map((swatch) => (
+                <div key={`${swatch.label}-${swatch.color}`} className="flex items-center gap-2">
+                  <span
+                    className="h-6 w-6 shrink-0 rounded-sm border"
+                    style={{ background: swatch.color, borderColor: "#D8CEC2" }}
+                  />
+                  <span className="text-xs" style={{ color: "#4d4651" }}>
+                    {swatch.label}
+                  </span>
+                </div>
               ))}
             </div>
 
@@ -101,6 +117,18 @@ function BranchTemplatesPage() {
               style={{ borderColor: "#D8CEC2", background: "#fff", color: "#6b6470" }}
             >
               Footer label: <span style={{ color: "#222026" }}>{profile.footerLabel}</span>
+            </div>
+            <div
+              className="mt-2 rounded-md border px-3 py-2 text-xs"
+              style={{ borderColor: "#D8CEC2", background: "#fff", color: "#6b6470" }}
+            >
+              Decorative weight: <span style={{ color: "#222026" }}>{profile.shapeWeight}</span>
+            </div>
+            <div
+              className="mt-2 rounded-md border px-3 py-2 text-xs"
+              style={{ borderColor: "#D8CEC2", background: "#fff", color: "#6b6470" }}
+            >
+              Cover path: <span style={{ color: "#222026" }}>{profile.coverImagePath}</span>
             </div>
           </section>
         ))}
@@ -112,10 +140,7 @@ function BranchTemplatesPage() {
       >
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5" style={{ color: "#4F2D68" }} />
-          <h2
-            className="text-xl"
-            style={{ fontFamily: "var(--font-display)", color: "#222026" }}
-          >
+          <h2 className="text-xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
             Shared workbook engine
           </h2>
         </div>

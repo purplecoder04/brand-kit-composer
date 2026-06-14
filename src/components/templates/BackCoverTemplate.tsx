@@ -5,11 +5,10 @@ import {
   BotanicalSprig,
   CornerWash,
   Diamond,
+  InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
-  PLUM_DEEP,
   SparkleRule,
-  TEXT_INK,
 } from "./_decor";
 
 type Props = {
@@ -20,7 +19,8 @@ type Props = {
 };
 
 export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
-  const gold = branchProfile.goldAccent;
+  const lineAccent = branchProfile.lineAccentColor;
+  const smallMark = branchProfile.smallMarkColor;
 
   return (
     <PageCanvas
@@ -30,10 +30,11 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
       showFooter={false}
       bleed
     >
+      <InteriorEditorialFrame branchProfile={branchProfile} density="feature" />
       <CornerWash branchProfile={branchProfile} variant="both" />
 
       <BotanicalSprig
-        color={gold}
+        color={smallMark}
         width="0.68in"
         height="1.72in"
         style={{
@@ -52,7 +53,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
           right: "0.7in",
           top: "0.76in",
           height: "1px",
-          background: gold,
+          background: lineAccent,
           opacity: 0.72,
         }}
       />
@@ -73,7 +74,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
             fontSize: "9.5px",
             letterSpacing: "0.42em",
             textTransform: "uppercase",
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             fontWeight: 600,
           }}
         >
@@ -87,7 +88,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
             fontSize: "46px",
             lineHeight: 1.05,
             fontWeight: 500,
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             letterSpacing: "0",
           }}
         >
@@ -108,7 +109,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
           </div>
         ) : null}
 
-        <SparkleRule color={gold} width="2.25in" marginTop="0.28in" marginBottom="0.3in" />
+        <SparkleRule color={lineAccent} width="2.25in" marginTop="0.28in" marginBottom="0.3in" />
 
         {block.body ? (
           <p
@@ -118,7 +119,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
               fontFamily: "var(--font-body, Inter, sans-serif)",
               fontSize: "14px",
               lineHeight: 1.75,
-              color: TEXT_INK,
+              color: branchProfile.textColor,
             }}
           >
             {block.body}
@@ -132,10 +133,10 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
               minWidth: "3.4in",
               maxWidth: "5.4in",
               padding: "0.16in 0.28in",
-              borderTop: `1px solid ${gold}`,
-              borderBottom: `1px solid ${gold}`,
+              borderTop: `1px solid ${lineAccent}`,
+              borderBottom: `1px solid ${lineAccent}`,
               background: PAPER_PANEL,
-              color: PLUM_DEEP,
+              color: branchProfile.primaryColor,
               fontSize: "10px",
               fontWeight: 600,
               letterSpacing: "0.24em",
@@ -160,7 +161,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
               fontWeight: 600,
             }}
           >
-            <Diamond color={gold} inline size={10} />
+            <Diamond color={smallMark} inline size={10} />
             <span>{block.subtitle}</span>
           </div>
         ) : null}

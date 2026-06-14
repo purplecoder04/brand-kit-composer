@@ -5,10 +5,9 @@ import {
   BotanicalSprig,
   CornerWash,
   Diamond,
+  InteriorEditorialFrame,
   KitFooterBand,
-  PLUM_DEEP,
   SparkleRule,
-  TEXT_INK,
 } from "./_decor";
 
 type Props = {
@@ -19,7 +18,8 @@ type Props = {
 };
 
 export function SectionDividerTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
-  const gold = branchProfile.goldAccent;
+  const lineAccent = branchProfile.lineAccentColor;
+  const smallMark = branchProfile.smallMarkColor;
   return (
     <PageCanvas
       branchProfile={branchProfile}
@@ -28,6 +28,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
       showFooter={false}
       bleed
     >
+      <InteriorEditorialFrame branchProfile={branchProfile} density="feature" />
       <CornerWash branchProfile={branchProfile} variant="both" />
 
       <div
@@ -38,7 +39,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
           right: "0.65in",
           top: "0.62in",
           height: "1px",
-          background: gold,
+          background: lineAccent,
           opacity: 0.7,
         }}
       />
@@ -63,7 +64,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
             fontSize: "11px",
             letterSpacing: "0.42em",
             textTransform: "uppercase",
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             fontWeight: 600,
             marginBottom: "0.24in",
           }}
@@ -71,7 +72,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
           {block.title}
         </div>
 
-        <SparkleRule color={gold} width="2.2in" marginBottom="0.4in" />
+        <SparkleRule color={lineAccent} width="2.2in" marginBottom="0.4in" />
 
         <h2
           style={{
@@ -79,7 +80,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
             fontSize: "64px",
             lineHeight: 1.05,
             fontWeight: 500,
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
             maxWidth: "6in",
@@ -88,9 +89,9 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
           {block.subtitle}
         </h2>
 
-        <Diamond color={gold} style={{ marginTop: "0.4in" }} />
+        <Diamond color={smallMark} style={{ marginTop: "0.4in" }} />
         <BotanicalSprig
-          color={gold}
+          color={smallMark}
           width="0.55in"
           height="1.05in"
           style={{ marginTop: "0.18in" }}
@@ -102,7 +103,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
               marginTop: "0.3in",
               fontSize: "14px",
               lineHeight: 1.7,
-              color: TEXT_INK,
+              color: branchProfile.textColor,
               maxWidth: "4.2in",
               fontStyle: "italic",
               opacity: 0.85,

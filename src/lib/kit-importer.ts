@@ -37,11 +37,11 @@ const AUDIENCE_RE = /^audience\s*:\s*(.+)$/i;
 const TONE_RE = /^tone\s*:\s*(.+)$/i;
 const TAGLINE_RE = /^tagline\s*:\s*(.+)$/i;
 const HEADING_RE =
-  /^(cover|section|divider|module|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
+  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
 const BARE_HEADING_RE =
-  /^(cover|section|divider|module|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
+  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
 const PAGE_LABEL_HEADING_RE =
-  /^(cover page|section divider|lesson page|table\s*\/\s*tracker page|table page|tracker page|workbook page|checklist page|notes page)\s*(?::|[-.])?\s*(.*)$/i;
+  /^(cover page|section divider|lesson page|table\s*\/\s*tracker page|table page|tracker page|workbook page|checklist page|notes page|back cover page|start here page|module intro page|quote\s*\/\s*opening thought page|quote page|opening thought page|reflection page|action plan page|resource page|case study\s*\/\s*example page|case study page|example page|prompt page|progress check page|closing\s*\/\s*next steps page|closing page|next steps page)\s*(?::|[-.])?\s*(.*)$/i;
 const NUMBERED_HEADING_RE =
   /^(?:\d+[).]\s*)?(lesson|step|module|worksheet|reflection|tracker)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.+)$/i;
 const BODY_RE = /^(body|lesson body|description)\s*:\s*(.*)$/i;
@@ -410,9 +410,11 @@ function normalizeSectionType(value: string): PageType {
     lower === "section" ||
     lower === "divider" ||
     lower === "module" ||
+    lower === "module intro" ||
+    lower === "module intro page" ||
     lower === "section divider"
   )
-    return "divider";
+    return lower.includes("module intro") ? "module-intro" : "divider";
   if (
     lower === "workbook" ||
     lower === "workbook page" ||
@@ -424,6 +426,36 @@ function normalizeSectionType(value: string): PageType {
   if (lower === "checklist" || lower === "checklist page") return "checklist";
   if (lower === "notes" || lower === "notes page") return "notes";
   if (lower === "back cover" || lower === "back cover page") return "back-cover";
+  if (lower === "start here" || lower === "start here page") return "start-here";
+  if (
+    lower === "quote" ||
+    lower === "quote page" ||
+    lower === "opening thought" ||
+    lower === "opening thought page" ||
+    lower === "quote / opening thought page"
+  )
+    return "quote";
+  if (lower === "reflection page") return "reflection";
+  if (lower === "action plan" || lower === "action plan page") return "action-plan";
+  if (lower === "resource" || lower === "resource page") return "resource";
+  if (
+    lower === "case study" ||
+    lower === "case study page" ||
+    lower === "example" ||
+    lower === "example page" ||
+    lower === "case study / example page"
+  )
+    return "case-study";
+  if (lower === "prompt page") return "prompt-page";
+  if (lower === "progress check" || lower === "progress check page") return "progress-check";
+  if (
+    lower === "closing" ||
+    lower === "closing page" ||
+    lower === "next steps" ||
+    lower === "next steps page" ||
+    lower === "closing / next steps page"
+  )
+    return "closing";
   if (
     lower === "table" ||
     lower === "tracker" ||
@@ -440,6 +472,15 @@ function titleFromBareHeading(lowerType: string): string {
   if (lowerType === "checklist") return "Checklist";
   if (lowerType === "notes") return "Notes";
   if (lowerType === "back cover") return "Back Cover";
+  if (lowerType === "start here") return "Start Here";
+  if (lowerType === "module intro") return "Module Intro";
+  if (lowerType === "quote" || lowerType === "opening thought") return "Opening Thought";
+  if (lowerType === "action plan") return "Action Plan";
+  if (lowerType === "resource") return "Resources";
+  if (lowerType === "case study" || lowerType === "example") return "Case Study";
+  if (lowerType === "prompt page") return "Prompt";
+  if (lowerType === "progress check") return "Progress Check";
+  if (lowerType === "closing" || lowerType === "next steps") return "Next Steps";
   if (lowerType === "tracker") return "Tracker";
   if (lowerType === "table") return "Table";
   if (lowerType === "workbook" || lowerType === "worksheet") return "Workbook";
@@ -537,5 +578,25 @@ function pageTypeName(pageType: PageType): string {
       return "Notes";
     case "back-cover":
       return "Back Cover";
+    case "start-here":
+      return "Start Here";
+    case "module-intro":
+      return "Module Intro";
+    case "quote":
+      return "Quote";
+    case "reflection":
+      return "Reflection";
+    case "action-plan":
+      return "Action Plan";
+    case "resource":
+      return "Resource";
+    case "case-study":
+      return "Case Study";
+    case "prompt-page":
+      return "Prompt";
+    case "progress-check":
+      return "Progress Check";
+    case "closing":
+      return "Closing";
   }
 }

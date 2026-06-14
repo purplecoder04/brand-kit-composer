@@ -45,7 +45,23 @@ export type BuilderWarning = {
     | "workbook"
     | "checklist"
     | "notes"
-    | "back-cover";
+    | "back-cover"
+    | "start-here"
+    | "module-intro"
+    | "quote"
+    | "reflection"
+    | "action-plan"
+    | "resource"
+    | "case-study"
+    | "prompt-page"
+    | "progress-check"
+    | "closing";
+  message: string;
+};
+
+export type PageCountWarning = {
+  level: "large" | "review";
+  title: "Large workbook" | "Review before export";
   message: string;
 };
 
@@ -56,6 +72,12 @@ const TABLE_ROWS_PER_PAGE = 8;
 const WORKBOOK_PROMPT_LIMIT = 280;
 const CHECKLIST_ITEMS_PER_PAGE = 12;
 const NOTES_PROMPT_LIMIT = 280;
+const LARGE_WORKBOOK_PAGE_COUNT = 21;
+const REVIEW_WORKBOOK_PAGE_COUNT = 41;
+const LARGE_WORKBOOK_MESSAGE =
+  "This is becoming a large workbook. Review spacing, page flow, and export quality before selling.";
+const REVIEW_WORKBOOK_MESSAGE =
+  "This workbook is over 40 pages. Please review page flow, file size, print quality, and whether it should be split into multiple products before export.";
 
 export const BUILDER_BLOCK_TYPES: Array<{ type: PageType; label: string }> = [
   { type: "cover", label: "Cover" },
@@ -66,6 +88,16 @@ export const BUILDER_BLOCK_TYPES: Array<{ type: PageType; label: string }> = [
   { type: "checklist", label: "Checklist Page" },
   { type: "notes", label: "Notes Page" },
   { type: "back-cover", label: "Back Cover" },
+  { type: "start-here", label: "Start Here Page" },
+  { type: "module-intro", label: "Module Intro Page" },
+  { type: "quote", label: "Quote / Opening Thought Page" },
+  { type: "reflection", label: "Reflection Page" },
+  { type: "action-plan", label: "Action Plan Page" },
+  { type: "resource", label: "Resource Page" },
+  { type: "case-study", label: "Case Study / Example Page" },
+  { type: "prompt-page", label: "Prompt Page" },
+  { type: "progress-check", label: "Progress Check Page" },
+  { type: "closing", label: "Closing / Next Steps Page" },
 ];
 
 export function createBlankBuilderDraft(): BuilderDraft {
@@ -94,7 +126,8 @@ export function createBuilderBlock(pageType: PageType, order = 1): BuilderBlock 
     body: "",
     keywords: "",
     prompt: "",
-    lines: pageType === "workbook" ? 12 : "",
+    lines:
+      pageType === "workbook" || pageType === "reflection" || pageType === "prompt-page" ? 12 : "",
     tableData: {
       headers: ["", "", ""],
       rows: [["", "", ""]],
@@ -224,11 +257,19 @@ export function buildPagesFromKitDraft(draft: BuilderDraft): Block[] {
 export function getBuilderWarnings(draft: BuilderDraft): BuilderWarning[] {
   const warnings: BuilderWarning[] = [];
   const normalized = normalizeDraft(draft);
+  const pageCountWarning = getPageCountWarning(buildPagesFromKitDraft(normalized).length);
 
   if (normalized.blocks.length === 0) {
     warnings.push({
       scope: "kit",
       message: "No blocks have been added yet.",
+    });
+  }
+
+  if (pageCountWarning) {
+    warnings.push({
+      scope: "kit",
+      message: pageCountWarning.message,
     });
   }
 
@@ -337,32 +378,56 @@ export function getBuilderWarnings(draft: BuilderDraft): BuilderWarning[] {
       }
     }
 
-    if (block.pageType === "notes") {
+    if (
+      block.pageType === "notes" ||
+      block.pageType === "reflection" ||
+      block.pageType === "prompt-page"
+    ) {
       if (block.prompt.length > NOTES_PROMPT_LIMIT) {
         warnings.push({
           blockId: block.id,
-          scope: "notes",
-          message: `${block.title || "Notes page"} has a long prompt that may reduce writing space.`,
+          scope: block.pageType,
+          message: `${block.title || pageTypeLabel(block.pageType)} has a long prompt that may reduce writing space.`,
         });
       }
       if (block.lines === "") {
         warnings.push({
           blockId: block.id,
-          scope: "notes",
-          message: `${block.title || "Notes page"} is missing a writing line count.`,
+          scope: block.pageType,
+          message: `${block.title || pageTypeLabel(block.pageType)} is missing a writing line count.`,
         });
       }
       if (typeof block.lines === "number" && (block.lines < 4 || block.lines > 20)) {
         warnings.push({
           blockId: block.id,
-          scope: "notes",
-          message: `${block.title || "Notes page"} writing lines should stay between 4 and 20.`,
+          scope: block.pageType,
+          message: `${block.title || pageTypeLabel(block.pageType)} writing lines should stay between 4 and 20.`,
         });
       }
     }
   }
 
   return warnings;
+}
+
+export function getPageCountWarning(pageCount: number): PageCountWarning | null {
+  if (pageCount >= REVIEW_WORKBOOK_PAGE_COUNT) {
+    return {
+      level: "review",
+      title: "Review before export",
+      message: REVIEW_WORKBOOK_MESSAGE,
+    };
+  }
+
+  if (pageCount >= LARGE_WORKBOOK_PAGE_COUNT) {
+    return {
+      level: "large",
+      title: "Large workbook",
+      message: LARGE_WORKBOOK_MESSAGE,
+    };
+  }
+
+  return null;
 }
 
 export function normalizeDraft(draft: BuilderDraft): BuilderDraft {

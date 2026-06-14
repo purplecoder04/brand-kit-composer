@@ -458,8 +458,8 @@ function ImportPage() {
         Paste Content Importer
       </h1>
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Upload a .txt, .md, or .docx file, or paste rough kit content, then review the detected
-        blocks before sending the cleaned draft to Builder.
+        Upload a .txt, .md, or .docx file, or paste rough kit content. Review the detected pages,
+        page count, and QC notes before sending the cleaned draft to Builder.
       </p>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(420px,0.8fr)_minmax(0,1fr)]">
@@ -535,7 +535,7 @@ function ImportPage() {
                   disabled={!hasContent || reviewDraft.blocks.length === 0 || hasImportBlockers}
                   style={{ background: "#4F2D68", color: "#fff" }}
                 >
-                  <ArrowRight className="mr-2 h-4 w-4" /> Create Builder Draft
+                  <ArrowRight className="mr-2 h-4 w-4" /> Send to Builder
                 </Button>
                 <Button
                   type="button"
@@ -548,7 +548,7 @@ function ImportPage() {
                     hasImportBlockers
                   }
                 >
-                  <Library className="mr-2 h-4 w-4" /> Create Draft + Save Version
+                  <Library className="mr-2 h-4 w-4" /> Save Version Snapshot
                 </Button>
                 <Button
                   type="button"
@@ -709,6 +709,12 @@ function ImportQualityGate({
   const status = blockCount === 0 ? "Needs Review" : blockers.length > 0 ? "Needs Repair" : "Ready";
   const statusColor =
     status === "Ready" ? "#2E5B33" : status === "Needs Repair" ? "#7a1f1f" : "#8a5a00";
+  const continuationPages = Math.max(0, report.pageCount - blockCount);
+  const pageCountWarning = warnings.find(
+    (issue) =>
+      issue.area === "Layout Safety" &&
+      (issue.message.includes("large workbook") || issue.message.includes("over 40 pages")),
+  );
 
   return (
     <Card>
@@ -735,6 +741,23 @@ function ImportQualityGate({
       </CardHeader>
       <CardContent className="space-y-3">
         <div
+          className="grid gap-2 rounded-md border p-3 text-sm sm:grid-cols-3"
+          style={{ borderColor: "#D8CEC2", background: "#FBF7F1" }}
+        >
+          <PlanMetric label="Detected Blocks" value={String(blockCount)} />
+          <PlanMetric label="Printable Pages" value={String(report.pageCount)} />
+          <PlanMetric
+            label="Extra Pages"
+            value={continuationPages > 0 ? `+${continuationPages}` : "0"}
+          />
+          <div className="sm:col-span-3 text-xs" style={{ color: "#6b6470" }}>
+            {continuationPages > 0
+              ? "Extra pages come from continuation rules, like long lessons, long tables, or long checklists."
+              : "Each page label is currently fitting as one printable page."}
+          </div>
+        </div>
+
+        <div
           className="rounded-md border p-3 text-sm"
           style={{ borderColor: "#D8CEC2", background: "#fff" }}
         >
@@ -760,9 +783,13 @@ function ImportQualityGate({
           </Alert>
         ) : warnings.length > 0 ? (
           <Alert>
-            <AlertTitle>Warnings can move forward</AlertTitle>
+            <AlertTitle>
+              {pageCountWarning ? "Page count warning only" : "Warnings can move forward"}
+            </AlertTitle>
             <AlertDescription>
-              Review these notes, but they do not block creating a Builder draft.
+              {pageCountWarning
+                ? "This workbook can still be sent to Builder and exported. Review size, flow, and print quality before selling."
+                : "Review these notes, but they do not block creating a Builder draft."}
             </AlertDescription>
           </Alert>
         ) : blockCount > 0 ? (
@@ -798,6 +825,19 @@ function ImportQualityGate({
         ) : null}
       </CardContent>
     </Card>
+  );
+}
+
+function PlanMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: "#4F2D68" }}>
+        {label}
+      </div>
+      <div className="mt-1 text-lg font-semibold" style={{ color: "#222026" }}>
+        {value}
+      </div>
+    </div>
   );
 }
 
@@ -838,7 +878,7 @@ function ImportQueueCard({
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center text-base">
-            <FileText className="mr-2 h-4 w-4" /> Batch Import Queue
+            <FileText className="mr-2 h-4 w-4" /> Uploaded File Queue
           </CardTitle>
           {items.length > 0 ? (
             <Button type="button" variant="outline" size="sm" onClick={onClear}>
@@ -853,7 +893,8 @@ function ImportQueueCard({
             className="rounded-md border px-4 py-5 text-sm"
             style={{ borderColor: "#D8CEC2", color: "#6b6470" }}
           >
-            Upload multiple .txt, .md, or .docx files to review them one at a time.
+            Upload multiple .txt, .md, or .docx files. This queue is for choosing which upload to
+            review now.
           </div>
         ) : (
           items.map((item) => (
@@ -938,7 +979,7 @@ function ImportHistoryCard({
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <CardTitle className="flex items-center text-base">
-            <History className="mr-2 h-4 w-4" /> Recent Imports
+            <History className="mr-2 h-4 w-4" /> Recent Import History
           </CardTitle>
           {records.length > 0 ? (
             <Button type="button" variant="outline" size="sm" onClick={onClear}>

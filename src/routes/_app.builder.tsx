@@ -57,6 +57,27 @@ const searchSchema = z.object({
   kitId: z.string().optional(),
 });
 
+const BODY_EDITOR_PAGE_TYPES: PageType[] = [
+  "divider",
+  "lesson",
+  "start-here",
+  "module-intro",
+  "quote",
+  "action-plan",
+  "resource",
+  "case-study",
+  "progress-check",
+  "closing",
+];
+
+const PROMPT_EDITOR_PAGE_TYPES: PageType[] = [
+  "quote",
+  "reflection",
+  "case-study",
+  "prompt-page",
+  "closing",
+];
+
 export const Route = createFileRoute("/_app/builder")({
   validateSearch: searchSchema,
   head: () => ({ meta: [{ title: "Multi-Page Kit Builder | Kit Factory" }] }),
@@ -425,7 +446,9 @@ function KitInfoCard({
             {BRANCH_TEMPLATE_PROFILES.filter((profile) => profile.status === "Active").map(
               (profile) => (
                 <option key={profile.name} value={profile.name}>
-                  {profile.name}
+                  {profile.displayName === profile.name
+                    ? profile.name
+                    : `${profile.name} / ${profile.displayName}`}
                 </option>
               ),
             )}
@@ -710,9 +733,7 @@ function CurrentBlockEditor({
           />
         </Field>
         <Field
-          label={
-            block.pageType === "back-cover" ? "Optional Copyright/Footer Line" : "Subtitle"
-          }
+          label={block.pageType === "back-cover" ? "Optional Copyright/Footer Line" : "Subtitle"}
         >
           <Input
             value={block.subtitle}
@@ -738,12 +759,22 @@ function CurrentBlockEditor({
           </>
         ) : null}
 
-        {block.pageType === "divider" || block.pageType === "lesson" ? (
-          <Field label="Body Text">
+        {BODY_EDITOR_PAGE_TYPES.includes(block.pageType) ? (
+          <Field label={bodyFieldLabel(block.pageType)} hint={bodyFieldHint(block.pageType)}>
             <Textarea
-              rows={block.pageType === "lesson" ? 9 : 4}
+              rows={bodyFieldRows(block.pageType)}
               value={block.body}
               onChange={(event) => onChange(block.id, { body: event.target.value })}
+            />
+          </Field>
+        ) : null}
+
+        {PROMPT_EDITOR_PAGE_TYPES.includes(block.pageType) ? (
+          <Field label={promptFieldLabel(block.pageType)} hint={promptFieldHint(block.pageType)}>
+            <Textarea
+              rows={block.pageType === "quote" ? 2 : 4}
+              value={block.prompt}
+              onChange={(event) => onChange(block.id, { prompt: event.target.value })}
             />
           </Field>
         ) : null}
@@ -817,6 +848,23 @@ function CurrentBlockEditor({
           </>
         ) : null}
 
+        {block.pageType === "reflection" || block.pageType === "prompt-page" ? (
+          <Field label="Writing Lines Count">
+            <Input
+              type="number"
+              min={4}
+              max={20}
+              value={block.lines}
+              onChange={(event) =>
+                onChange(block.id, {
+                  lines:
+                    event.target.value === "" ? "" : Number.parseInt(event.target.value, 10) || 0,
+                })
+              }
+            />
+          </Field>
+        ) : null}
+
         {block.pageType === "back-cover" ? (
           <>
             <Field label="Short Closing Message">
@@ -837,6 +885,67 @@ function CurrentBlockEditor({
       </CardContent>
     </Card>
   );
+}
+
+function bodyFieldLabel(pageType: PageType): string {
+  switch (pageType) {
+    case "quote":
+      return "Opening Thought / Quote";
+    case "action-plan":
+      return "Action Steps";
+    case "progress-check":
+      return "Progress Check Items";
+    case "resource":
+      return "Resources / References";
+    case "case-study":
+      return "Example / Scenario";
+    case "closing":
+      return "Closing Message";
+    case "module-intro":
+      return "Module Introduction";
+    case "start-here":
+      return "Start Here Instructions";
+    default:
+      return "Body Text";
+  }
+}
+
+function bodyFieldHint(pageType: PageType): string | undefined {
+  if (pageType === "action-plan" || pageType === "progress-check") return "One item per line.";
+  if (pageType === "resource") return "Add links, tools, terms, reminders, or references.";
+  if (pageType === "quote") return "Use the main quote or opening thought here.";
+  return undefined;
+}
+
+function bodyFieldRows(pageType: PageType): number {
+  if (pageType === "lesson") return 9;
+  if (pageType === "quote") return 4;
+  if (pageType === "action-plan" || pageType === "progress-check") return 8;
+  return 5;
+}
+
+function promptFieldLabel(pageType: PageType): string {
+  switch (pageType) {
+    case "quote":
+      return "Attribution / Source";
+    case "reflection":
+      return "Reflection Prompt";
+    case "case-study":
+      return "Takeaway / Focus";
+    case "prompt-page":
+      return "Main Writing Prompt";
+    case "closing":
+      return "Final Call to Action";
+    default:
+      return "Prompt";
+  }
+}
+
+function promptFieldHint(pageType: PageType): string | undefined {
+  if (pageType === "quote") return "Optional. Example: Best Collective";
+  if (pageType === "prompt-page") return "This is the main prompt above the writing lines.";
+  if (pageType === "reflection") return "This appears above the writing lines.";
+  return undefined;
 }
 
 function BuilderTableEditor({

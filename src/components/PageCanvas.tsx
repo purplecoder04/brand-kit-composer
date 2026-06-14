@@ -48,6 +48,12 @@ export function PageCanvas({
         width: "8.5in",
         height: "11in",
         backgroundColor: branchProfile.backgroundColor,
+        backgroundImage: `
+          radial-gradient(circle at 18% 22%, rgba(255,255,255,0.5) 0 0.7px, transparent 0.8px),
+          radial-gradient(circle at 72% 38%, rgba(40,36,44,0.04) 0 0.6px, transparent 0.8px),
+          linear-gradient(135deg, rgba(255,255,255,0.28), rgba(40,36,44,0.018))
+        `,
+        backgroundSize: "8px 8px, 11px 11px, 100% 100%",
         color: branchProfile.textColor,
         boxShadow: "0 1px 3px rgba(0,0,0,0.12), 0 8px 24px rgba(0,0,0,0.08)",
         fontFamily: "var(--font-body, Inter, system-ui, sans-serif)",
@@ -88,9 +94,7 @@ export function PageCanvas({
             top: PAGE_PADDING,
             left: PAGE_PADDING,
             right: PAGE_PADDING,
-            bottom: showFooter
-              ? `calc(${PAGE_PADDING} + ${FOOTER_HEIGHT})`
-              : PAGE_PADDING,
+            bottom: showFooter ? `calc(${PAGE_PADDING} + ${FOOTER_HEIGHT})` : PAGE_PADDING,
             overflow: "hidden",
           }}
         >
@@ -114,7 +118,7 @@ export function PageCanvas({
           <div
             style={{
               height: "1px",
-              background: branchProfile.goldAccent,
+              background: branchProfile.lineAccentColor,
               marginBottom: "0.12in",
               opacity: 0.85,
             }}
@@ -127,7 +131,7 @@ export function PageCanvas({
               fontSize: "10px",
               letterSpacing: "0.12em",
               textTransform: "uppercase",
-              color: branchProfile.primaryColor,
+              color: branchProfile.footerBarColor,
             }}
           >
             <span>{branchProfile.footerLabel}</span>

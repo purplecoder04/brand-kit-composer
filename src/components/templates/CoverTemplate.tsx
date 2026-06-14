@@ -1,15 +1,7 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
 import { PageCanvas } from "../PageCanvas";
-import {
-  BotanicalSprig,
-  CoverOrganicFrame,
-  Diamond,
-  KitFooterBand,
-  PLUM_DEEP,
-  SparkleRule,
-  TEXT_INK,
-} from "./_decor";
+import { BotanicalSprig, CoverOrganicFrame, Diamond, KitFooterBand, SparkleRule } from "./_decor";
 
 type Props = {
   block: Block;
@@ -19,7 +11,8 @@ type Props = {
 };
 
 export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: Props) {
-  const gold = branchProfile.goldAccent;
+  const lineAccent = branchProfile.lineAccentColor;
+  const smallMark = branchProfile.smallMarkColor;
   const titleLines =
     block.title === "Get Your Business Straight"
       ? ["Get Your", "Business", "Straight"]
@@ -33,6 +26,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
           },
           [""],
         );
+  const titleSize = titleLines.length <= 1 ? "138px" : titleLines.length === 2 ? "108px" : "86px";
 
   return (
     <PageCanvas
@@ -45,7 +39,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
       <CoverOrganicFrame branchProfile={branchProfile} />
 
       <BotanicalSprig
-        color={gold}
+        color={smallMark}
         width="1.7in"
         height="3.95in"
         style={{
@@ -60,12 +54,12 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
       <main
         style={{
           position: "absolute",
-          top: "0.78in",
+          top: "0.76in",
           left: "1.42in",
           right: "1.15in",
           bottom: "1.02in",
           textAlign: "center",
-          color: PLUM_DEEP,
+          color: branchProfile.primaryColor,
         }}
       >
         <div
@@ -80,18 +74,13 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
           Best Collective
         </div>
 
-        <SparkleRule
-          color={branchProfile.accentColor}
-          width="3.05in"
-          marginTop="0.18in"
-          marginBottom="0.2in"
-        />
+        <SparkleRule color={lineAccent} width="3.05in" marginTop="0.18in" marginBottom="0.2in" />
 
         <p
           style={{
-            margin: "0 auto 0.58in",
+            margin: "0 auto 0.62in",
             maxWidth: "3.7in",
-            color: TEXT_INK,
+            color: branchProfile.textColor,
             fontSize: "14px",
             lineHeight: 1.35,
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
@@ -103,12 +92,13 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "72px",
+            fontSize: titleSize,
             lineHeight: 0.98,
             fontWeight: 500,
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0.005em",
+            textShadow: "0 8px 22px rgba(40, 36, 44, 0.045)",
           }}
         >
           {titleLines.map((line) => (
@@ -120,7 +110,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
 
         <div
           style={{
-            margin: "0.38in auto 0.12in",
+            margin: "0.34in auto 0.12in",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
@@ -131,7 +121,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             style={{
               width: "1.15in",
               height: "1px",
-              background: branchProfile.accentColor,
+              background: lineAccent,
               opacity: 0.72,
             }}
           />
@@ -139,7 +129,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             style={{
               fontSize: "31px",
               letterSpacing: "0.38em",
-              color: branchProfile.accentColor,
+              color: smallMark,
               fontWeight: 500,
             }}
           >
@@ -149,18 +139,18 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             style={{
               width: "1.15in",
               height: "1px",
-              background: branchProfile.accentColor,
+              background: lineAccent,
               opacity: 0.72,
             }}
           />
         </div>
 
-        <Diamond color={gold} size={14} style={{ margin: "0 auto 0.2in" }} />
+        <Diamond color={smallMark} size={14} style={{ margin: "0 auto 0.2in" }} />
 
         <div
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             fontSize: "20px",
             fontStyle: "italic",
             fontWeight: 600,
@@ -174,8 +164,11 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
           {(() => {
             const pillars = block.keywords ?? [];
             return pillars.map((word, i) => (
-              <span key={`${word}-${i}`} style={{ display: "inline-flex", alignItems: "center", gap: "0.09in" }}>
-                {i > 0 ? <Diamond color={gold} size={9} inline /> : null}
+              <span
+                key={`${word}-${i}`}
+                style={{ display: "inline-flex", alignItems: "center", gap: "0.09in" }}
+              >
+                {i > 0 ? <Diamond color={smallMark} size={9} inline /> : null}
                 <span>{word}</span>
               </span>
             ));
@@ -187,9 +180,10 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             style={{
               margin: "0 auto",
               maxWidth: "4.1in",
-              fontSize: "15px",
-              lineHeight: 1.62,
-              color: TEXT_INK,
+              fontSize: "16px",
+              lineHeight: 1.58,
+              color: branchProfile.textColor,
+              fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
             }}
           >
             {block.body}

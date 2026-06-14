@@ -4,11 +4,10 @@ import { PageCanvas } from "../PageCanvas";
 import {
   CornerWash,
   Diamond,
+  InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
-  PLUM_DEEP,
   SparkleRule,
-  TEXT_INK,
 } from "./_decor";
 
 type Props = {
@@ -23,7 +22,8 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
     .split(/\r?\n/)
     .map((item) => item.trim())
     .filter(Boolean);
-  const gold = branchProfile.goldAccent;
+  const lineAccent = branchProfile.lineAccentColor;
+  const smallMark = branchProfile.smallMarkColor;
 
   return (
     <PageCanvas
@@ -33,6 +33,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
       showFooter={false}
       bleed
     >
+      <InteriorEditorialFrame branchProfile={branchProfile} />
       <CornerWash branchProfile={branchProfile} variant="topRight" />
       <CornerWash branchProfile={branchProfile} variant="bottomLeft" />
 
@@ -44,7 +45,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
           top: "0.62in",
           width: "2.1in",
           height: "1px",
-          background: gold,
+          background: lineAccent,
           opacity: 0.72,
         }}
       />
@@ -64,7 +65,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
               fontSize: "10px",
               letterSpacing: "0.42em",
               textTransform: "uppercase",
-              color: PLUM_DEEP,
+              color: branchProfile.primaryColor,
               fontWeight: 600,
               marginBottom: "0.16in",
             }}
@@ -79,7 +80,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
             fontSize: "40px",
             lineHeight: 1.05,
             fontWeight: 500,
-            color: PLUM_DEEP,
+            color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
           }}
@@ -88,7 +89,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
         </h1>
 
         <SparkleRule
-          color={gold}
+          color={lineAccent}
           width="2in"
           marginTop="0.24in"
           marginBottom="0.34in"
@@ -101,9 +102,9 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
             maxWidth: "6.3in",
             boxSizing: "border-box",
             background: PAPER_PANEL,
-            borderLeft: `2px solid ${gold}`,
+            borderLeft: `2px solid ${lineAccent}`,
             padding: "0.18in 0.3in 0.08in",
-            boxShadow: "0 10px 22px rgba(47, 23, 70, 0.05)",
+            boxShadow: "0 10px 22px rgba(40, 36, 44, 0.05)",
           }}
         >
           {items.map((item, index) => (
@@ -117,7 +118,9 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
                 minHeight: "0.42in",
                 padding: "0.06in 0",
                 borderBottom:
-                  index < items.length - 1 ? `1px solid ${branchProfile.stoneColor}` : "none",
+                  index < items.length - 1
+                    ? `1px solid ${branchProfile.worksheetLineColor}`
+                    : "none",
               }}
             >
               <span
@@ -125,7 +128,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
                 style={{
                   width: "0.16in",
                   height: "0.16in",
-                  border: `1.5px solid ${PLUM_DEEP}`,
+                  border: `1.5px solid ${branchProfile.smallMarkColor}`,
                   background: PAPER_PANEL,
                   marginTop: "0.03in",
                   display: "inline-block",
@@ -135,7 +138,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
                 style={{
                   fontSize: "14px",
                   lineHeight: 1.55,
-                  color: TEXT_INK,
+                  color: branchProfile.textColor,
                   wordBreak: "break-word",
                 }}
               >
@@ -146,9 +149,15 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
         </div>
 
         <div style={{ marginTop: "0.35in", display: "flex", alignItems: "center", gap: "0.12in" }}>
-          <Diamond color={gold} inline />
+          <Diamond color={smallMark} inline />
           <div
-            style={{ flex: 1, height: "1px", background: gold, opacity: 0.5, maxWidth: "1.2in" }}
+            style={{
+              flex: 1,
+              height: "1px",
+              background: lineAccent,
+              opacity: 0.5,
+              maxWidth: "1.2in",
+            }}
           />
         </div>
       </div>

@@ -39,7 +39,15 @@ const SAMPLE_TEXT_MARKERS = [
   "A Best Collective Brand Kit",
 ];
 
-const PLACEHOLDER_MARKERS = ["lorem ipsum", "placeholder", "todo", "write your", "sample"];
+const PLACEHOLDER_MARKERS = [
+  "lorem ipsum",
+  "placeholder",
+  "todo:",
+  "[insert",
+  "replace this",
+  "sample content",
+  "sample text",
+];
 
 export function createQCReport(draft: BuilderDraft): QCReportMvp {
   const normalized = normalizeDraft(draft);
@@ -64,7 +72,7 @@ export function createQCReport(draft: BuilderDraft): QCReportMvp {
   for (const warning of getBuilderWarnings(normalized)) {
     issues.push(
       issue(
-        warning.scope === "kit" ? "blocker" : "warning",
+        "warning",
         "Layout Safety",
         blockTitle(normalized.blocks.find((block) => block.id === warning.blockId)),
         warning.message,

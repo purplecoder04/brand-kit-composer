@@ -142,6 +142,26 @@ function defaultTitleFor(pageType: PageType): string {
       return "Notes";
     case "back-cover":
       return "Back Cover";
+    case "start-here":
+      return "Start Here";
+    case "module-intro":
+      return "Module Intro";
+    case "quote":
+      return "Opening Thought";
+    case "reflection":
+      return "Reflection";
+    case "action-plan":
+      return "Action Plan";
+    case "resource":
+      return "Resources";
+    case "case-study":
+      return "Case Study";
+    case "prompt-page":
+      return "Prompt";
+    case "progress-check":
+      return "Progress Check";
+    case "closing":
+      return "Next Steps";
   }
 }
 

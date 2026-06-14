@@ -4,16 +4,11 @@ import { useMemo } from "react";
 import { useKitStore } from "@/lib/kit-store";
 import { PageRenderer } from "@/components/PageRenderer";
 import { PagePreview } from "@/components/PagePreview";
-import {
-  RESERVED_MAPPER_KIT_ID,
-  buildMapperKit,
-  encodeMapperDraftForUrl,
-  loadMapperDraft,
-} from "@/lib/mapper-content";
+import { RESERVED_MAPPER_KIT_ID, buildMapperKit, loadMapperDraft } from "@/lib/mapper-content";
 import {
   RESERVED_BUILDER_KIT_ID,
   buildBuilderKit,
-  encodeBuilderDraftForUrl,
+  getPageCountWarning,
   loadBuilderDraft,
 } from "@/lib/builder-content";
 
@@ -56,14 +51,7 @@ function PrintPreviewPage() {
 
     return state.kits[0];
   }, [builderDraft?.source, builderKit, kitId, mapperDraft?.source, mapperKit, state.kits]);
-  const mapperPayload = useMemo(() => {
-    if (kit?.id !== RESERVED_MAPPER_KIT_ID || !mapperDraft) return undefined;
-    return encodeMapperDraftForUrl(mapperDraft.content, mapperDraft.source);
-  }, [kit?.id, mapperDraft]);
-  const builderPayload = useMemo(() => {
-    if (kit?.id !== RESERVED_BUILDER_KIT_ID || !builderDraft) return undefined;
-    return encodeBuilderDraftForUrl(builderDraft);
-  }, [builderDraft, kit?.id]);
+  const pageCountWarning = kit ? getPageCountWarning(kit.blocks.length) : null;
 
   if (!kit) return <div className="p-10">No kits yet.</div>;
 
@@ -78,37 +66,25 @@ function PrintPreviewPage() {
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
         Open one of the chrome-free print routes below to use the browser's Save as PDF dialog.
       </p>
+      {pageCountWarning ? (
+        <div
+          className="mt-5 rounded-md border px-4 py-3 text-sm"
+          style={{
+            borderColor: pageCountWarning.level === "review" ? "#9f3a38" : "#C6A85B",
+            background: pageCountWarning.level === "review" ? "#fff1f0" : "#fff8e1",
+            color: pageCountWarning.level === "review" ? "#7a211f" : "#7a4a00",
+          }}
+        >
+          <div className="font-semibold">{pageCountWarning.title}</div>
+          <div className="mt-1">{pageCountWarning.message}</div>
+        </div>
+      ) : null}
 
       <div className="mt-5 flex flex-wrap gap-2">
-        <PrintLink
-          kitId={kit.id}
-          filter="all"
-          label="Print / Save as PDF"
-          mapperPayload={mapperPayload}
-          builderPayload={builderPayload}
-          primary
-        />
-        <PrintLink
-          kitId={kit.id}
-          filter="lesson"
-          label="Export Lesson Guide"
-          mapperPayload={mapperPayload}
-          builderPayload={builderPayload}
-        />
-        <PrintLink
-          kitId={kit.id}
-          filter="workbook"
-          label="Export Workbook"
-          mapperPayload={mapperPayload}
-          builderPayload={builderPayload}
-        />
-        <PrintLink
-          kitId={kit.id}
-          filter="all"
-          label="Export Full Kit"
-          mapperPayload={mapperPayload}
-          builderPayload={builderPayload}
-        />
+        <PrintLink kitId={kit.id} filter="all" label="Print / Save as PDF" primary />
+        <PrintLink kitId={kit.id} filter="lesson" label="Export Lesson Guide" />
+        <PrintLink kitId={kit.id} filter="workbook" label="Export Workbook" />
+        <PrintLink kitId={kit.id} filter="all" label="Export Full Kit" />
       </div>
 
       <div className="mt-10 space-y-8">
@@ -131,22 +107,14 @@ function PrintLink({
   kitId,
   filter,
   label,
-  mapperPayload,
-  builderPayload,
   primary = false,
 }: {
   kitId: string;
   filter: "all" | "lesson" | "workbook";
   label: string;
-  mapperPayload?: string;
-  builderPayload?: string;
   primary?: boolean;
 }) {
-  const href = builderPayload
-    ? `/print/${kitId}?filter=${filter}&builder=${builderPayload}#builder=${builderPayload}`
-    : mapperPayload
-      ? `/print/${kitId}?filter=${filter}&mapper=${mapperPayload}#mapper=${mapperPayload}`
-      : `/print/${kitId}?filter=${filter}`;
+  const href = `/print/${kitId}?filter=${filter}`;
 
   return (
     <a

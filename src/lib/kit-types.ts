@@ -8,7 +8,17 @@ export type PageType =
   | "workbook"
   | "checklist"
   | "notes"
-  | "back-cover";
+  | "back-cover"
+  | "start-here"
+  | "module-intro"
+  | "quote"
+  | "reflection"
+  | "action-plan"
+  | "resource"
+  | "case-study"
+  | "prompt-page"
+  | "progress-check"
+  | "closing";
 
 export type TableData = {
   headers: string[];
