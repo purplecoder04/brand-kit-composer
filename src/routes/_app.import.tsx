@@ -1,5 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { ArrowRight, ClipboardPaste, FileText, History, RefreshCw, Trash2 } from "lucide-react";
+import {
+  ArrowRight,
+  ClipboardPaste,
+  FileText,
+  History,
+  Library,
+  RefreshCw,
+  Trash2,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -16,7 +24,13 @@ import {
   type BuilderBlock,
   type BuilderDraft,
 } from "@/lib/builder-content";
+import { createVersionLibraryRecord } from "@/lib/api/version-library.functions";
 import { extractDocxText } from "@/lib/docx-text";
+import {
+  createVersionFromDraft,
+  loadVersionLibrary,
+  saveVersionLibrary,
+} from "@/lib/version-library";
 import {
   addImportHistoryRecord,
   clearImportHistory,
@@ -66,6 +80,7 @@ function ImportPage() {
   const [importHistory, setImportHistory] = useState<ImportHistoryRecord[]>(() =>
     loadImportHistory(),
   );
+  const [savingVersion, setSavingVersion] = useState(false);
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
   const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(detected.draft);
   const warnings = useMemo(() => getImportWarnings(reviewDraft), [reviewDraft]);
@@ -107,22 +122,61 @@ function ImportPage() {
       toast.message("Paste kit content before creating a builder draft");
       return;
     }
-    if (currentHistoryId) {
-      setImportHistory(markImportCreated(currentHistoryId));
-    } else {
-      setImportHistory(
-        addImportHistoryRecord({
-          fileName: uploadedFileName || "Pasted content",
-          fileType: uploadedFileName ? detectImportFileType(uploadedFileName) : "paste",
-          rawText,
-          draft: saved,
-          warningCount: warnings.length,
-          createdBuilderDraft: true,
-        }),
-      );
-    }
+    markCurrentImportCreated(saved);
     toast.success("Builder draft created");
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
+  };
+
+  const createDraftAndVersion = async () => {
+    if (savingVersion) return;
+
+    const saved = saveBuilderDraft(reviewDraft);
+    if (saved.blocks.length === 0) {
+      toast.message("Paste kit content before creating a builder draft");
+      return;
+    }
+
+    setSavingVersion(true);
+    const records = loadVersionLibrary();
+
+    try {
+      const result = await createVersionLibraryRecord({ data: { draft: saved } });
+      if (result.ok) {
+        saveVersionLibrary([result.data.record, ...records]);
+        markCurrentImportCreated(saved);
+        toast.success("Draft saved to Version Library");
+        navigate({ to: "/version-library" });
+        return;
+      }
+    } catch {
+      // Fall back to local version storage below.
+    } finally {
+      setSavingVersion(false);
+    }
+
+    const version = createVersionFromDraft(records, saved);
+    saveVersionLibrary([version, ...records]);
+    markCurrentImportCreated(saved);
+    toast.success("Draft saved to Version Library locally");
+    navigate({ to: "/version-library" });
+  };
+
+  const markCurrentImportCreated = (draft: BuilderDraft) => {
+    if (currentHistoryId) {
+      setImportHistory(markImportCreated(currentHistoryId));
+      return;
+    }
+
+    setImportHistory(
+      addImportHistoryRecord({
+        fileName: uploadedFileName || "Pasted content",
+        fileType: uploadedFileName ? detectImportFileType(uploadedFileName) : "paste",
+        rawText,
+        draft,
+        warningCount: warnings.length,
+        createdBuilderDraft: true,
+      }),
+    );
   };
 
   const loadUploadedFile = async (file: File | undefined) => {
@@ -234,6 +288,14 @@ function ImportPage() {
                   style={{ background: "#4F2D68", color: "#fff" }}
                 >
                   <ArrowRight className="mr-2 h-4 w-4" /> Create Builder Draft
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={createDraftAndVersion}
+                  disabled={!hasContent || reviewDraft.blocks.length === 0 || savingVersion}
+                >
+                  <Library className="mr-2 h-4 w-4" /> Create Draft + Save Version
                 </Button>
                 <Button
                   type="button"
