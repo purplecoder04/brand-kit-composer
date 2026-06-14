@@ -99,6 +99,22 @@ Column Headers: Task, Owner, Status
 Table Row: Outline kit, Erica, Done
 Table Row: Run QC, Erica, Next`;
 
+type ImportQueueStatus = "Ready" | "Needs Repair" | "Needs Review" | "Error";
+
+type ImportQueueItem = {
+  id: string;
+  fileName: string;
+  fileType: string;
+  rawText: string;
+  draft: BuilderDraft;
+  historyId: string | null;
+  warningCount: number;
+  blockerCount: number;
+  status: ImportQueueStatus;
+  importedAt: string;
+  error?: string;
+};
+
 function ImportPage() {
   const navigate = useNavigate();
   const [savedSession] = useState(() => loadImportSession());
@@ -111,6 +127,7 @@ function ImportPage() {
   const [importHistory, setImportHistory] = useState<ImportHistoryRecord[]>(() =>
     loadImportHistory(),
   );
+  const [importQueue, setImportQueue] = useState<ImportQueueItem[]>([]);
   const [savingVersion, setSavingVersion] = useState(false);
   const [showImportQc, setShowImportQc] = useState(false);
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
@@ -291,9 +308,55 @@ function ImportPage() {
     );
   };
 
-  const loadUploadedFile = async (file: File | undefined) => {
-    if (!file) return;
+  const loadUploadedFiles = async (fileList: FileList | null) => {
+    const files = Array.from(fileList ?? []);
+    if (files.length === 0) return;
+    const items: ImportQueueItem[] = [];
 
+    for (const file of files) {
+      const item = await readQueuedImportFile(file);
+      items.push(item);
+
+      if (!item.error) {
+        const records = addImportHistoryRecord({
+          fileName: file.name,
+          fileType: detectImportFileType(file.name),
+          rawText: item.rawText,
+          draft: item.draft,
+          warningCount: item.warningCount,
+        });
+        const historyId = records[0]?.id ?? null;
+        item.historyId = historyId;
+        setImportHistory(records);
+      }
+    }
+
+    setImportQueue((current) => [...items, ...current].slice(0, 12));
+
+    const firstReady = items.find((item) => !item.error);
+    if (firstReady) {
+      setActiveImport({
+        text: firstReady.rawText,
+        fileName: firstReady.fileName,
+        historyId: firstReady.historyId,
+        draft: firstReady.draft,
+      });
+    }
+
+    const errorCount = items.filter((item) => item.error).length;
+    if (files.length > 1) {
+      toast.success(
+        `Batch loaded ${items.length - errorCount} of ${items.length} file${
+          items.length === 1 ? "" : "s"
+        }`,
+      );
+    } else if (errorCount === 0) {
+      toast.success("File loaded into importer");
+    }
+    if (errorCount > 0) toast.error(`${errorCount} file${errorCount === 1 ? "" : "s"} failed`);
+  };
+
+  const readQueuedImportFile = async (file: File): Promise<ImportQueueItem> => {
     const extension = file.name.split(".").pop()?.toLowerCase();
     const isTextFile =
       extension === "txt" ||
@@ -305,31 +368,54 @@ function ImportPage() {
       file.type === "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
 
     if (!isTextFile && !isDocx) {
-      toast.error("Upload a .txt, .md, or .docx file");
-      return;
+      return createImportQueueError(file.name, "Upload a .txt, .md, or .docx file");
     }
 
     try {
       const text = isDocx ? await extractDocxText(file) : await file.text();
       const imported = detectImportedKitText(text);
-      const records = addImportHistoryRecord({
+      const report = createQCReport(imported.draft);
+      const blockerCount = report.issues.filter((issue) => issue.severity === "blocker").length;
+
+      return {
+        id: createQueueId(),
         fileName: file.name,
         fileType: detectImportFileType(file.name),
         rawText: text,
         draft: imported.draft,
+        historyId: null,
         warningCount: imported.warnings.length,
-      });
-      setImportHistory(records);
-      setActiveImport({
-        text,
-        fileName: file.name,
-        historyId: records[0]?.id ?? null,
-        draft: imported.draft,
-      });
-      toast.success("File loaded into importer");
+        blockerCount,
+        status:
+          imported.draft.blocks.length === 0
+            ? "Needs Review"
+            : blockerCount > 0
+              ? "Needs Repair"
+              : "Ready",
+        importedAt: new Date().toISOString(),
+      };
     } catch {
-      toast.error("Could not read that file");
+      return createImportQueueError(file.name, "Could not read that file");
     }
+  };
+
+  const loadQueueItem = (item: ImportQueueItem) => {
+    if (item.error) {
+      toast.error(item.error);
+      return;
+    }
+
+    setActiveImport({
+      text: item.rawText,
+      fileName: item.fileName,
+      historyId: item.historyId,
+      draft: item.draft,
+    });
+    toast.success("Queued import loaded");
+  };
+
+  const removeQueueItem = (itemId: string) => {
+    setImportQueue((current) => current.filter((item) => item.id !== itemId));
   };
 
   const loadHistoryRecord = (record: ImportHistoryRecord) => {
@@ -380,8 +466,9 @@ function ImportPage() {
                   <Input
                     id="kit-file-upload"
                     type="file"
+                    multiple
                     accept=".txt,.md,.docx,text/plain,text/markdown,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                    onChange={(event) => loadUploadedFile(event.target.files?.[0])}
+                    onChange={(event) => loadUploadedFiles(event.target.files)}
                   />
                   {uploadedFileName ? (
                     <div className="flex items-center text-xs" style={{ color: "#6b6470" }}>
@@ -490,6 +577,14 @@ function ImportPage() {
             records={importHistory}
             onLoad={loadHistoryRecord}
             onClear={clearHistory}
+          />
+
+          <ImportQueueCard
+            items={importQueue}
+            activeFileName={uploadedFileName}
+            onLoad={loadQueueItem}
+            onRemove={removeQueueItem}
+            onClear={() => setImportQueue([])}
           />
         </div>
 
@@ -710,6 +805,110 @@ function TextField({
   );
 }
 
+function ImportQueueCard({
+  items,
+  activeFileName,
+  onLoad,
+  onRemove,
+  onClear,
+}: {
+  items: ImportQueueItem[];
+  activeFileName: string;
+  onLoad: (item: ImportQueueItem) => void;
+  onRemove: (itemId: string) => void;
+  onClear: () => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center text-base">
+            <FileText className="mr-2 h-4 w-4" /> Batch Import Queue
+          </CardTitle>
+          {items.length > 0 ? (
+            <Button type="button" variant="outline" size="sm" onClick={onClear}>
+              Clear Queue
+            </Button>
+          ) : null}
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {items.length === 0 ? (
+          <div
+            className="rounded-md border px-4 py-5 text-sm"
+            style={{ borderColor: "#D8CEC2", color: "#6b6470" }}
+          >
+            Upload multiple .txt, .md, or .docx files to review them one at a time.
+          </div>
+        ) : (
+          items.map((item) => (
+            <div
+              key={item.id}
+              className="rounded-md border p-3"
+              style={{
+                borderColor: item.fileName === activeFileName ? "#4F2D68" : "#D8CEC2",
+                background: item.fileName === activeFileName ? "#FBF7F1" : "#fff",
+              }}
+            >
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div
+                    className="text-[10px] uppercase tracking-[0.18em]"
+                    style={{ color: "#4F2D68" }}
+                  >
+                    {item.fileType} file
+                  </div>
+                  <div className="mt-1 font-semibold" style={{ color: "#222026" }}>
+                    {item.draft.kitName || item.fileName}
+                  </div>
+                  <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                    {item.fileName} · {item.draft.blocks.length} block
+                    {item.draft.blocks.length === 1 ? "" : "s"} · {item.warningCount} cleanup
+                    warning{item.warningCount === 1 ? "" : "s"}
+                  </div>
+                  <div
+                    className="mt-2 text-xs font-semibold"
+                    style={{ color: queueStatusColor(item.status) }}
+                  >
+                    {item.status}
+                    {item.blockerCount > 0
+                      ? ` · ${item.blockerCount} blocker${item.blockerCount === 1 ? "" : "s"}`
+                      : ""}
+                  </div>
+                  {item.error ? (
+                    <div className="mt-1 text-xs" style={{ color: "#7a1f1f" }}>
+                      {item.error}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onLoad(item)}
+                    disabled={Boolean(item.error)}
+                  >
+                    Review
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onRemove(item.id)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 function ImportHistoryCard({
   records,
   onLoad,
@@ -927,4 +1126,30 @@ function parseCsvRows(value: string): string[][] {
     .filter((row) => row.some((cell) => cell.trim()));
 
   return rows.length > 0 ? rows : [["", "", ""]];
+}
+
+function createImportQueueError(fileName: string, error: string): ImportQueueItem {
+  return {
+    id: createQueueId(),
+    fileName,
+    fileType: detectImportFileType(fileName),
+    rawText: "",
+    draft: detectImportedKitText("").draft,
+    historyId: null,
+    warningCount: 0,
+    blockerCount: 0,
+    status: "Error",
+    importedAt: new Date().toISOString(),
+    error,
+  };
+}
+
+function createQueueId(): string {
+  return `queue-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function queueStatusColor(status: ImportQueueStatus): string {
+  if (status === "Ready") return "#2E5B33";
+  if (status === "Needs Repair" || status === "Error") return "#7a1f1f";
+  return "#8a5a00";
 }
