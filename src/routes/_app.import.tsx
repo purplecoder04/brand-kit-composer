@@ -151,9 +151,36 @@ function ImportPage() {
     });
   }, [currentHistoryId, hasContent, rawText, reviewDraft, uploadedFileName]);
 
-  const setImportText = (text: string) => {
+  const setActiveImport = ({
+    text,
+    fileName = "",
+    historyId = null,
+    draft,
+  }: {
+    text: string;
+    fileName?: string;
+    historyId?: string | null;
+    draft?: BuilderDraft;
+  }) => {
+    const nextDraft = draft ?? detectImportedKitText(text).draft;
     setRawText(text);
-    setCurrentHistoryId(null);
+    setUploadedFileName(fileName);
+    setCurrentHistoryId(historyId);
+    setReviewDraft(nextDraft);
+    setShowImportQc(false);
+
+    if (!text.trim() && nextDraft.blocks.length === 0 && !fileName) {
+      clearImportSession();
+      return;
+    }
+
+    saveImportSession({
+      rawText: text,
+      uploadedFileName: fileName,
+      currentHistoryId: historyId,
+      reviewDraft: nextDraft,
+      savedAt: new Date().toISOString(),
+    });
   };
 
   const clearActiveImport = () => {
@@ -292,11 +319,13 @@ function ImportPage() {
         draft: imported.draft,
         warningCount: imported.warnings.length,
       });
-      setRawText(text);
-      setUploadedFileName(file.name);
-      setReviewDraft(imported.draft);
       setImportHistory(records);
-      setCurrentHistoryId(records[0]?.id ?? null);
+      setActiveImport({
+        text,
+        fileName: file.name,
+        historyId: records[0]?.id ?? null,
+        draft: imported.draft,
+      });
       toast.success("File loaded into importer");
     } catch {
       toast.error("Could not read that file");
@@ -304,10 +333,12 @@ function ImportPage() {
   };
 
   const loadHistoryRecord = (record: ImportHistoryRecord) => {
-    setRawText(record.rawText);
-    setUploadedFileName(record.fileType === "paste" ? "" : record.fileName);
-    setReviewDraft(record.draft);
-    setCurrentHistoryId(record.id);
+    setActiveImport({
+      text: record.rawText,
+      fileName: record.fileType === "paste" ? "" : record.fileName,
+      historyId: record.id,
+      draft: record.draft,
+    });
     toast.success("Import loaded");
   };
 
@@ -388,7 +419,7 @@ function ImportPage() {
                       variant="outline"
                       size="sm"
                       className="mt-3"
-                      onClick={() => setImportText(detected.cleanedText)}
+                      onClick={() => setActiveImport({ text: detected.cleanedText })}
                     >
                       <RefreshCw className="mr-2 h-4 w-4" /> Apply Cleaned Text
                     </Button>
@@ -437,20 +468,14 @@ function ImportPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setImportText(SAMPLE_IMPORT);
-                    setUploadedFileName("");
-                  }}
+                  onClick={() => setActiveImport({ text: SAMPLE_IMPORT })}
                 >
                   <ClipboardPaste className="mr-2 h-4 w-4" /> Load Test Text
                 </Button>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setImportText(ROUGH_SAMPLE_IMPORT);
-                    setUploadedFileName("");
-                  }}
+                  onClick={() => setActiveImport({ text: ROUGH_SAMPLE_IMPORT })}
                 >
                   <ClipboardPaste className="mr-2 h-4 w-4" /> Load Rough Test
                 </Button>
