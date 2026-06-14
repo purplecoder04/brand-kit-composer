@@ -364,3 +364,50 @@ Do not change Level 9C unless fixing a confirmed bug.
 Do not add AI generation yet.
 Do not add customer-facing features.
 Do not add branch design support yet.
+
+---
+
+# Best Collective Kit Factory V1 - Level 10B Import Cleanup
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 10B Import Cleanup checkpoint.
+
+Approved behavior:
+- /import keeps the approved importer, review, Builder draft, Version Library, and QC flow intact.
+- Rough import labels are cleaned into the strict passing format before parsing.
+- Supported rough labels include Lesson Title, Lesson Body, Workbook Title, Question, Checklist Title, Tracker Title, Column Headers, and Table Row.
+- Word-style bullets and checkbox markers are converted into checklist items.
+- Import Cleanup status appears when cleanup rules are applied.
+- Apply Cleaned Text can replace the text area with the cleaned strict structure.
+- Load Rough Test provides a local rough-format test case.
+- Strict import format still passes:
+
+```text
+Lesson: Title
+Body: text
+Workbook: Title
+Prompt: text
+Checklist: Title
+- item
+Table: Title
+Headers: Column A, Column B, Column C
+Row: value, value, value
+```
+
+- Rough cleanup import test passes QC.
+- No sample content is added unless user intentionally loads test/sample text.
+- Blank fields stay blank.
+- Print/PDF pipeline still uses locked Brand Template V1.
+- /mapper remains untouched.
+- /builder remains stable.
+- /version-library remains stable.
+- /qc remains stable.
+- /dashboard remains stable.
+- Brand Template V1 styling remains locked.
+
+Do not change Level 10B unless fixing a confirmed bug.
+Do not add AI generation yet.
+Do not add customer-facing features.
+Do not add branch design support yet.
+Do not change print CSS, fonts, page size, or locked Brand Template V1 styling.
