@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
+  AlertTriangle,
+  CheckCircle2,
   ClipboardPaste,
   FileText,
   History,
@@ -41,6 +43,7 @@ import {
 } from "@/lib/import-history";
 import { detectImportedKitText, getImportWarnings } from "@/lib/kit-importer";
 import type { PageType } from "@/lib/kit-types";
+import { createQCReport, type QCReportMvp } from "@/lib/qc-report";
 
 export const Route = createFileRoute("/_app/import")({
   head: () => ({ meta: [{ title: "Paste Content Importer | Kit Factory" }] }),
@@ -104,15 +107,21 @@ function ImportPage() {
     loadImportHistory(),
   );
   const [savingVersion, setSavingVersion] = useState(false);
+  const [showImportQc, setShowImportQc] = useState(false);
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
   const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(detected.draft);
   const warnings = useMemo(() => getImportWarnings(reviewDraft), [reviewDraft]);
+  const importQcReport = useMemo(() => createQCReport(reviewDraft), [reviewDraft]);
+  const importQcBlockers = importQcReport.issues.filter((issue) => issue.severity === "blocker");
+  const importQcWarnings = importQcReport.issues.filter((issue) => issue.severity === "warning");
+  const hasImportBlockers = importQcBlockers.length > 0;
   const hasContent = rawText.trim().length > 0;
   const cleanupWasApplied =
     hasContent && detected.cleanedText.trim() !== rawText.replace(/\r\n/g, "\n").trim();
 
   useEffect(() => {
     setReviewDraft(detected.draft);
+    setShowImportQc(false);
   }, [detected.draft]);
 
   const updateDraft = (patch: Partial<BuilderDraft>) => {
@@ -147,6 +156,11 @@ function ImportPage() {
       toast.message("Paste kit content before creating a builder draft");
       return;
     }
+    if (hasImportBlockers) {
+      setShowImportQc(true);
+      toast.error("Fix import QC blockers before creating a Builder draft");
+      return;
+    }
     markCurrentImportCreated(saved);
     toast.success("Builder draft created");
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
@@ -158,6 +172,11 @@ function ImportPage() {
     const saved = saveBuilderDraft(reviewDraft);
     if (saved.blocks.length === 0) {
       toast.message("Paste kit content before creating a builder draft");
+      return;
+    }
+    if (hasImportBlockers) {
+      setShowImportQc(true);
+      toast.error("Fix import QC blockers before saving a version");
       return;
     }
 
@@ -338,7 +357,7 @@ function ImportPage() {
                 <Button
                   type="button"
                   onClick={createDraft}
-                  disabled={!hasContent || reviewDraft.blocks.length === 0}
+                  disabled={!hasContent || reviewDraft.blocks.length === 0 || hasImportBlockers}
                   style={{ background: "#4F2D68", color: "#fff" }}
                 >
                   <ArrowRight className="mr-2 h-4 w-4" /> Create Builder Draft
@@ -347,9 +366,31 @@ function ImportPage() {
                   type="button"
                   variant="outline"
                   onClick={createDraftAndVersion}
-                  disabled={!hasContent || reviewDraft.blocks.length === 0 || savingVersion}
+                  disabled={
+                    !hasContent ||
+                    reviewDraft.blocks.length === 0 ||
+                    savingVersion ||
+                    hasImportBlockers
+                  }
                 >
                   <Library className="mr-2 h-4 w-4" /> Create Draft + Save Version
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setShowImportQc(true);
+                    if (importQcBlockers.length > 0) {
+                      toast.error("Import QC found blockers");
+                    } else if (importQcWarnings.length > 0) {
+                      toast.message("Import QC passed with warnings");
+                    } else {
+                      toast.success("Import QC passed");
+                    }
+                  }}
+                  disabled={!hasContent || reviewDraft.blocks.length === 0}
+                >
+                  <CheckCircle2 className="mr-2 h-4 w-4" /> Run Import QC
                 </Button>
                 <Button
                   type="button"
@@ -396,6 +437,13 @@ function ImportPage() {
         </div>
 
         <div className="space-y-6">
+          <ImportQualityGate
+            report={importQcReport}
+            blockCount={reviewDraft.blocks.length}
+            visible={showImportQc}
+            onShow={() => setShowImportQc(true)}
+          />
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Review Kit Info</CardTitle>
@@ -475,6 +523,114 @@ function ImportPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+function ImportQualityGate({
+  report,
+  blockCount,
+  visible,
+  onShow,
+}: {
+  report: QCReportMvp;
+  blockCount: number;
+  visible: boolean;
+  onShow: () => void;
+}) {
+  const blockers = report.issues.filter((issue) => issue.severity === "blocker");
+  const warnings = report.issues.filter((issue) => issue.severity === "warning");
+  const status = blockCount === 0 ? "Needs Review" : blockers.length > 0 ? "Needs Repair" : "Ready";
+  const statusColor =
+    status === "Ready" ? "#2E5B33" : status === "Needs Repair" ? "#7a1f1f" : "#8a5a00";
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <CardTitle className="flex items-center text-base">
+            {status === "Ready" ? (
+              <CheckCircle2 className="mr-2 h-4 w-4" style={{ color: statusColor }} />
+            ) : (
+              <AlertTriangle className="mr-2 h-4 w-4" style={{ color: statusColor }} />
+            )}
+            Import Readiness
+          </CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onShow}
+            disabled={blockCount === 0}
+          >
+            Run Import QC
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <div
+          className="rounded-md border p-3 text-sm"
+          style={{ borderColor: "#D8CEC2", background: "#fff" }}
+        >
+          <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: "#4F2D68" }}>
+            Status
+          </div>
+          <div className="mt-1 text-lg font-semibold" style={{ color: statusColor }}>
+            {status}
+          </div>
+          <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+            {blockers.length} blocker{blockers.length === 1 ? "" : "s"} · {warnings.length} warning
+            {warnings.length === 1 ? "" : "s"} · {report.pageCount} printable page
+            {report.pageCount === 1 ? "" : "s"}
+          </div>
+        </div>
+
+        {blockers.length > 0 ? (
+          <Alert>
+            <AlertTitle>Fix blockers before Builder</AlertTitle>
+            <AlertDescription>
+              Builder draft creation is paused until these confirmed import issues are fixed.
+            </AlertDescription>
+          </Alert>
+        ) : warnings.length > 0 ? (
+          <Alert>
+            <AlertTitle>Warnings can move forward</AlertTitle>
+            <AlertDescription>
+              Review these notes, but they do not block creating a Builder draft.
+            </AlertDescription>
+          </Alert>
+        ) : blockCount > 0 ? (
+          <Alert>
+            <AlertTitle>Ready for Builder</AlertTitle>
+            <AlertDescription>No import QC issues found.</AlertDescription>
+          </Alert>
+        ) : null}
+
+        {visible && report.issues.length > 0 ? (
+          <div className="space-y-2">
+            {report.issues.slice(0, 8).map((issue) => (
+              <div
+                key={issue.id}
+                className="rounded-md border p-3 text-sm"
+                style={{ borderColor: "#D8CEC2", background: "#fff" }}
+              >
+                <div
+                  className="font-semibold"
+                  style={{ color: issue.severity === "blocker" ? "#7a1f1f" : "#8a5a00" }}
+                >
+                  {issue.severity.toUpperCase()} · {issue.area}
+                </div>
+                <div className="mt-1" style={{ color: "#4F2D68" }}>
+                  {issue.blockTitle}
+                </div>
+                <div className="mt-1" style={{ color: "#222026" }}>
+                  {issue.message}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </CardContent>
+    </Card>
   );
 }
 
