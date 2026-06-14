@@ -411,3 +411,37 @@ Do not add AI generation yet.
 Do not add customer-facing features.
 Do not add branch design support yet.
 Do not change print CSS, fonts, page size, or locked Brand Template V1 styling.
+
+---
+
+# Best Collective Kit Factory V1 - Level 10C Import Quality Gate
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 10C Import Quality Gate checkpoint.
+
+Approved behavior:
+- /import shows an Import Readiness gate.
+- Import Readiness can show Ready, Needs Review, or Needs Repair.
+- Run Import QC checks the reviewed import draft before it goes to Builder.
+- QC blockers prevent Create Builder Draft.
+- QC blockers prevent Create Draft + Save Version.
+- QC warnings are shown but do not block moving forward.
+- Clean imports can create Builder drafts.
+- Clean imports can create version snapshots.
+- Broken imports show the specific confirmed blockers.
+- Load Rough Test still works for import cleanup testing.
+- Import cleanup from Level 10B remains approved and stable.
+- Print/PDF pipeline still uses locked Brand Template V1.
+- /mapper remains untouched.
+- /builder remains stable.
+- /version-library remains stable.
+- /qc remains stable.
+- /dashboard remains stable.
+- Brand Template V1 styling remains locked.
+
+Do not change Level 10C unless fixing a confirmed bug.
+Do not add AI generation yet.
+Do not add customer-facing features.
+Do not add branch design support yet.
+Do not change print CSS, fonts, page size, or locked Brand Template V1 styling.
