@@ -6,6 +6,7 @@ import { LessonTemplate } from "./templates/LessonTemplate";
 import { TableTemplate } from "./templates/TableTemplate";
 import { WorkbookTemplate } from "./templates/WorkbookTemplate";
 import { ChecklistTemplate } from "./templates/ChecklistTemplate";
+import { BackCoverTemplate } from "./templates/BackCoverTemplate";
 
 type Props = {
   block: Block;
@@ -30,6 +31,8 @@ export function PageRenderer(props: Props) {
       return <ChecklistTemplate {...props} />;
     case "notes":
       return <WorkbookTemplate {...props} />;
+    case "back-cover":
+      return <BackCoverTemplate {...props} />;
     default:
       return null;
   }

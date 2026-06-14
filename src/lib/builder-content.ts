@@ -1,4 +1,4 @@
-import { BRAND_PROFILE } from "./branch-profile";
+import { resolveBranchProfile } from "./branch-profile";
 import type { Block, Kit, PageType, TableData } from "./kit-types";
 import { SAMPLE_KIT } from "./sample-kit";
 
@@ -36,7 +36,16 @@ export type BuilderDraft = {
 
 export type BuilderWarning = {
   blockId?: string;
-  scope: "kit" | "cover" | "divider" | "lesson" | "table" | "workbook" | "checklist" | "notes";
+  scope:
+    | "kit"
+    | "cover"
+    | "divider"
+    | "lesson"
+    | "table"
+    | "workbook"
+    | "checklist"
+    | "notes"
+    | "back-cover";
   message: string;
 };
 
@@ -56,6 +65,7 @@ export const BUILDER_BLOCK_TYPES: Array<{ type: PageType; label: string }> = [
   { type: "workbook", label: "Workbook Page" },
   { type: "checklist", label: "Checklist Page" },
   { type: "notes", label: "Notes Page" },
+  { type: "back-cover", label: "Back Cover" },
 ];
 
 export function createBlankBuilderDraft(): BuilderDraft {
@@ -192,7 +202,7 @@ export function buildBuilderKit(draft: BuilderDraft): Kit {
     lessonGuide: "",
     workbook: "",
     tracker: "",
-    branchProfile: BRAND_PROFILE,
+    branchProfile: resolveBranchProfile(normalized.branch),
     blocks: buildPagesFromKitDraft(normalized),
     version: "v1-level-3b",
     status: "Draft",

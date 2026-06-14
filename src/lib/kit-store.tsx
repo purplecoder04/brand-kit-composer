@@ -140,6 +140,8 @@ function defaultTitleFor(pageType: PageType): string {
       return "New Checklist";
     case "notes":
       return "Notes";
+    case "back-cover":
+      return "Back Cover";
   }
 }
 

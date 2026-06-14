@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PagePreview } from "@/components/PagePreview";
 import { PageRenderer } from "@/components/PageRenderer";
+import { BRANCH_TEMPLATE_PROFILES } from "@/lib/branch-profile";
 import { createVersionLibraryRecord } from "@/lib/api/version-library.functions";
 import {
   BUILDER_BLOCK_TYPES,
@@ -414,10 +415,21 @@ function KitInfoCard({
           />
         </Field>
         <Field label="Branch">
-          <Input
+          <select
             value={draft.branch}
             onChange={(event) => onChange({ branch: event.target.value })}
-          />
+            className="w-full rounded-md border px-3 py-2 text-sm"
+            style={{ borderColor: "#D8CEC2", background: "#fff" }}
+          >
+            <option value="">Select branch</option>
+            {BRANCH_TEMPLATE_PROFILES.filter((profile) => profile.status === "Active").map(
+              (profile) => (
+                <option key={profile.name} value={profile.name}>
+                  {profile.name}
+                </option>
+              ),
+            )}
+          </select>
         </Field>
         <Field label="Audience">
           <Input
@@ -691,13 +703,17 @@ function CurrentBlockEditor({
         <Field label="Order Number">
           <Input value={String(block.order)} readOnly />
         </Field>
-        <Field label="Block Title">
+        <Field label={block.pageType === "back-cover" ? "Closing Title" : "Block Title"}>
           <Input
             value={block.title}
             onChange={(event) => onChange(block.id, { title: event.target.value })}
           />
         </Field>
-        <Field label="Subtitle">
+        <Field
+          label={
+            block.pageType === "back-cover" ? "Optional Copyright/Footer Line" : "Subtitle"
+          }
+        >
           <Input
             value={block.subtitle}
             onChange={(event) => onChange(block.id, { subtitle: event.target.value })}
@@ -796,6 +812,24 @@ function CurrentBlockEditor({
                       event.target.value === "" ? "" : Number.parseInt(event.target.value, 10) || 0,
                   })
                 }
+              />
+            </Field>
+          </>
+        ) : null}
+
+        {block.pageType === "back-cover" ? (
+          <>
+            <Field label="Short Closing Message">
+              <Textarea
+                rows={5}
+                value={block.body}
+                onChange={(event) => onChange(block.id, { body: event.target.value })}
+              />
+            </Field>
+            <Field label="Website or Call-to-Action Placeholder">
+              <Input
+                value={block.prompt}
+                onChange={(event) => onChange(block.id, { prompt: event.target.value })}
               />
             </Field>
           </>

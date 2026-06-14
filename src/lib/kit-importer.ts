@@ -423,6 +423,7 @@ function normalizeSectionType(value: string): PageType {
     return "workbook";
   if (lower === "checklist" || lower === "checklist page") return "checklist";
   if (lower === "notes" || lower === "notes page") return "notes";
+  if (lower === "back cover" || lower === "back cover page") return "back-cover";
   if (
     lower === "table" ||
     lower === "tracker" ||
@@ -438,6 +439,7 @@ function titleFromBareHeading(lowerType: string): string {
   if (lowerType.endsWith(" page") || lowerType === "table / tracker page") return "";
   if (lowerType === "checklist") return "Checklist";
   if (lowerType === "notes") return "Notes";
+  if (lowerType === "back cover") return "Back Cover";
   if (lowerType === "tracker") return "Tracker";
   if (lowerType === "table") return "Table";
   if (lowerType === "workbook" || lowerType === "worksheet") return "Workbook";
@@ -495,6 +497,8 @@ const STRICT_LABEL_ALIASES: Record<string, string> = {
   "checklist title": "Checklist",
   "checklist page": "Checklist",
   "checklist items": "Checklist",
+  "back cover title": "Back Cover",
+  "back cover page": "Back Cover",
   "tracker title": "Table",
   "tracker page": "Table",
   "table title": "Table",
@@ -531,5 +535,7 @@ function pageTypeName(pageType: PageType): string {
       return "Checklist";
     case "notes":
       return "Notes";
+    case "back-cover":
+      return "Back Cover";
   }
 }

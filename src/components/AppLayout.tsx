@@ -17,7 +17,7 @@ const NAV = [
   { to: "/create", label: "Create Kit", icon: FilePlus2 },
   { to: "/mapper", label: "Kit Content Mapper", icon: Edit3 },
   { to: "/import", label: "Paste Importer", icon: Upload },
-  { to: "/templates", label: "Templates", icon: LayoutTemplate },
+  { to: "/templates", label: "Branch Templates", icon: LayoutTemplate },
   { to: "/builder", label: "Multi-Page Builder", icon: Wrench },
   { to: "/print-preview", label: "Print Preview", icon: Printer },
   { to: "/qc", label: "QC Report", icon: ClipboardCheck },

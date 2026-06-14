@@ -7,7 +7,8 @@ export type PageType =
   | "table"
   | "workbook"
   | "checklist"
-  | "notes";
+  | "notes"
+  | "back-cover";
 
 export type TableData = {
   headers: string[];
