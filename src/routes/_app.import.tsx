@@ -54,23 +54,46 @@ Audience: Business owners
 Tone: Clear and supportive
 Tagline: Build the first clean version of your kit.
 
-Module 1: Getting Started
+Lesson: Know What You Are Building
+Body: This lesson helps you define the product you are creating and the result it should help someone reach.
+Body: Keep the lesson focused so the finished workbook page stays clean and useful.
 
-Lesson One - Know What You Are Building
-This lesson helps you define the product you are creating and the result it should help someone reach.
-
-Worksheet: First Build
-What are you building first?
+Workbook: First Build
+Prompt: What are you building first?
 
 Checklist: Launch Checklist
 - Review the kit
 - Export the PDF
 - Save the version
 
-Tracker: Build Tracker
+Table: Build Tracker
 Headers: Task, Owner, Status
 Row: Outline kit, Erica, Done
 Row: Run QC, Erica, Next`;
+
+const ROUGH_SAMPLE_IMPORT = `Cover Title: Test Kit Erica
+Subtitle: Rough cleanup test
+Branch: Brand
+Audience: Business owners
+Tone: Clear and supportive
+Tagline: Build the first clean version of your kit.
+
+Lesson Title: Know What You Are Building
+Lesson Body: This lesson helps you define the product you are creating and the result it should help someone reach.
+Description: Keep the lesson focused so the finished workbook page stays clean and useful.
+
+Workbook Title: First Build
+Question: What are you building first?
+
+Checklist Title: Launch Checklist
+- Review the kit
+- Export the PDF
+- Save the version
+
+Tracker Title: Build Tracker
+Column Headers: Task, Owner, Status
+Table Row: Outline kit, Erica, Done
+Table Row: Run QC, Erica, Next`;
 
 function ImportPage() {
   const navigate = useNavigate();
@@ -85,6 +108,8 @@ function ImportPage() {
   const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(detected.draft);
   const warnings = useMemo(() => getImportWarnings(reviewDraft), [reviewDraft]);
   const hasContent = rawText.trim().length > 0;
+  const cleanupWasApplied =
+    hasContent && detected.cleanedText.trim() !== rawText.replace(/\r\n/g, "\n").trim();
 
   useEffect(() => {
     setReviewDraft(detected.draft);
@@ -234,7 +259,7 @@ function ImportPage() {
   return (
     <div className="p-8">
       <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Level 9B Word Doc Import
+        Level 10B Import Cleanup
       </div>
       <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
         Paste Content Importer
@@ -280,6 +305,35 @@ function ImportPage() {
                 placeholder="Paste kit title, modules, lessons, worksheets, prompts, checklists, and trackers here."
                 className="font-mono text-xs leading-5"
               />
+              {hasContent && detected.cleanupNotes.length > 0 ? (
+                <div
+                  className="rounded-md border p-3 text-sm"
+                  style={{ borderColor: "#D8CEC2", background: "#FBF7F1", color: "#4b4450" }}
+                >
+                  <div
+                    className="text-[10px] uppercase tracking-[0.18em]"
+                    style={{ color: "#4F2D68" }}
+                  >
+                    Import Cleanup
+                  </div>
+                  <ul className="mt-2 list-disc space-y-1 pl-5">
+                    {detected.cleanupNotes.map((note) => (
+                      <li key={note}>{note}</li>
+                    ))}
+                  </ul>
+                  {cleanupWasApplied ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="mt-3"
+                      onClick={() => setRawText(detected.cleanedText)}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" /> Apply Cleaned Text
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <Button
                   type="button"
@@ -307,6 +361,17 @@ function ImportPage() {
                   }}
                 >
                   <ClipboardPaste className="mr-2 h-4 w-4" /> Load Test Text
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    setRawText(ROUGH_SAMPLE_IMPORT);
+                    setUploadedFileName("");
+                    setCurrentHistoryId(null);
+                  }}
+                >
+                  <ClipboardPaste className="mr-2 h-4 w-4" /> Load Rough Test
                 </Button>
                 <Button
                   type="button"

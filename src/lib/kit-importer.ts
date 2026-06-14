@@ -15,6 +15,8 @@ export type ImportWarning = {
 export type ImportedKitReview = {
   draft: BuilderDraft;
   warnings: ImportWarning[];
+  cleanedText: string;
+  cleanupNotes: string[];
 };
 
 type ParsedSection = {
@@ -57,11 +59,12 @@ export function parseImportedKitText(raw: string): BuilderDraft {
 }
 
 export function detectImportedKitText(raw: string): ImportedKitReview {
+  const cleanup = cleanupImportedKitText(raw);
   const draft = createBlankBuilderDraft();
   const sections: ParsedSection[] = [];
   let current: ParsedSection | null = null;
 
-  const lines = raw.replace(/\r\n/g, "\n").split("\n");
+  const lines = cleanup.cleanedText.replace(/\r\n/g, "\n").split("\n");
   for (const rawLine of lines) {
     const line = rawLine.trim();
     if (!line) continue;
@@ -229,6 +232,19 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
   return {
     draft: normalizedDraft,
     warnings: getImportWarnings(normalizedDraft),
+    cleanedText: cleanup.cleanedText,
+    cleanupNotes: cleanup.notes,
+  };
+}
+
+export function cleanupImportedKitText(raw: string): { cleanedText: string; notes: string[] } {
+  const notes = new Set<string>();
+  const lines = raw.replace(/\r\n/g, "\n").split("\n");
+  const cleanedLines = lines.map((line) => cleanupImportedLine(line, notes));
+
+  return {
+    cleanedText: cleanedLines.join("\n").trim(),
+    notes: Array.from(notes),
   };
 }
 
@@ -307,6 +323,38 @@ function matchTypedHeading(line: string): { type: string; title: string } | null
   }
 
   return null;
+}
+
+function cleanupImportedLine(line: string, notes: Set<string>): string {
+  const indentation = line.match(/^\s*/)?.[0] ?? "";
+  const trimmed = line.trim();
+
+  if (!trimmed) return "";
+
+  const bullet = trimmed.match(/^[•‣◦▪▫☐☑✓✔]\s*(.+)$/);
+  if (bullet) {
+    notes.add("Converted Word-style bullets and checkboxes into checklist items.");
+    return `${indentation}- ${bullet[1]?.trim() ?? ""}`;
+  }
+
+  const normalized = normalizeLabelLine(trimmed, notes);
+  if (normalized !== trimmed) return `${indentation}${normalized}`;
+
+  return line;
+}
+
+function normalizeLabelLine(line: string, notes: Set<string>): string {
+  const label = line.match(/^([A-Za-z][A-Za-z\s/]+?)\s*:\s*(.*)$/);
+  if (!label) return line;
+
+  const rawLabel = label[1]?.trim() ?? "";
+  const value = label[2]?.trim() ?? "";
+  const normalizedLabel = rawLabel.toLowerCase().replace(/\s+/g, " ");
+  const nextLabel = STRICT_LABEL_ALIASES[normalizedLabel];
+
+  if (!nextLabel) return line;
+  notes.add("Standardized rough labels into the strict import format.");
+  return `${nextLabel}: ${value}`.trimEnd();
 }
 
 function createSection(rawType: string, rawTitle: string): ParsedSection {
@@ -426,6 +474,40 @@ function splitCells(value: string): string[] {
     .map((cell) => cell.trim())
     .filter(Boolean);
 }
+
+const STRICT_LABEL_ALIASES: Record<string, string> = {
+  "kit title": "Kit Name",
+  "kit name": "Kit Name",
+  title: "Kit Name",
+  "cover title": "Kit Name",
+  description: "Body",
+  "lesson title": "Lesson",
+  "lesson page": "Lesson",
+  "lesson body": "Body",
+  "body text": "Body",
+  "workbook title": "Workbook",
+  "workbook page": "Workbook",
+  "workbook prompt": "Prompt",
+  question: "Prompt",
+  "notes title": "Notes",
+  "notes page": "Notes",
+  "notes prompt": "Prompt",
+  "checklist title": "Checklist",
+  "checklist page": "Checklist",
+  "checklist items": "Checklist",
+  "tracker title": "Table",
+  "tracker page": "Table",
+  "table title": "Table",
+  "table page": "Table",
+  "table / tracker page": "Table",
+  columns: "Headers",
+  "column headers": "Headers",
+  headers: "Headers",
+  "table headers": "Headers",
+  row: "Row",
+  rows: "Row",
+  "table row": "Row",
+};
 
 function normalizeCells(cells: string[]): string[] {
   const next = cells.slice(0, 3);
