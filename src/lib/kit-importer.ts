@@ -38,6 +38,8 @@ const HEADING_RE =
   /^(cover|section|divider|module|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
 const BARE_HEADING_RE =
   /^(cover|section|divider|module|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
+const PAGE_LABEL_HEADING_RE =
+  /^(cover page|section divider|lesson page|table\s*\/\s*tracker page|table page|tracker page|workbook page|checklist page|notes page)\s*(?::|[-.])?\s*(.*)$/i;
 const NUMBERED_HEADING_RE =
   /^(?:\d+[).]\s*)?(lesson|step|module|worksheet|reflection|tracker)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.+)$/i;
 const BODY_RE = /^(body|lesson body|description)\s*:\s*(.*)$/i;
@@ -161,7 +163,12 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
       continue;
     }
 
-    if (line.includes("|") && looksLikeTableLine(line)) {
+    if (shouldPromoteLineToTitle(current, line)) {
+      current.title = line;
+      continue;
+    }
+
+    if ((current.type === "table" || line.includes("|")) && looksLikeTableLine(line)) {
       current.type = "table";
       const cells = splitCells(line);
       if (current.tableHeaders.length === 0) current.tableHeaders = cells;
@@ -180,6 +187,11 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
         current.type === "workbook" || current.type === "notes" ? "prompt" : "body",
         line,
       );
+      continue;
+    }
+
+    if (current.type === "checklist") {
+      current.checklistItems.push(line);
       continue;
     }
 
@@ -274,6 +286,11 @@ export function getImportWarnings(draft: BuilderDraft): ImportWarning[] {
 }
 
 function matchTypedHeading(line: string): { type: string; title: string } | null {
+  const pageLabel = line.match(PAGE_LABEL_HEADING_RE);
+  if (pageLabel) {
+    return { type: pageLabel[1] ?? "lesson", title: pageLabel[2]?.trim() ?? "" };
+  }
+
   const heading = line.match(HEADING_RE);
   if (heading) {
     return { type: heading[1] ?? "lesson", title: heading[2]?.trim() ?? "" };
@@ -339,23 +356,38 @@ function toBlock(section: ParsedSection, index: number): BuilderBlock {
 }
 
 function normalizeSectionType(value: string): PageType {
-  const lower = value.toLowerCase().trim();
-  if (lower === "cover") return "cover";
-  if (lower === "section" || lower === "divider" || lower === "module") return "divider";
+  const lower = value.toLowerCase().replace(/\s+/g, " ").trim();
+  if (lower === "cover" || lower === "cover page") return "cover";
+  if (
+    lower === "section" ||
+    lower === "divider" ||
+    lower === "module" ||
+    lower === "section divider"
+  )
+    return "divider";
   if (
     lower === "workbook" ||
+    lower === "workbook page" ||
     lower === "workbook prompt" ||
     lower === "worksheet" ||
     lower === "reflection"
   )
     return "workbook";
-  if (lower === "checklist") return "checklist";
-  if (lower === "notes") return "notes";
-  if (lower === "table" || lower === "tracker") return "table";
+  if (lower === "checklist" || lower === "checklist page") return "checklist";
+  if (lower === "notes" || lower === "notes page") return "notes";
+  if (
+    lower === "table" ||
+    lower === "tracker" ||
+    lower === "table page" ||
+    lower === "tracker page" ||
+    lower === "table / tracker page"
+  )
+    return "table";
   return "lesson";
 }
 
 function titleFromBareHeading(lowerType: string): string {
+  if (lowerType.endsWith(" page") || lowerType === "table / tracker page") return "";
   if (lowerType === "checklist") return "Checklist";
   if (lowerType === "notes") return "Notes";
   if (lowerType === "tracker") return "Tracker";
@@ -372,6 +404,19 @@ function appendText(section: ParsedSection, field: "body" | "prompt", value: str
 
 function looksLikeTableLine(line: string): boolean {
   return splitCells(line).length >= 2;
+}
+
+function shouldPromoteLineToTitle(section: ParsedSection, line: string): boolean {
+  if (section.title.trim()) return false;
+  if (line.match(BODY_RE) || line.match(PROMPT_RE)) return false;
+  if (line.match(TABLE_HEADERS_RE) || line.match(TABLE_ROW_RE)) return false;
+  if (line.match(CHECKLIST_ITEM_RE) || line.match(NUMBERED_ITEM_RE)) return false;
+  if (matchTypedHeading(line)) return false;
+  if (looksLikeTableLine(line)) return false;
+  if (section.body.trim() || section.prompt.trim()) return false;
+  if (section.checklistItems.length > 0) return false;
+  if (section.tableHeaders.length > 0 || section.tableRows.length > 0) return false;
+  return true;
 }
 
 function splitCells(value: string): string[] {
