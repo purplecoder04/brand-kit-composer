@@ -115,6 +115,8 @@ type ImportQueueItem = {
   error?: string;
 };
 
+const IMPORT_QUEUE_STORAGE_KEY = "best_collective_import_batch_queue";
+
 function ImportPage() {
   const navigate = useNavigate();
   const [savedSession] = useState(() => loadImportSession());
@@ -127,7 +129,7 @@ function ImportPage() {
   const [importHistory, setImportHistory] = useState<ImportHistoryRecord[]>(() =>
     loadImportHistory(),
   );
-  const [importQueue, setImportQueue] = useState<ImportQueueItem[]>([]);
+  const [importQueue, setImportQueue] = useState<ImportQueueItem[]>(() => loadImportQueue());
   const [savingVersion, setSavingVersion] = useState(false);
   const [showImportQc, setShowImportQc] = useState(false);
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
@@ -331,7 +333,7 @@ function ImportPage() {
       }
     }
 
-    setImportQueue((current) => [...items, ...current].slice(0, 12));
+    updateImportQueue((current) => [...items, ...current].slice(0, 12));
 
     const firstReady = items.find((item) => !item.error);
     if (firstReady) {
@@ -415,7 +417,20 @@ function ImportPage() {
   };
 
   const removeQueueItem = (itemId: string) => {
-    setImportQueue((current) => current.filter((item) => item.id !== itemId));
+    updateImportQueue((current) => current.filter((item) => item.id !== itemId));
+  };
+
+  const clearImportQueue = () => {
+    updateImportQueue(() => []);
+    toast.message("Batch queue cleared");
+  };
+
+  const updateImportQueue = (updater: (current: ImportQueueItem[]) => ImportQueueItem[]) => {
+    setImportQueue((current) => {
+      const next = updater(current).slice(0, 12);
+      saveImportQueue(next);
+      return next;
+    });
   };
 
   const loadHistoryRecord = (record: ImportHistoryRecord) => {
@@ -584,7 +599,7 @@ function ImportPage() {
             activeFileName={uploadedFileName}
             onLoad={loadQueueItem}
             onRemove={removeQueueItem}
-            onClear={() => setImportQueue([])}
+            onClear={clearImportQueue}
           />
         </div>
 
@@ -1152,4 +1167,53 @@ function queueStatusColor(status: ImportQueueStatus): string {
   if (status === "Ready") return "#2E5B33";
   if (status === "Needs Repair" || status === "Error") return "#7a1f1f";
   return "#8a5a00";
+}
+
+function loadImportQueue(): ImportQueueItem[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(IMPORT_QUEUE_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizeImportQueueItem).filter(Boolean).slice(0, 12) as ImportQueueItem[];
+  } catch {
+    return [];
+  }
+}
+
+function saveImportQueue(items: ImportQueueItem[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(IMPORT_QUEUE_STORAGE_KEY, JSON.stringify(items.slice(0, 12)));
+  } catch {
+    // Queue persistence is a convenience; importing should keep working without it.
+  }
+}
+
+function normalizeImportQueueItem(item: Partial<ImportQueueItem>): ImportQueueItem | null {
+  if (!item || typeof item !== "object" || !item.fileName || !item.draft) return null;
+  const status = isImportQueueStatus(item.status) ? item.status : "Needs Review";
+
+  return {
+    id: item.id ?? createQueueId(),
+    fileName: item.fileName,
+    fileType: item.fileType ?? detectImportFileType(item.fileName),
+    rawText: item.rawText ?? "",
+    draft: item.draft,
+    historyId: item.historyId ?? null,
+    warningCount: Number(item.warningCount ?? 0),
+    blockerCount: Number(item.blockerCount ?? 0),
+    status,
+    importedAt: item.importedAt ?? new Date().toISOString(),
+    error: item.error,
+  };
+}
+
+function isImportQueueStatus(value: unknown): value is ImportQueueStatus {
+  return (
+    value === "Ready" || value === "Needs Repair" || value === "Needs Review" || value === "Error"
+  );
 }
