@@ -332,3 +332,35 @@ Do not change Level 9B unless fixing a confirmed bug.
 Do not add AI generation yet.
 Do not add customer-facing features.
 Do not add branch design support yet.
+
+---
+
+# Best Collective Kit Factory V1 - Level 9C Import History
+
+Approved on: 2026-06-13
+
+This version is locked as the approved Level 9C Import History checkpoint.
+
+Approved behavior:
+- /import shows a Recent Imports section.
+- TXT imports are tracked locally.
+- Markdown imports are tracked locally.
+- Word document imports are tracked locally.
+- Import history stores file name, file type, import time, kit name, block count, warning count, and Builder draft status.
+- Recent imports can be loaded back into the import review screen.
+- Import history can be cleared.
+- Builder draft creation still works after import history is enabled.
+- Print/PDF pipeline still uses locked Brand Template V1.
+- QC still works on uploaded/imported Builder drafts.
+- /mapper remains untouched.
+- /builder remains stable.
+- /version-library remains stable.
+- /qc remains stable.
+- /dashboard remains stable.
+- Brand Template V1 styling remains locked.
+- No Supabase schema changes were added for Level 9C.
+
+Do not change Level 9C unless fixing a confirmed bug.
+Do not add AI generation yet.
+Do not add customer-facing features.
+Do not add branch design support yet.
