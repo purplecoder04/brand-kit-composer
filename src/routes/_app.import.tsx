@@ -10,7 +10,7 @@ import {
   RefreshCw,
   Trash2,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,7 @@ import {
   markImportCreated,
   type ImportHistoryRecord,
 } from "@/lib/import-history";
+import { clearImportSession, loadImportSession, saveImportSession } from "@/lib/import-session";
 import { detectImportedKitText, getImportWarnings } from "@/lib/kit-importer";
 import type { PageType } from "@/lib/kit-types";
 import { createQCReport, type QCReportMvp } from "@/lib/qc-report";
@@ -100,16 +101,22 @@ Table Row: Run QC, Erica, Next`;
 
 function ImportPage() {
   const navigate = useNavigate();
-  const [rawText, setRawText] = useState("");
-  const [uploadedFileName, setUploadedFileName] = useState("");
-  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(null);
+  const [savedSession] = useState(() => loadImportSession());
+  const restoredSessionRef = useRef(Boolean(savedSession));
+  const [rawText, setRawText] = useState(savedSession?.rawText ?? "");
+  const [uploadedFileName, setUploadedFileName] = useState(savedSession?.uploadedFileName ?? "");
+  const [currentHistoryId, setCurrentHistoryId] = useState<string | null>(
+    savedSession?.currentHistoryId ?? null,
+  );
   const [importHistory, setImportHistory] = useState<ImportHistoryRecord[]>(() =>
     loadImportHistory(),
   );
   const [savingVersion, setSavingVersion] = useState(false);
   const [showImportQc, setShowImportQc] = useState(false);
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
-  const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(detected.draft);
+  const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(
+    savedSession?.reviewDraft ?? detected.draft,
+  );
   const warnings = useMemo(() => getImportWarnings(reviewDraft), [reviewDraft]);
   const importQcReport = useMemo(() => createQCReport(reviewDraft), [reviewDraft]);
   const importQcBlockers = importQcReport.issues.filter((issue) => issue.severity === "blocker");
@@ -120,9 +127,43 @@ function ImportPage() {
     hasContent && detected.cleanedText.trim() !== rawText.replace(/\r\n/g, "\n").trim();
 
   useEffect(() => {
+    if (restoredSessionRef.current && savedSession?.rawText === rawText) {
+      restoredSessionRef.current = false;
+      return;
+    }
+    restoredSessionRef.current = false;
     setReviewDraft(detected.draft);
     setShowImportQc(false);
-  }, [detected.draft]);
+  }, [detected.draft, rawText, savedSession?.rawText]);
+
+  useEffect(() => {
+    if (!hasContent && reviewDraft.blocks.length === 0 && !uploadedFileName) {
+      clearImportSession();
+      return;
+    }
+
+    saveImportSession({
+      rawText,
+      uploadedFileName,
+      currentHistoryId,
+      reviewDraft,
+      savedAt: new Date().toISOString(),
+    });
+  }, [currentHistoryId, hasContent, rawText, reviewDraft, uploadedFileName]);
+
+  const setImportText = (text: string) => {
+    setRawText(text);
+    setCurrentHistoryId(null);
+  };
+
+  const clearActiveImport = () => {
+    setRawText("");
+    setUploadedFileName("");
+    setCurrentHistoryId(null);
+    setReviewDraft(detectImportedKitText("").draft);
+    setShowImportQc(false);
+    clearImportSession();
+  };
 
   const updateDraft = (patch: Partial<BuilderDraft>) => {
     setReviewDraft((current) => normalizeDraft({ ...current, ...patch, source: "current" }));
@@ -253,6 +294,7 @@ function ImportPage() {
       });
       setRawText(text);
       setUploadedFileName(file.name);
+      setReviewDraft(imported.draft);
       setImportHistory(records);
       setCurrentHistoryId(records[0]?.id ?? null);
       toast.success("File loaded into importer");
@@ -346,7 +388,7 @@ function ImportPage() {
                       variant="outline"
                       size="sm"
                       className="mt-3"
-                      onClick={() => setRawText(detected.cleanedText)}
+                      onClick={() => setImportText(detected.cleanedText)}
                     >
                       <RefreshCw className="mr-2 h-4 w-4" /> Apply Cleaned Text
                     </Button>
@@ -396,9 +438,8 @@ function ImportPage() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setRawText(SAMPLE_IMPORT);
+                    setImportText(SAMPLE_IMPORT);
                     setUploadedFileName("");
-                    setCurrentHistoryId(null);
                   }}
                 >
                   <ClipboardPaste className="mr-2 h-4 w-4" /> Load Test Text
@@ -407,22 +448,13 @@ function ImportPage() {
                   type="button"
                   variant="outline"
                   onClick={() => {
-                    setRawText(ROUGH_SAMPLE_IMPORT);
+                    setImportText(ROUGH_SAMPLE_IMPORT);
                     setUploadedFileName("");
-                    setCurrentHistoryId(null);
                   }}
                 >
                   <ClipboardPaste className="mr-2 h-4 w-4" /> Load Rough Test
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setRawText("");
-                    setUploadedFileName("");
-                    setCurrentHistoryId(null);
-                  }}
-                >
+                <Button type="button" variant="outline" onClick={clearActiveImport}>
                   <RefreshCw className="mr-2 h-4 w-4" /> Clear
                 </Button>
               </div>
