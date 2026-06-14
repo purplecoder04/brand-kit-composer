@@ -10,6 +10,7 @@ import {
   Library,
   Edit3,
   Upload,
+  PackageCheck,
 } from "lucide-react";
 
 const NAV = [
@@ -22,6 +23,7 @@ const NAV = [
   { to: "/print-preview", label: "Print Preview", icon: Printer },
   { to: "/qc", label: "QC Report", icon: ClipboardCheck },
   { to: "/version-library", label: "Version Library", icon: Library },
+  { to: "/package-export", label: "Package Export", icon: PackageCheck },
 ] as const;
 
 export function AppLayout() {
