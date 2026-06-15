@@ -82,7 +82,7 @@ function PrintPreviewPage() {
 
       <div className="mt-5 flex flex-wrap gap-2">
         <PrintLink kitId={kit.id} filter="all" label="Print / Save as PDF" primary />
-        <PrintLink kitId={kit.id} filter="lesson" label="Export Lesson Guide" />
+        <PrintLink kitId={kit.id} filter="lesson" label="Export Lesson Pages" />
         <PrintLink kitId={kit.id} filter="workbook" label="Export Workbook" />
         <PrintLink kitId={kit.id} filter="all" label="Export Full Kit" />
       </div>

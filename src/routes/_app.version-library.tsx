@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import {
   Archive,
+  BookOpenText,
   CheckCircle2,
   ClipboardCheck,
   Copy,
@@ -30,6 +31,13 @@ import {
   type VersionQcStatus,
   type VersionStatus,
 } from "@/lib/version-library";
+import {
+  findLessonGuideForVersion,
+  loadLessonGuideLibrary,
+  openLessonGuideRecord,
+  saveLessonGuideSource,
+  type LessonGuideLibraryRecord,
+} from "@/lib/lesson-guide";
 
 export const Route = createFileRoute("/_app/version-library")({
   head: () => ({ meta: [{ title: "Version Library | Kit Factory" }] }),
@@ -52,6 +60,7 @@ function VersionLibraryPage() {
   const [editingNotesId, setEditingNotesId] = useState<string | null>(null);
   const [notesDraft, setNotesDraft] = useState("");
   const [storageMode, setStorageMode] = useState<StorageMode>("checking");
+  const [lessonGuides] = useState<LessonGuideLibraryRecord[]>(() => loadLessonGuideLibrary());
 
   useEffect(() => {
     let cancelled = false;
@@ -91,6 +100,10 @@ function VersionLibraryPage() {
       docHubReady: records.filter((record) => record.docHubReady).length,
     };
   }, [records]);
+  const standaloneLessonGuides = useMemo(
+    () => lessonGuides.filter((record) => !record.sourceVersionId),
+    [lessonGuides],
+  );
 
   const persistLocal = (next: KitVersionRecord[]) => {
     const saved = saveVersionLibrary(next);
@@ -102,6 +115,22 @@ function VersionLibraryPage() {
     openVersionDraftInBuilder(record);
     toast.success("Opened version in builder");
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
+  };
+
+  const generateLessonGuide = (record: KitVersionRecord) => {
+    saveLessonGuideSource(record.draft, {
+      sourceLabel: `${displayKitName(record.kitName)} ${record.version}`,
+      sourceKitId: record.draft.id,
+      sourceVersionId: record.id,
+    });
+    toast.success("Lesson Guide generated");
+    navigate({ to: "/lesson-guide" });
+  };
+
+  const openLessonGuide = (record: LessonGuideLibraryRecord) => {
+    openLessonGuideRecord(record);
+    toast.success("Opened Lesson Guide");
+    navigate({ to: "/lesson-guide" });
   };
 
   const duplicateRecord = async (record: KitVersionRecord) => {
@@ -223,177 +252,238 @@ function VersionLibraryPage() {
                 </td>
               </tr>
             ) : (
-              records.map((record) => (
-                <tr key={record.id} style={{ borderTop: "1px solid #E7DFD2" }}>
-                  <td className="px-4 py-3 align-top">
-                    <div
-                      className="font-semibold"
-                      style={{ color: record.kitName ? "#222026" : "#9a929d" }}
-                    >
-                      {displayKitName(record.kitName)}
-                    </div>
-                    {editingNotesId === record.id ? (
-                      <div className="mt-2 space-y-2">
-                        <Textarea
-                          rows={3}
-                          value={notesDraft}
-                          onChange={(event) => setNotesDraft(event.target.value)}
-                        />
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={() => saveNotes(record.id)}>
-                            Save Notes
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingNotesId(null);
-                              setNotesDraft("");
-                            }}
-                          >
-                            Cancel
-                          </Button>
+              records.map((record) => {
+                const lessonGuide = findLessonGuideForVersion(lessonGuides, record);
+
+                return (
+                  <tr key={record.id} style={{ borderTop: "1px solid #E7DFD2" }}>
+                    <td className="px-4 py-3 align-top">
+                      <div
+                        className="font-semibold"
+                        style={{ color: record.kitName ? "#222026" : "#9a929d" }}
+                      >
+                        {displayKitName(record.kitName)}
+                      </div>
+                      <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                        Lesson Guide:{" "}
+                        <span
+                          className="font-semibold"
+                          style={{ color: lessonGuide ? "#2E5B33" : "#9a929d" }}
+                        >
+                          {lessonGuide ? "Generated" : "Not generated"}
+                        </span>
+                      </div>
+                      {editingNotesId === record.id ? (
+                        <div className="mt-2 space-y-2">
+                          <Textarea
+                            rows={3}
+                            value={notesDraft}
+                            onChange={(event) => setNotesDraft(event.target.value)}
+                          />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={() => saveNotes(record.id)}>
+                              Save Notes
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => {
+                                setEditingNotesId(null);
+                                setNotesDraft("");
+                              }}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                    ) : record.notes ? (
-                      <div className="mt-1 max-w-[240px] text-xs" style={{ color: "#6b6470" }}>
-                        {record.notes}
-                      </div>
-                    ) : null}
-                  </td>
-                  <td className="px-4 py-3 align-top">{record.branch}</td>
-                  <td className="px-4 py-3 align-top">{record.version}</td>
-                  <td className="px-4 py-3 align-top">
-                    <SelectCell
-                      value={record.status}
-                      options={STATUS_OPTIONS}
-                      onChange={(value) =>
-                        void patchRecord(
-                          record.id,
-                          { status: value as VersionStatus },
-                          "Status updated",
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <SelectCell
-                      value={record.qcStatus}
-                      options={QC_STATUS_OPTIONS}
-                      onChange={(value) =>
-                        void patchRecord(
-                          record.id,
-                          { qcStatus: value as VersionQcStatus },
-                          "QC status updated",
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <SelectCell
-                      value={record.saleReady ? "Yes" : "No"}
-                      options={["No", "Yes"]}
-                      onChange={(value) =>
-                        void patchRecord(
-                          record.id,
-                          { saleReady: value === "Yes" },
-                          "Sale readiness updated",
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <SelectCell
-                      value={record.docHubReady ? "Yes" : "No"}
-                      options={["No", "Yes"]}
-                      onChange={(value) =>
-                        void patchRecord(
-                          record.id,
-                          { docHubReady: value === "Yes" },
-                          "DocHub readiness updated",
-                        )
-                      }
-                    />
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    {new Date(record.lastUpdated).toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="flex flex-wrap gap-2">
-                      <ActionButton label="Open in Builder" onClick={() => openInBuilder(record)}>
-                        <ExternalLink className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton
-                        label="Run QC"
-                        onClick={() => navigate({ to: "/qc", search: { versionId: record.id } })}
-                      >
-                        <ClipboardCheck className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton
-                        label="Duplicate Version"
-                        onClick={() => void duplicateRecord(record)}
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton
-                        label="Archive Version"
-                        onClick={() =>
-                          void patchRecord(record.id, { status: "Archived" }, "Version archived")
-                        }
-                      >
-                        <Archive className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton
-                        label="Mark QC Passed"
-                        onClick={() =>
+                      ) : record.notes ? (
+                        <div className="mt-1 max-w-[240px] text-xs" style={{ color: "#6b6470" }}>
+                          {record.notes}
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3 align-top">{record.branch}</td>
+                    <td className="px-4 py-3 align-top">{record.version}</td>
+                    <td className="px-4 py-3 align-top">
+                      <SelectCell
+                        value={record.status}
+                        options={STATUS_OPTIONS}
+                        onChange={(value) =>
                           void patchRecord(
                             record.id,
-                            { qcStatus: "Passed", status: "Approved" },
-                            "QC marked passed",
+                            { status: value as VersionStatus },
+                            "Status updated",
                           )
                         }
-                      >
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton
-                        label="Mark Needs Repair"
-                        onClick={() =>
+                      />
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <SelectCell
+                        value={record.qcStatus}
+                        options={QC_STATUS_OPTIONS}
+                        onChange={(value) =>
                           void patchRecord(
                             record.id,
-                            { qcStatus: "Needs Repair", status: "In Review" },
-                            "Marked needs repair",
+                            { qcStatus: value as VersionQcStatus },
+                            "QC status updated",
                           )
                         }
-                      >
-                        <RotateCcw className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton
-                        label="Mark Sale Ready"
-                        onClick={() =>
-                          void patchRecord(record.id, { saleReady: true }, "Marked sale ready")
+                      />
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <SelectCell
+                        value={record.saleReady ? "Yes" : "No"}
+                        options={["No", "Yes"]}
+                        onChange={(value) =>
+                          void patchRecord(
+                            record.id,
+                            { saleReady: value === "Yes" },
+                            "Sale readiness updated",
+                          )
                         }
-                      >
-                        <FileCheck2 className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton
-                        label="Mark DocHub Ready"
-                        onClick={() =>
-                          void patchRecord(record.id, { docHubReady: true }, "Marked DocHub ready")
+                      />
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <SelectCell
+                        value={record.docHubReady ? "Yes" : "No"}
+                        options={["No", "Yes"]}
+                        onChange={(value) =>
+                          void patchRecord(
+                            record.id,
+                            { docHubReady: value === "Yes" },
+                            "DocHub readiness updated",
+                          )
                         }
-                      >
-                        <FileCheck2 className="h-3.5 w-3.5" />
-                      </ActionButton>
-                      <ActionButton label="Add/Edit Notes" onClick={() => startNotes(record)}>
-                        <StickyNote className="h-3.5 w-3.5" />
-                      </ActionButton>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                      />
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      {new Date(record.lastUpdated).toLocaleString()}
+                    </td>
+                    <td className="px-4 py-3 align-top">
+                      <div className="flex flex-wrap gap-2">
+                        <ActionButton label="Open in Builder" onClick={() => openInBuilder(record)}>
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Run QC"
+                          onClick={() => navigate({ to: "/qc", search: { versionId: record.id } })}
+                        >
+                          <ClipboardCheck className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Generate Lesson Guide"
+                          onClick={() => generateLessonGuide(record)}
+                        >
+                          <BookOpenText className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        {lessonGuide ? (
+                          <ActionButton
+                            label="Open Lesson Guide"
+                            onClick={() => openLessonGuide(lessonGuide)}
+                          >
+                            <BookOpenText className="h-3.5 w-3.5" />
+                          </ActionButton>
+                        ) : null}
+                        <ActionButton
+                          label="Duplicate Version"
+                          onClick={() => void duplicateRecord(record)}
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Archive Version"
+                          onClick={() =>
+                            void patchRecord(record.id, { status: "Archived" }, "Version archived")
+                          }
+                        >
+                          <Archive className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Mark QC Passed"
+                          onClick={() =>
+                            void patchRecord(
+                              record.id,
+                              { qcStatus: "Passed", status: "Approved" },
+                              "QC marked passed",
+                            )
+                          }
+                        >
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Mark Needs Repair"
+                          onClick={() =>
+                            void patchRecord(
+                              record.id,
+                              { qcStatus: "Needs Repair", status: "In Review" },
+                              "Marked needs repair",
+                            )
+                          }
+                        >
+                          <RotateCcw className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Mark Sale Ready"
+                          onClick={() =>
+                            void patchRecord(record.id, { saleReady: true }, "Marked sale ready")
+                          }
+                        >
+                          <FileCheck2 className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Mark DocHub Ready"
+                          onClick={() =>
+                            void patchRecord(
+                              record.id,
+                              { docHubReady: true },
+                              "Marked DocHub ready",
+                            )
+                          }
+                        >
+                          <FileCheck2 className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton label="Add/Edit Notes" onClick={() => startNotes(record)}>
+                          <StickyNote className="h-3.5 w-3.5" />
+                        </ActionButton>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
       </div>
+
+      {standaloneLessonGuides.length > 0 ? (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-base">Standalone Lesson Guides</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {standaloneLessonGuides.map((guide) => (
+              <div
+                key={guide.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                style={{ borderColor: "#D8CEC2", background: "#fff" }}
+              >
+                <div>
+                  <div className="font-semibold" style={{ color: "#222026" }}>
+                    {guide.guideTitle}
+                  </div>
+                  <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                    {guide.branch || "Brand"} / Generated{" "}
+                    {new Date(guide.generatedAt).toLocaleString()}
+                  </div>
+                </div>
+                <Button type="button" variant="outline" onClick={() => openLessonGuide(guide)}>
+                  <BookOpenText className="mr-2 h-4 w-4" /> Open Lesson Guide
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
     </div>
   );
 }

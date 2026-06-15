@@ -11,6 +11,7 @@ import {
   Edit3,
   Upload,
   PackageCheck,
+  BookOpenText,
 } from "lucide-react";
 
 const NAV = [
@@ -24,6 +25,7 @@ const NAV = [
   { to: "/qc", label: "QC Report", icon: ClipboardCheck },
   { to: "/version-library", label: "Version Library", icon: Library },
   { to: "/package-export", label: "Package Export", icon: PackageCheck },
+  { to: "/lesson-guide", label: "Lesson Guide", icon: BookOpenText },
 ] as const;
 
 export function AppLayout() {

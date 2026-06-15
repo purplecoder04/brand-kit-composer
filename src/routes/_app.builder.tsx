@@ -4,6 +4,7 @@ import {
   AlertTriangle,
   ArrowDown,
   ArrowUp,
+  BookOpenText,
   Copy,
   Eraser,
   Library,
@@ -50,6 +51,7 @@ import {
   loadVersionLibrary,
   saveVersionLibrary,
 } from "@/lib/version-library";
+import { saveLessonGuideSource } from "@/lib/lesson-guide";
 import type { PageType } from "@/lib/kit-types";
 
 const searchSchema = z.object({
@@ -239,6 +241,13 @@ function BuilderPage() {
     });
   };
 
+  const generateLessonGuide = () => {
+    const savedDraft = persist();
+    saveLessonGuideSource(savedDraft, "Current Builder Draft");
+    toast.success("Lesson Guide generated");
+    navigate({ to: "/lesson-guide" });
+  };
+
   const resetToSample = () => {
     const sample = saveBuilderDraft(createSampleBuilderDraft());
     setDraft(sample);
@@ -280,6 +289,9 @@ function BuilderPage() {
         </Button>
         <Button onClick={printDraft} variant="outline">
           <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
+        </Button>
+        <Button onClick={generateLessonGuide} variant="outline">
+          <BookOpenText className="mr-2 h-4 w-4" /> Generate Lesson Guide
         </Button>
         <Button onClick={resetToSample} variant="outline">
           <RotateCcw className="mr-2 h-4 w-4" /> Reset to Sample Content

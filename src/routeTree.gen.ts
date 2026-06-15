@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as LessonGuidePrintRouteImport } from './routes/lesson-guide-print'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrintKitIdRouteImport } from './routes/print.$kitId'
@@ -19,11 +20,17 @@ import { Route as AppQcRouteImport } from './routes/_app.qc'
 import { Route as AppPrintPreviewRouteImport } from './routes/_app.print-preview'
 import { Route as AppPackageExportRouteImport } from './routes/_app.package-export'
 import { Route as AppMapperRouteImport } from './routes/_app.mapper'
+import { Route as AppLessonGuideRouteImport } from './routes/_app.lesson-guide'
 import { Route as AppImportRouteImport } from './routes/_app.import'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCreateRouteImport } from './routes/_app.create'
 import { Route as AppBuilderRouteImport } from './routes/_app.builder'
 
+const LessonGuidePrintRoute = LessonGuidePrintRouteImport.update({
+  id: '/lesson-guide-print',
+  path: '/lesson-guide-print',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppRoute = AppRouteImport.update({
   id: '/_app',
   getParentRoute: () => rootRouteImport,
@@ -73,6 +80,11 @@ const AppMapperRoute = AppMapperRouteImport.update({
   path: '/mapper',
   getParentRoute: () => AppRoute,
 } as any)
+const AppLessonGuideRoute = AppLessonGuideRouteImport.update({
+  id: '/lesson-guide',
+  path: '/lesson-guide',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppImportRoute = AppImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -96,10 +108,12 @@ const AppBuilderRoute = AppBuilderRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/lesson-guide-print': typeof LessonGuidePrintRoute
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
   '/import': typeof AppImportRoute
+  '/lesson-guide': typeof AppLessonGuideRoute
   '/mapper': typeof AppMapperRoute
   '/package-export': typeof AppPackageExportRoute
   '/print-preview': typeof AppPrintPreviewRoute
@@ -111,10 +125,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/lesson-guide-print': typeof LessonGuidePrintRoute
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
   '/import': typeof AppImportRoute
+  '/lesson-guide': typeof AppLessonGuideRoute
   '/mapper': typeof AppMapperRoute
   '/package-export': typeof AppPackageExportRoute
   '/print-preview': typeof AppPrintPreviewRoute
@@ -128,10 +144,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/lesson-guide-print': typeof LessonGuidePrintRoute
   '/_app/builder': typeof AppBuilderRoute
   '/_app/create': typeof AppCreateRoute
   '/_app/dashboard': typeof AppDashboardRoute
   '/_app/import': typeof AppImportRoute
+  '/_app/lesson-guide': typeof AppLessonGuideRoute
   '/_app/mapper': typeof AppMapperRoute
   '/_app/package-export': typeof AppPackageExportRoute
   '/_app/print-preview': typeof AppPrintPreviewRoute
@@ -145,10 +163,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/lesson-guide-print'
     | '/builder'
     | '/create'
     | '/dashboard'
     | '/import'
+    | '/lesson-guide'
     | '/mapper'
     | '/package-export'
     | '/print-preview'
@@ -160,10 +180,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/lesson-guide-print'
     | '/builder'
     | '/create'
     | '/dashboard'
     | '/import'
+    | '/lesson-guide'
     | '/mapper'
     | '/package-export'
     | '/print-preview'
@@ -176,10 +198,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
+    | '/lesson-guide-print'
     | '/_app/builder'
     | '/_app/create'
     | '/_app/dashboard'
     | '/_app/import'
+    | '/_app/lesson-guide'
     | '/_app/mapper'
     | '/_app/package-export'
     | '/_app/print-preview'
@@ -193,11 +217,19 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  LessonGuidePrintRoute: typeof LessonGuidePrintRoute
   PrintKitIdRoute: typeof PrintKitIdRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/lesson-guide-print': {
+      id: '/lesson-guide-print'
+      path: '/lesson-guide-print'
+      fullPath: '/lesson-guide-print'
+      preLoaderRoute: typeof LessonGuidePrintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app': {
       id: '/_app'
       path: ''
@@ -268,6 +300,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppMapperRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/lesson-guide': {
+      id: '/_app/lesson-guide'
+      path: '/lesson-guide'
+      fullPath: '/lesson-guide'
+      preLoaderRoute: typeof AppLessonGuideRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/import': {
       id: '/_app/import'
       path: '/import'
@@ -304,6 +343,7 @@ interface AppRouteChildren {
   AppCreateRoute: typeof AppCreateRoute
   AppDashboardRoute: typeof AppDashboardRoute
   AppImportRoute: typeof AppImportRoute
+  AppLessonGuideRoute: typeof AppLessonGuideRoute
   AppMapperRoute: typeof AppMapperRoute
   AppPackageExportRoute: typeof AppPackageExportRoute
   AppPrintPreviewRoute: typeof AppPrintPreviewRoute
@@ -318,6 +358,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppCreateRoute: AppCreateRoute,
   AppDashboardRoute: AppDashboardRoute,
   AppImportRoute: AppImportRoute,
+  AppLessonGuideRoute: AppLessonGuideRoute,
   AppMapperRoute: AppMapperRoute,
   AppPackageExportRoute: AppPackageExportRoute,
   AppPrintPreviewRoute: AppPrintPreviewRoute,
@@ -332,6 +373,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  LessonGuidePrintRoute: LessonGuidePrintRoute,
   PrintKitIdRoute: PrintKitIdRoute,
 }
 export const routeTree = rootRouteImport

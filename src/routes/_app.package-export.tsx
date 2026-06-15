@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   Archive,
+  BookOpenText,
   CheckCircle2,
   ExternalLink,
   FileText,
@@ -22,6 +23,7 @@ import {
   saveVersionLibrary,
   type KitVersionRecord,
 } from "@/lib/version-library";
+import { saveLessonGuideSource } from "@/lib/lesson-guide";
 
 export const Route = createFileRoute("/_app/package-export")({
   head: () => ({ meta: [{ title: "Package Export | Kit Factory" }] }),
@@ -109,6 +111,22 @@ function PackageExportPage() {
     setSourceMode("builder");
     toast.success("Version loaded into Builder");
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
+  };
+
+  const generateLessonGuide = () => {
+    if (!activeDraft) return;
+    saveLessonGuideSource(
+      activeDraft,
+      sourceMode === "version" && activeRecord
+        ? {
+            sourceLabel: `${displayKitName(activeRecord.kitName)} ${activeRecord.version}`,
+            sourceKitId: activeRecord.draft.id,
+            sourceVersionId: activeRecord.id,
+          }
+        : "Current Builder Draft",
+    );
+    toast.success("Lesson Guide generated");
+    navigate({ to: "/lesson-guide" });
   };
 
   return (
@@ -235,6 +253,15 @@ function PackageExportPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
+                disabled={!activeDraft}
+                onClick={generateLessonGuide}
+              >
+                <BookOpenText className="mr-2 h-4 w-4" /> Generate Lesson Guide
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
                 onClick={() => navigate({ to: "/version-library" })}
               >
                 <FileText className="mr-2 h-4 w-4" /> Open Version Library
@@ -337,9 +364,8 @@ function PackageExportPage() {
               />
               <ChecklistRow
                 label="Create extra guide files"
-                detail="Lesson Guide and How To Use This Kit PDF are planned next."
-                done={false}
-                planned
+                detail="Lesson Guide MVP is available now. How To Use This Kit PDF is still planned."
+                done={Boolean(activeDraft)}
               />
             </CardContent>
           </Card>
@@ -350,7 +376,10 @@ function PackageExportPage() {
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
               <PackageFile title="Workbook PDF" status={hasPages ? "Ready to export" : "Missing"} />
-              <PackageFile title="Lesson Guide" status="Planned" />
+              <PackageFile
+                title="Lesson Guide"
+                status={activeDraft ? "Ready to generate" : "Missing"}
+              />
               <PackageFile title="How To Use This Kit PDF" status="Planned" />
               <PackageFile title="Package Notes" status="Checklist only" />
               <PackageFile title="ZIP Bundle" status="Not built yet" />
