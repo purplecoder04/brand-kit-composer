@@ -12,6 +12,7 @@ import {
   Upload,
   PackageCheck,
   BookOpenText,
+  FileText,
 } from "lucide-react";
 
 const NAV = [
@@ -26,6 +27,7 @@ const NAV = [
   { to: "/version-library", label: "Version Library", icon: Library },
   { to: "/package-export", label: "Package Export", icon: PackageCheck },
   { to: "/lesson-guide", label: "Lesson Guide", icon: BookOpenText },
+  { to: "/how-to-kit", label: "How-To PDF", icon: FileText },
 ] as const;
 
 export function AppLayout() {

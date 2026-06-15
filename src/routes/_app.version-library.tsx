@@ -38,6 +38,13 @@ import {
   saveLessonGuideSource,
   type LessonGuideLibraryRecord,
 } from "@/lib/lesson-guide";
+import {
+  findHowToKitForVersion,
+  loadHowToKitLibrary,
+  openHowToKitRecord,
+  saveHowToKitSource,
+  type HowToKitLibraryRecord,
+} from "@/lib/how-to-kit";
 
 export const Route = createFileRoute("/_app/version-library")({
   head: () => ({ meta: [{ title: "Version Library | Kit Factory" }] }),
@@ -61,6 +68,7 @@ function VersionLibraryPage() {
   const [notesDraft, setNotesDraft] = useState("");
   const [storageMode, setStorageMode] = useState<StorageMode>("checking");
   const [lessonGuides] = useState<LessonGuideLibraryRecord[]>(() => loadLessonGuideLibrary());
+  const [howToGuides] = useState<HowToKitLibraryRecord[]>(() => loadHowToKitLibrary());
 
   useEffect(() => {
     let cancelled = false;
@@ -104,6 +112,10 @@ function VersionLibraryPage() {
     () => lessonGuides.filter((record) => !record.sourceVersionId),
     [lessonGuides],
   );
+  const standaloneHowToGuides = useMemo(
+    () => howToGuides.filter((record) => !record.sourceVersionId),
+    [howToGuides],
+  );
 
   const persistLocal = (next: KitVersionRecord[]) => {
     const saved = saveVersionLibrary(next);
@@ -131,6 +143,22 @@ function VersionLibraryPage() {
     openLessonGuideRecord(record);
     toast.success("Opened Lesson Guide");
     navigate({ to: "/lesson-guide" });
+  };
+
+  const generateHowToKit = (record: KitVersionRecord) => {
+    saveHowToKitSource(record.draft, {
+      sourceLabel: `${displayKitName(record.kitName)} ${record.version}`,
+      sourceKitId: record.draft.id,
+      sourceVersionId: record.id,
+    });
+    toast.success("How-To PDF generated");
+    navigate({ to: "/how-to-kit" });
+  };
+
+  const openHowToKit = (record: HowToKitLibraryRecord) => {
+    openHowToKitRecord(record);
+    toast.success("Opened How-To PDF");
+    navigate({ to: "/how-to-kit" });
   };
 
   const duplicateRecord = async (record: KitVersionRecord) => {
@@ -254,6 +282,7 @@ function VersionLibraryPage() {
             ) : (
               records.map((record) => {
                 const lessonGuide = findLessonGuideForVersion(lessonGuides, record);
+                const howToGuide = findHowToKitForVersion(howToGuides, record);
 
                 return (
                   <tr key={record.id} style={{ borderTop: "1px solid #E7DFD2" }}>
@@ -271,6 +300,15 @@ function VersionLibraryPage() {
                           style={{ color: lessonGuide ? "#2E5B33" : "#9a929d" }}
                         >
                           {lessonGuide ? "Generated" : "Not generated"}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                        How-To PDF:{" "}
+                        <span
+                          className="font-semibold"
+                          style={{ color: howToGuide ? "#2E5B33" : "#9a929d" }}
+                        >
+                          {howToGuide ? "Generated" : "Not generated"}
                         </span>
                       </div>
                       {editingNotesId === record.id ? (
@@ -385,6 +423,20 @@ function VersionLibraryPage() {
                           </ActionButton>
                         ) : null}
                         <ActionButton
+                          label="Generate How-To PDF"
+                          onClick={() => generateHowToKit(record)}
+                        >
+                          <FileCheck2 className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        {howToGuide ? (
+                          <ActionButton
+                            label="Open How-To"
+                            onClick={() => openHowToKit(howToGuide)}
+                          >
+                            <FileCheck2 className="h-3.5 w-3.5" />
+                          </ActionButton>
+                        ) : null}
+                        <ActionButton
                           label="Duplicate Version"
                           onClick={() => void duplicateRecord(record)}
                         >
@@ -478,6 +530,36 @@ function VersionLibraryPage() {
                 </div>
                 <Button type="button" variant="outline" onClick={() => openLessonGuide(guide)}>
                   <BookOpenText className="mr-2 h-4 w-4" /> Open Lesson Guide
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {standaloneHowToGuides.length > 0 ? (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-base">Standalone How-To PDFs</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {standaloneHowToGuides.map((guide) => (
+              <div
+                key={guide.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                style={{ borderColor: "#D8CEC2", background: "#fff" }}
+              >
+                <div>
+                  <div className="font-semibold" style={{ color: "#222026" }}>
+                    {guide.guideTitle}
+                  </div>
+                  <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                    {guide.branch || "Brand"} / Generated{" "}
+                    {new Date(guide.generatedAt).toLocaleString()}
+                  </div>
+                </div>
+                <Button type="button" variant="outline" onClick={() => openHowToKit(guide)}>
+                  <FileCheck2 className="mr-2 h-4 w-4" /> Open How-To
                 </Button>
               </div>
             ))}

@@ -7,6 +7,7 @@ import {
   BookOpenText,
   Copy,
   Eraser,
+  FileText,
   Library,
   Plus,
   Printer,
@@ -52,6 +53,7 @@ import {
   saveVersionLibrary,
 } from "@/lib/version-library";
 import { saveLessonGuideSource } from "@/lib/lesson-guide";
+import { saveHowToKitSource } from "@/lib/how-to-kit";
 import type { PageType } from "@/lib/kit-types";
 
 const searchSchema = z.object({
@@ -248,6 +250,13 @@ function BuilderPage() {
     navigate({ to: "/lesson-guide" });
   };
 
+  const generateHowToKit = () => {
+    const savedDraft = persist();
+    saveHowToKitSource(savedDraft, "Current Builder Draft");
+    toast.success("How-To PDF generated");
+    navigate({ to: "/how-to-kit" });
+  };
+
   const resetToSample = () => {
     const sample = saveBuilderDraft(createSampleBuilderDraft());
     setDraft(sample);
@@ -292,6 +301,9 @@ function BuilderPage() {
         </Button>
         <Button onClick={generateLessonGuide} variant="outline">
           <BookOpenText className="mr-2 h-4 w-4" /> Generate Lesson Guide
+        </Button>
+        <Button onClick={generateHowToKit} variant="outline">
+          <FileText className="mr-2 h-4 w-4" /> Generate How-To PDF
         </Button>
         <Button onClick={resetToSample} variant="outline">
           <RotateCcw className="mr-2 h-4 w-4" /> Reset to Sample Content

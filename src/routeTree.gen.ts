@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LessonGuidePrintRouteImport } from './routes/lesson-guide-print'
+import { Route as HowToKitPrintRouteImport } from './routes/how-to-kit-print'
 import { Route as AppRouteImport } from './routes/_app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PrintKitIdRouteImport } from './routes/print.$kitId'
@@ -22,6 +23,7 @@ import { Route as AppPackageExportRouteImport } from './routes/_app.package-expo
 import { Route as AppMapperRouteImport } from './routes/_app.mapper'
 import { Route as AppLessonGuideRouteImport } from './routes/_app.lesson-guide'
 import { Route as AppImportRouteImport } from './routes/_app.import'
+import { Route as AppHowToKitRouteImport } from './routes/_app.how-to-kit'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCreateRouteImport } from './routes/_app.create'
 import { Route as AppBuilderRouteImport } from './routes/_app.builder'
@@ -29,6 +31,11 @@ import { Route as AppBuilderRouteImport } from './routes/_app.builder'
 const LessonGuidePrintRoute = LessonGuidePrintRouteImport.update({
   id: '/lesson-guide-print',
   path: '/lesson-guide-print',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HowToKitPrintRoute = HowToKitPrintRouteImport.update({
+  id: '/how-to-kit-print',
+  path: '/how-to-kit-print',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AppRoute = AppRouteImport.update({
@@ -90,6 +97,11 @@ const AppImportRoute = AppImportRouteImport.update({
   path: '/import',
   getParentRoute: () => AppRoute,
 } as any)
+const AppHowToKitRoute = AppHowToKitRouteImport.update({
+  id: '/how-to-kit',
+  path: '/how-to-kit',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -108,10 +120,12 @@ const AppBuilderRoute = AppBuilderRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/how-to-kit-print': typeof HowToKitPrintRoute
   '/lesson-guide-print': typeof LessonGuidePrintRoute
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
+  '/how-to-kit': typeof AppHowToKitRoute
   '/import': typeof AppImportRoute
   '/lesson-guide': typeof AppLessonGuideRoute
   '/mapper': typeof AppMapperRoute
@@ -125,10 +139,12 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/how-to-kit-print': typeof HowToKitPrintRoute
   '/lesson-guide-print': typeof LessonGuidePrintRoute
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
+  '/how-to-kit': typeof AppHowToKitRoute
   '/import': typeof AppImportRoute
   '/lesson-guide': typeof AppLessonGuideRoute
   '/mapper': typeof AppMapperRoute
@@ -144,10 +160,12 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_app': typeof AppRouteWithChildren
+  '/how-to-kit-print': typeof HowToKitPrintRoute
   '/lesson-guide-print': typeof LessonGuidePrintRoute
   '/_app/builder': typeof AppBuilderRoute
   '/_app/create': typeof AppCreateRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/how-to-kit': typeof AppHowToKitRoute
   '/_app/import': typeof AppImportRoute
   '/_app/lesson-guide': typeof AppLessonGuideRoute
   '/_app/mapper': typeof AppMapperRoute
@@ -163,10 +181,12 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/how-to-kit-print'
     | '/lesson-guide-print'
     | '/builder'
     | '/create'
     | '/dashboard'
+    | '/how-to-kit'
     | '/import'
     | '/lesson-guide'
     | '/mapper'
@@ -180,10 +200,12 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/how-to-kit-print'
     | '/lesson-guide-print'
     | '/builder'
     | '/create'
     | '/dashboard'
+    | '/how-to-kit'
     | '/import'
     | '/lesson-guide'
     | '/mapper'
@@ -198,10 +220,12 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/_app'
+    | '/how-to-kit-print'
     | '/lesson-guide-print'
     | '/_app/builder'
     | '/_app/create'
     | '/_app/dashboard'
+    | '/_app/how-to-kit'
     | '/_app/import'
     | '/_app/lesson-guide'
     | '/_app/mapper'
@@ -217,6 +241,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
+  HowToKitPrintRoute: typeof HowToKitPrintRoute
   LessonGuidePrintRoute: typeof LessonGuidePrintRoute
   PrintKitIdRoute: typeof PrintKitIdRoute
 }
@@ -228,6 +253,13 @@ declare module '@tanstack/react-router' {
       path: '/lesson-guide-print'
       fullPath: '/lesson-guide-print'
       preLoaderRoute: typeof LessonGuidePrintRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/how-to-kit-print': {
+      id: '/how-to-kit-print'
+      path: '/how-to-kit-print'
+      fullPath: '/how-to-kit-print'
+      preLoaderRoute: typeof HowToKitPrintRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_app': {
@@ -314,6 +346,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppImportRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/how-to-kit': {
+      id: '/_app/how-to-kit'
+      path: '/how-to-kit'
+      fullPath: '/how-to-kit'
+      preLoaderRoute: typeof AppHowToKitRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -342,6 +381,7 @@ interface AppRouteChildren {
   AppBuilderRoute: typeof AppBuilderRoute
   AppCreateRoute: typeof AppCreateRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppHowToKitRoute: typeof AppHowToKitRoute
   AppImportRoute: typeof AppImportRoute
   AppLessonGuideRoute: typeof AppLessonGuideRoute
   AppMapperRoute: typeof AppMapperRoute
@@ -357,6 +397,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBuilderRoute: AppBuilderRoute,
   AppCreateRoute: AppCreateRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppHowToKitRoute: AppHowToKitRoute,
   AppImportRoute: AppImportRoute,
   AppLessonGuideRoute: AppLessonGuideRoute,
   AppMapperRoute: AppMapperRoute,
@@ -373,6 +414,7 @@ const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
+  HowToKitPrintRoute: HowToKitPrintRoute,
   LessonGuidePrintRoute: LessonGuidePrintRoute,
   PrintKitIdRoute: PrintKitIdRoute,
 }
