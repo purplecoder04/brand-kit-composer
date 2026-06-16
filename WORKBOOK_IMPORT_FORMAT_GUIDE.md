@@ -1,179 +1,56 @@
-# Best Collective Workbook Import Guide
+# Best Collective Kit Factory Import Format Guide
 
-Use this guide when you want to write a workbook in a text file, Markdown file, or Word document and feed it into the Kit Factory importer with fewer errors.
+Use this guide when creating a `.md`, `.txt`, or `.docx` file that you want the Kit Factory importer to read cleanly.
 
-The goal is simple:
+The best import format is simple Markdown/text with clear labels. The app is looking for structure more than formatting.
 
-- The app should understand your kit structure.
-- The Builder draft should come in clean.
-- Import QC should have fewer blockers.
-- The PDF should use your content, not guessed or sample content.
+## Best File Type
 
-## Best File Types
+Recommended:
 
-Use one of these:
+```text
+.md
+```
 
-- `.txt`
-- `.md`
-- `.docx`
+Also works:
 
-For the cleanest import, write the workbook like a structured outline. Do not make it fancy before importing. The app cares more about clear labels than pretty formatting.
+```text
+.txt
+.docx
+```
 
-## Golden Rule
+Avoid using PDF as the source file. PDF should be the final output after the kit is built.
 
-Put one clear label before each section.
+## The Main Rule
+
+Every page needs a clear page label.
 
 Good:
 
 ```text
 Lesson Page: Know What You Are Building
-Body: This lesson helps the reader understand what they are creating and why it matters.
+Body: Before you build the full kit, define what the first version should help the reader do.
 ```
 
 Risky:
 
 ```text
-Here is a really important thing about building your workbook...
+Know what you are building before you start.
 ```
 
 The risky version may import, but the app has to guess what kind of page it is.
 
-## Page Count Rule
+## Kit Info Format
 
-Every page-type label creates one Builder block and usually one PDF page.
-
-That means this creates 3 workbook pages:
-
-```text
-Cover Page: My Kit
-
-Lesson Page: First Lesson
-
-Workbook Page: First Prompt
-```
-
-If a file has 18 page-type labels, the app should create about 18 pages. That is correct behavior.
-
-To control page count:
-
-- Count the page-type labels before importing.
-- Use only the labels you want to become real pages.
-- Put extra context inside `Body:` or `Prompt:` instead of starting a new page label.
-- If the label says `Something Page:`, `Section Divider:`, or `Back Cover Page:`, treat it like a new page.
-
-If you expected 10 pages but got 18, the file probably has 18 page labels. Fix the file first before changing code.
-
-## Import-Safe Page Types
-
-These labels are the safest to use right now:
-
-```text
-Cover Page:
-Start Here Page:
-Section Divider:
-Module Intro Page:
-Lesson Page:
-Quote / Opening Thought Page:
-Workbook Page:
-Checklist Page:
-Table / Tracker Page:
-Notes Page:
-Reflection Page:
-Action Plan Page:
-Resource Page:
-Case Study / Example Page:
-Prompt Page:
-Progress Check Page:
-Closing / Next Steps Page:
-Back Cover Page:
-```
-
-Reflection content can also import well when written as:
-
-```text
-Reflection:
-Prompt:
-```
-
-If a page type does not import the way you expect, change the block type in Builder after import. The safest core types are still Cover, Section Divider, Lesson, Workbook, Checklist, Table / Tracker, Notes, and Back Cover.
-
-## Page Count Warning Tests
-
-Use these tests to confirm the Builder page count warnings are working.
-
-### Normal Test: 1-20 Pages
-
-Make a file with 20 page-type labels or fewer.
-
-Expected result:
-
-- No large workbook warning.
-- PDF export should still work.
-
-### Large Workbook Test: 21-40 Pages
-
-Make a file with 21 page-type labels.
-
-Expected warning:
-
-```text
-This is becoming a large workbook. Review spacing, page flow, and export quality before selling.
-```
-
-PDF export should still work. This warning is guidance only.
-
-### Review Before Export Test: 41+ Pages
-
-Make a file with 41 page-type labels.
-
-Expected warning:
-
-```text
-This workbook is over 40 pages. Please review page flow, file size, print quality, and whether it should be split into multiple products before export.
-```
-
-PDF export should still work. This warning is guidance only.
-
-### Easy Way To Build A 20 Or 40 Page Test
-
-Repeat short page blocks instead of using long text. Short blocks keep the test focused on page count instead of overflow.
-
-Example repeatable lesson block:
-
-```text
-Lesson Page: Test Lesson 01
-Body: This is a short page-count test lesson.
-```
-
-Example repeatable workbook block:
-
-```text
-Workbook Page: Test Prompt 01
-Prompt: What is one next step?
-```
-
-Example repeatable checklist block:
-
-```text
-Checklist Page: Test Checklist 01
-- Confirm the title
-- Confirm the branch
-- Confirm the PDF
-```
-
-For a clean count test, avoid very long lesson bodies, long prompts, more than 8 table rows, or more than 12 checklist items. Those can create continuation pages and make the count higher on purpose.
-
-## Top Kit Info
-
-Start every workbook with this kit information:
+Start the file with kit-level information.
 
 ```text
 Kit Name: Test Kit Erica
-Subtitle: A simple workbook draft
+Subtitle: A Best Collective workbook
 Branch: Brand
 Audience: Business owners
 Tone: Clear, warm, practical
-Tagline: A short sentence about what this kit helps the reader do.
+Tagline: A simple workbook to help the reader take the next right step.
 ```
 
 Approved branch values:
@@ -186,307 +63,157 @@ Rebuild
 Heal
 ```
 
-## Clean Workbook Structure
+If branch is blank or misspelled, the app may default to a general style or show a warning.
 
-Use this order for a strong import:
+## Import-Safe Page Labels
+
+Use these exact labels when possible:
 
 ```text
-Kit Name:
-Subtitle:
-Branch:
-Audience:
-Tone:
-Tagline:
-
 Cover Page:
-Body:
-
-Section Divider:
-Body:
-
 Start Here Page:
-Body:
-
+Section Divider:
 Module Intro Page:
-Body:
-
 Lesson Page:
-Body:
-
 Quote / Opening Thought Page:
-Body:
-
 Workbook Page:
-Prompt:
-
 Checklist Page:
-- Item one
-- Item two
-- Item three
-
 Table / Tracker Page:
-Headers: Column One, Column Two, Column Three
-Row: Answer one, Answer two, Answer three
-Row: Answer one, Answer two, Answer three
-
 Notes Page:
-Prompt:
-
 Reflection Page:
-Prompt:
-
 Action Plan Page:
-Body:
-
 Resource Page:
-Body:
-
 Case Study / Example Page:
-Body:
-
 Prompt Page:
-Prompt:
-
 Progress Check Page:
-Body:
-
 Closing / Next Steps Page:
-Body:
-
 Back Cover Page:
-Body:
 ```
 
-## What Each Page Needs
+Each page label creates one Builder block. Some blocks can create extra print pages later if they overflow.
 
-### Cover Page
+## Page Count Rule
 
-Use this for the main kit title and intro.
+One page label usually becomes one workbook page.
+
+This file creates about three pages:
 
 ```text
-Cover Page: Test Kit Erica
-Body: A short description of what this workbook helps the reader do.
+Cover Page: My Kit
+
+Lesson Page: First Lesson
+Body: Short lesson text.
+
+Workbook Page: First Prompt
+Prompt: What is one next step?
 ```
 
-Tips:
+If you expected 10 pages but got 18, the file probably had 18 page labels or overflow content created continuation pages.
 
-- Keep the title short.
-- Put the longer explanation in Body.
-- Do not paste a full lesson on the cover.
+## Overflow Rules
 
-### Section Divider
+The app may create continuation pages when content is long:
 
-Use this to open a new section or module.
+- Lesson body over about 1400 characters or 6 paragraphs
+- Table over 8 rows
+- Checklist over 12 items
+- Very long prompts can trigger warnings
 
-```text
-Section Divider: Module One
-Body: A short line that explains what this section is about.
-```
+This is expected. The app should not shrink text tiny or crowd the page.
 
-Tips:
+## Required Field Rules
 
-- Keep it short and spacious.
-- Use this for pacing, not heavy teaching.
+Blank fields stay blank. The app should not invent sample content.
 
-### Lesson Page
+To avoid QC blockers, give these pages the right fields:
 
-Use this for teaching content.
+- Lesson Page needs a title and body.
+- Workbook Page needs a title and prompt.
+- Checklist Page needs at least one checklist item.
+- Table / Tracker Page needs headers and at least one filled row.
+- Notes, Reflection, and Prompt pages work best with a title, prompt, and writing lines.
 
-```text
-Lesson Page: Know What You Are Building
-Body: Before you build the workbook, define the result it creates.
+## Writing Lines
 
-Keep the lesson focused. One page should teach one main idea.
-```
-
-Tips:
-
-- Use blank lines between paragraphs.
-- Keep lesson bodies focused.
-- Very long lessons may create continuation pages.
-
-### Workbook Page
-
-Use this for a writing prompt.
+For writing pages, add `Writing Lines:` when you want to control space.
 
 ```text
 Workbook Page: Define Your First Build
 Prompt: What are you building first, who is it for, and what result should it create?
+Writing Lines: 12
 ```
 
-Tips:
-
-- Always include Prompt.
-- Keep the prompt under 280 characters when possible.
-- The app will add writing lines in Builder.
-
-### Checklist Page
-
-Use one item per line.
+Recommended range:
 
 ```text
-Checklist Page: Launch Checklist
-- Name the kit
-- Confirm the branch
-- Review the lesson
-- Test the PDF export
+4 to 20
 ```
 
-Tips:
+If you leave writing lines blank, the Builder may use its default or show a warning.
 
-- Use `-` for each item.
-- Do not put all checklist items in one paragraph.
-- Long checklists may create continuation pages.
+## Lesson-Only File
 
-### Table / Tracker Page
-
-Use headers and rows.
+Use this when you only want to upload lesson content.
 
 ```text
-Table / Tracker Page: Build Tracker
-Headers: Task, Status, Notes
-Row: Draft lesson, Done, Keep it short
-Row: Add workbook prompt, In progress, Needs review
-Row: Test PDF, Not started, Export after QC
-```
+Kit Name: Test Kit Erica
+Subtitle: Lesson-only import test
+Branch: Brand
+Audience: Business owners
+Tone: Clear, warm, practical
+Tagline: A simple lesson import test.
 
-Tips:
-
-- Use exactly three headers.
-- Use exactly three values per row.
-- Do not leave all headers blank.
-- Do not leave all rows blank.
-
-### Notes Page
-
-Use this for open writing space.
-
-```text
-Notes Page: Notes
-Prompt: What do you want to remember from this section?
-```
-
-Tips:
-
-- Prompt is optional, but it helps QC and future fillable mapping.
-- If you want a blank writing page, use Notes Page with a title.
-
-### Back Cover Page
-
-Use this only if the workbook needs a closing page.
-
-```text
-Back Cover Page: Your Next Step
-Body: You have everything you need to take the next step with clarity.
-```
-
-Tips:
-
-- Back Cover is optional.
-- It is not forced onto every workbook.
-
-## Common Import Errors
-
-### Error: Missing title
-
-Cause:
-
-```text
-Lesson Page:
-Body: This has body text but no lesson title.
-```
-
-Fix:
-
-```text
 Lesson Page: Know What You Are Building
-Body: This has a clear lesson title.
+Body: Before you build the full kit, define what the first version should help the reader do.
+
+A strong workbook helps the reader move from confusion to clarity with simple, focused steps.
+
+Lesson Page: Choose the First Result
+Body: The first version of a kit does not need to solve everything.
+
+It should create one useful result the reader can feel, name, or complete.
 ```
 
-### Error: Workbook prompt is blank
+Expected result:
 
-Cause:
+- Two Lesson Page blocks
+- No workbook prompts unless you add Workbook Page labels
+- No sample content
+
+## Workbook-Only File
+
+Use this when you only want writing pages.
 
 ```text
-Workbook Page: First Build
-Body: What are you building first?
+Kit Name: Test Kit Erica
+Subtitle: Workbook-only import test
+Branch: Brand
+Audience: Business owners
+Tone: Clear, warm, practical
+Tagline: A simple workbook import test.
+
+Workbook Page: Define Your First Build
+Prompt: What are you building first, who is it for, and what result should it create?
+Writing Lines: 12
+
+Reflection Page: What Feels Clear
+Prompt: What feels clearer after naming the first version of this kit?
+Writing Lines: 10
+
+Action Plan Page: Choose Your Next Three Steps
+Body: Write the next three steps you will take to move this kit forward.
 ```
 
-Fix:
+Expected result:
 
-```text
-Workbook Page: First Build
-Prompt: What are you building first?
-```
+- Workbook Page block
+- Reflection Page block
+- Action Plan Page block
+- No lesson pages unless you add Lesson Page labels
 
-### Error: Checklist has no items
+## Full Kit Starter Template
 
-Cause:
-
-```text
-Checklist Page: Launch Checklist
-```
-
-Fix:
-
-```text
-Checklist Page: Launch Checklist
-- Check the title
-- Check the branch
-- Check the PDF
-```
-
-### Error: Table headers are blank
-
-Cause:
-
-```text
-Table / Tracker Page: Build Tracker
-Row: Draft, Done, Looks good
-```
-
-Fix:
-
-```text
-Table / Tracker Page: Build Tracker
-Headers: Task, Status, Notes
-Row: Draft, Done, Looks good
-```
-
-### Error: Table has no filled rows
-
-Cause:
-
-```text
-Table / Tracker Page: Build Tracker
-Headers: Task, Status, Notes
-```
-
-Fix:
-
-```text
-Table / Tracker Page: Build Tracker
-Headers: Task, Status, Notes
-Row: Draft lesson, Done, Looks good
-```
-
-## Best Writing Rules
-
-Follow these to avoid repair work:
-
-- One page equals one idea.
-- Keep titles clear and short.
-- Use Body for teaching content.
-- Use Prompt for workbook, notes, and reflection questions.
-- Use bullets for checklists.
-- Use Headers and Row for tables.
-- Do not paste the whole workbook as one long paragraph.
-- Do not use filler markers like lorem ipsum, placeholder, TODO:, [insert...], replace this, sample content, or sample text.
-- Do not leave required pages blank unless you want blank pages.
-
-## Copy/Paste Starter Template
-
-Use this as your starting file:
+Copy this when you want a complete test kit.
 
 ```text
 Kit Name: Test Kit Erica
@@ -499,19 +226,26 @@ Tagline: A simple workbook to help the reader take the next right step.
 Cover Page: Test Kit Erica
 Body: This workbook helps you clarify what you are building and turn it into a simple action plan.
 
-Section Divider: Start Here
-Body: Begin with the big picture before moving into the details.
-
 Start Here Page: How To Use This Workbook
 Body: Move through each page in order. Keep your answers simple and focus on one clear next step at a time.
+
+Section Divider: Module One
+Body: Start by naming the result this kit should create.
+
+Module Intro Page: Build the First Version
+Body: This module helps you focus on the first useful version instead of trying to build everything at once.
 
 Lesson Page: Know What You Are Building
 Body: Before you build anything, name the result you want the workbook to create.
 
 The clearer the result, the easier it is to shape the lessons, prompts, and action steps.
 
+Quote / Opening Thought Page: Keep the First Version Simple
+Body: A clear first version is better than a crowded final version that never gets finished.
+
 Workbook Page: Define Your First Build
 Prompt: What are you building first, who is it for, and what result should it create?
+Writing Lines: 12
 
 Checklist Page: Builder Checklist
 - Name the kit
@@ -528,40 +262,432 @@ Row: Test PDF, Not started, Review before export
 
 Notes Page: Reflection Notes
 Prompt: What needs to be clearer before this kit is ready?
+Writing Lines: 12
+
+Reflection Page: What Is Working
+Prompt: What part of this kit already feels useful?
+Writing Lines: 10
+
+Action Plan Page: Next Three Steps
+Body: Choose the next three steps that will move this kit toward a clean first version.
+
+Resource Page: Helpful Links and Reminders
+Body: Add any tools, links, reminders, or references that support this kit.
+
+Case Study / Example Page: Example Answer
+Body: Show a simple example of how a reader might complete one of the workbook prompts.
+
+Prompt Page: Main Writing Prompt
+Prompt: What is the most important decision you need to make before this kit is ready?
+Writing Lines: 12
 
 Progress Check Page: Review Your Progress
-Body: Confirm what is finished
-Confirm what still needs work
-Choose the next action
+Body: Confirm what is finished.
+Confirm what still needs work.
+Choose the next action.
+
+Closing / Next Steps Page: What To Do Next
+Body: Review your answers, choose your top three next actions, and revisit the kit in 30 days.
 
 Back Cover Page: Your Next Step
 Body: Use this workbook as a clear starting point. Keep the next step simple and visible.
 ```
 
+## Page Type Examples
+
+### Cover Page
+
+```text
+Cover Page: Test Kit Erica
+Body: This workbook helps you clarify what you are building.
+```
+
+### Start Here Page
+
+```text
+Start Here Page: How To Use This Workbook
+Body: Start at the beginning, move in order, and keep your answers simple.
+```
+
+### Section Divider
+
+```text
+Section Divider: Module One
+Body: Begin with clarity before moving into action.
+```
+
+### Module Intro Page
+
+```text
+Module Intro Page: Build the First Version
+Body: This module helps you choose the first useful version of the kit.
+```
+
+### Lesson Page
+
+```text
+Lesson Page: Know What You Are Building
+Body: Before you build the full kit, define the first result this kit should create.
+```
+
+### Quote / Opening Thought Page
+
+```text
+Quote / Opening Thought Page: A Simple Start
+Body: The first version does not need to do everything. It needs to do one useful thing clearly.
+```
+
+### Workbook Page
+
+```text
+Workbook Page: Define Your First Build
+Prompt: What are you building first, who is it for, and what result should it create?
+Writing Lines: 12
+```
+
+### Checklist Page
+
+```text
+Checklist Page: Launch Checklist
+- Confirm the kit title
+- Confirm the branch
+- Review the workbook preview
+- Export the PDF
+```
+
+### Table / Tracker Page
+
+```text
+Table / Tracker Page: Build Tracker
+Headers: Task, Status, Notes
+Row: Draft lesson, Done, Keep it focused
+Row: Add workbook prompt, In progress, Keep prompt short
+Row: Test PDF, Not started, Review before export
+```
+
+Use three headers and three values per row when possible.
+
+### Notes Page
+
+```text
+Notes Page: Notes
+Prompt: What do you want to remember from this section?
+Writing Lines: 12
+```
+
+### Reflection Page
+
+```text
+Reflection Page: What Feels Clear
+Prompt: What feels clearer after completing this section?
+Writing Lines: 10
+```
+
+### Action Plan Page
+
+```text
+Action Plan Page: Next Three Steps
+Body: Choose three actions you can complete next.
+```
+
+### Resource Page
+
+```text
+Resource Page: Tools and Reminders
+Body: Add helpful links, tools, terms, reminders, or references here.
+```
+
+### Case Study / Example Page
+
+```text
+Case Study / Example Page: Example Answer
+Body: Show a sample answer or scenario that helps the reader understand what good work looks like.
+```
+
+### Prompt Page
+
+```text
+Prompt Page: Main Decision
+Prompt: What is the most important decision you need to make before moving forward?
+Writing Lines: 12
+```
+
+### Progress Check Page
+
+```text
+Progress Check Page: Review Your Progress
+Body: What is finished?
+What still needs work?
+What is the next action?
+```
+
+### Closing / Next Steps Page
+
+```text
+Closing / Next Steps Page: What To Do Next
+Body: Review your answers, choose the top three next actions, and revisit the kit in 30 days.
+```
+
+### Back Cover Page
+
+```text
+Back Cover Page: Your Next Step
+Body: You have everything you need to take the next step with clarity.
+```
+
+Back Cover is optional. Do not add it unless the kit needs a closing page.
+
+## Table Rules
+
+Good:
+
+```text
+Table / Tracker Page: Offer Tracker
+Headers: Offer, Status, Notes
+Row: Starter kit, Drafted, Needs preview
+Row: Workbook PDF, Ready, Export in Chrome
+```
+
+Avoid:
+
+```text
+Table / Tracker Page: Offer Tracker
+Body: Here is a table about offers.
+```
+
+The app needs `Headers:` and `Row:` lines to build a real table.
+
+## Checklist Rules
+
+Good:
+
+```text
+Checklist Page: Review Checklist
+- Check the title
+- Check the branch
+- Check the PDF
+```
+
+Avoid:
+
+```text
+Checklist Page: Review Checklist
+Check the title, check the branch, check the PDF.
+```
+
+Use one checklist item per line.
+
+## Common Import Problems
+
+### Missing Title
+
+Problem:
+
+```text
+Lesson Page:
+Body: This lesson has no title.
+```
+
+Fix:
+
+```text
+Lesson Page: Know What You Are Building
+Body: This lesson has a clear title.
+```
+
+### Workbook Prompt Is Blank
+
+Problem:
+
+```text
+Workbook Page: First Build
+Body: What are you building first?
+```
+
+Fix:
+
+```text
+Workbook Page: First Build
+Prompt: What are you building first?
+```
+
+### Checklist Has No Items
+
+Problem:
+
+```text
+Checklist Page: Launch Checklist
+```
+
+Fix:
+
+```text
+Checklist Page: Launch Checklist
+- Confirm the title
+- Review the preview
+```
+
+### Table Headers Are Blank
+
+Problem:
+
+```text
+Table / Tracker Page: Build Tracker
+Row: Draft lesson, Done, Looks good
+```
+
+Fix:
+
+```text
+Table / Tracker Page: Build Tracker
+Headers: Task, Status, Notes
+Row: Draft lesson, Done, Looks good
+```
+
+### Table Has No Rows
+
+Problem:
+
+```text
+Table / Tracker Page: Build Tracker
+Headers: Task, Status, Notes
+```
+
+Fix:
+
+```text
+Table / Tracker Page: Build Tracker
+Headers: Task, Status, Notes
+Row: Draft lesson, Done, Looks good
+```
+
+## Words To Avoid In Test Files
+
+The importer/QC may flag sample or placeholder language.
+
+Avoid:
+
+```text
+sample
+placeholder
+lorem ipsum
+TODO
+insert here
+replace this
+test ccccc
+dummy text
+```
+
+Use real working text, even if it is short.
+
+## Best Writing Rules
+
+- One page equals one idea.
+- Use clear page labels.
+- Use `Body:` for teaching or explanation.
+- Use `Prompt:` for workbook, notes, reflection, and prompt pages.
+- Use `Writing Lines:` for writing pages.
+- Use `Headers:` and `Row:` for tables.
+- Use `-` for checklist items.
+- Keep lesson pages focused.
+- Keep workbook prompts short.
+- Do not paste the whole workbook into one block.
+- Do not use sample content unless you are intentionally testing sample content.
+
+## 20-Page And 40-Page Tests
+
+To test page warnings, repeat short blocks.
+
+Normal:
+
+- 1 to 20 pages
+- No large workbook warning
+
+Large workbook:
+
+- 21 to 40 pages
+- Shows large workbook warning
+- Export still allowed
+
+Review before export:
+
+- 41+ pages
+- Shows stronger review warning
+- Export still allowed
+
+Short repeatable lesson:
+
+```text
+Lesson Page: Test Lesson 01
+Body: This is a short page-count test lesson.
+```
+
+Short repeatable workbook page:
+
+```text
+Workbook Page: Test Prompt 01
+Prompt: What is one next step?
+Writing Lines: 8
+```
+
+Avoid long text during page-count tests because overflow pages can make the final PDF page count higher.
+
 ## Best Workflow
 
-1. Write the workbook in `.txt`, `.md`, or `.docx`.
-2. Use the labels from this guide.
-3. Upload or paste into Import.
+1. Write the kit in `.md` first.
+2. Use the exact labels from this guide.
+3. Import into Paste Importer.
 4. Run Import QC.
-5. Fix blockers before creating a Builder draft.
+5. Fix blockers.
 6. Create Builder draft.
-7. Add newer pacing pages in Builder if needed.
+7. Review and edit in Builder.
 8. Run QC.
-9. Preview.
-10. Print / Save as PDF.
+9. Generate workbook PDF.
+10. Generate How-To PDF if needed.
+11. Generate Lesson Guide if this kit will be taught or reviewed.
+12. Track the package in Package Export.
 
 ## Quick Pass Test
 
-If your file imports and creates these blocks, the structure is working:
+If this imports cleanly, the basics are working:
 
-- Cover
-- Section Divider
-- Lesson
-- Workbook
-- Checklist
-- Table / Tracker
-- Notes
-- Back Cover
+```text
+Kit Name: Quick Import Test
+Subtitle: Basic structure test
+Branch: Brand
+Audience: Business owners
+Tone: Clear and practical
+Tagline: A short test kit for import structure.
 
-If QC passes or only shows small warnings, the workbook is ready to clean up inside Builder.
+Cover Page: Quick Import Test
+Body: This is a short cover description.
+
+Lesson Page: First Lesson
+Body: This is a short lesson.
+
+Workbook Page: First Prompt
+Prompt: What is one next step?
+Writing Lines: 10
+
+Checklist Page: First Checklist
+- Confirm the title
+- Confirm the branch
+- Confirm the PDF
+
+Table / Tracker Page: First Tracker
+Headers: Task, Status, Notes
+Row: Draft, Done, Looks good
+
+Back Cover Page: Final Step
+Body: Review your answers and choose one next action.
+```
+
+Expected result:
+
+- Cover block
+- Lesson block
+- Workbook block
+- Checklist block
+- Table block
+- Back Cover block
+- No sample content

@@ -1,0 +1,225 @@
+import { buildPagesFromKitDraft, normalizeDraft, type BuilderDraft } from "./builder-content";
+import type { KitVersionRecord, VersionQcStatus } from "./version-library";
+
+export const PACKAGE_EXPORT_STORAGE_KEY = "best_collective_package_exports";
+
+export type PackageExportStatus = {
+  id: string;
+  sourceVersionId?: string;
+  sourceKitId?: string;
+  kitName: string;
+  branch: string;
+  version: string;
+  workbookExported: boolean;
+  lessonGuideGenerated: boolean;
+  howToGenerated: boolean;
+  qcStatus: VersionQcStatus;
+  saleReady: boolean;
+  docHubReady: boolean;
+  packageReady: boolean;
+  manifest: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type PackageAssetReadiness = {
+  workbookReady: boolean;
+  lessonGuideGenerated: boolean;
+  howToGenerated: boolean;
+  qcPassed: boolean;
+  packageNotesGenerated: boolean;
+};
+
+export function loadPackageExports(): PackageExportStatus[] {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const raw = window.localStorage.getItem(PACKAGE_EXPORT_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as Partial<PackageExportStatus>[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map(normalizePackageExport).filter(Boolean) as PackageExportStatus[];
+  } catch {
+    return [];
+  }
+}
+
+export function savePackageExports(records: PackageExportStatus[]): PackageExportStatus[] {
+  const normalized = records.map(normalizePackageExport).filter(Boolean) as PackageExportStatus[];
+
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(PACKAGE_EXPORT_STORAGE_KEY, JSON.stringify(normalized));
+    } catch {
+      // Ignore local browser storage failures.
+    }
+  }
+
+  return normalized;
+}
+
+export function findPackageExportForVersion(
+  records: PackageExportStatus[],
+  versionId: string,
+): PackageExportStatus | null {
+  return records.find((record) => record.sourceVersionId === versionId) ?? null;
+}
+
+export function getPackageExportForSource(
+  records: PackageExportStatus[],
+  draft: BuilderDraft,
+  version?: KitVersionRecord | null,
+): PackageExportStatus {
+  const normalizedDraft = normalizeDraft(draft);
+  const now = new Date().toISOString();
+  const existing = version
+    ? findPackageExportForVersion(records, version.id)
+    : records.find(
+        (record) => !record.sourceVersionId && record.sourceKitId === normalizedDraft.id,
+      );
+
+  if (existing) {
+    return normalizePackageExport({
+      ...existing,
+      sourceKitId: existing.sourceKitId ?? normalizedDraft.id,
+      kitName: normalizedDraft.kitName,
+      branch: normalizedDraft.branch,
+      version: version?.version ?? existing.version,
+      qcStatus: version?.qcStatus ?? existing.qcStatus,
+      saleReady: version?.saleReady ?? existing.saleReady,
+      docHubReady: version?.docHubReady ?? existing.docHubReady,
+    }) as PackageExportStatus;
+  }
+
+  return {
+    id: createId("package"),
+    sourceVersionId: version?.id,
+    sourceKitId: normalizedDraft.id,
+    kitName: normalizedDraft.kitName,
+    branch: normalizedDraft.branch,
+    version: version?.version ?? "Builder Draft",
+    workbookExported: false,
+    lessonGuideGenerated: false,
+    howToGenerated: false,
+    qcStatus: version?.qcStatus ?? "Not Reviewed",
+    saleReady: version?.saleReady ?? false,
+    docHubReady: version?.docHubReady ?? false,
+    packageReady: false,
+    manifest: "",
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+export function upsertPackageExport(
+  records: PackageExportStatus[],
+  status: PackageExportStatus,
+): PackageExportStatus[] {
+  const next = normalizePackageExport({
+    ...status,
+    updatedAt: new Date().toISOString(),
+  }) as PackageExportStatus;
+  const remaining = records.filter((record) => record.id !== next.id);
+  return savePackageExports([next, ...remaining]);
+}
+
+export function buildPackageManifest({
+  draft,
+  version,
+  lessonGuideGenerated,
+  howToGenerated,
+  workbookExported,
+}: {
+  draft: BuilderDraft;
+  version: string;
+  lessonGuideGenerated: boolean;
+  howToGenerated: boolean;
+  workbookExported: boolean;
+}): string {
+  const normalizedDraft = normalizeDraft(draft);
+  const productName = normalizedDraft.kitName.trim() || "Untitled Kit";
+  const branch = normalizedDraft.branch.trim() || "Unassigned";
+  const safeName = productName.replace(/[\\/:*?"<>|]/g, "").trim() || "Untitled Kit";
+  const includedFiles = [
+    workbookExported
+      ? `${safeName} - Workbook.pdf`
+      : `${safeName} - Workbook.pdf (export in Chrome before final package)`,
+    howToGenerated ? `${safeName} - How To Use This Kit.pdf` : null,
+    lessonGuideGenerated ? `${safeName} - Lesson Guide.pdf` : null,
+  ].filter(Boolean);
+
+  return [
+    `Package Manifest`,
+    ``,
+    `Product name: ${productName}`,
+    `Branch: ${branch}`,
+    `Version: ${version}`,
+    `Generated: ${new Date().toLocaleString()}`,
+    ``,
+    `Included files:`,
+    ...includedFiles.map((file) => `- ${file}`),
+    ``,
+    `Suggested buyer file names:`,
+    `- ${safeName} - Workbook.pdf`,
+    howToGenerated ? `- ${safeName} - How To Use This Kit.pdf` : null,
+    lessonGuideGenerated ? `- ${safeName} - Lesson Guide.pdf` : null,
+    ``,
+    `Usage notes:`,
+    `- Deliver the workbook PDF as the primary customer file.`,
+    `- Include the How-To PDF when buyers need simple usage instructions.`,
+    `- Keep the Lesson Guide internal unless this product is being taught or facilitated.`,
+    ``,
+    `Internal production notes:`,
+    `- Confirm the workbook PDF was exported from Chrome with background graphics enabled.`,
+    `- Confirm QC status is Passed before marking the package ready.`,
+    `- ZIP packaging and stored PDF files are not part of this MVP.`,
+  ]
+    .filter((line): line is string => line !== null)
+    .join("\n");
+}
+
+export function isPackageReady(readiness: PackageAssetReadiness): boolean {
+  return (
+    readiness.workbookReady &&
+    readiness.lessonGuideGenerated &&
+    readiness.howToGenerated &&
+    readiness.qcPassed &&
+    readiness.packageNotesGenerated
+  );
+}
+
+export function packageReadinessLabel(status: PackageExportStatus | null): "Ready" | "In Progress" {
+  return status?.packageReady ? "Ready" : "In Progress";
+}
+
+export function countPrintablePages(draft: BuilderDraft): number {
+  return buildPagesFromKitDraft(draft).length;
+}
+
+function normalizePackageExport(record: Partial<PackageExportStatus>): PackageExportStatus | null {
+  if (!record) return null;
+  const now = new Date().toISOString();
+
+  return {
+    id: record.id ?? createId("package"),
+    sourceVersionId: record.sourceVersionId,
+    sourceKitId: record.sourceKitId,
+    kitName: record.kitName ?? "",
+    branch: record.branch ?? "",
+    version: record.version ?? "Builder Draft",
+    workbookExported: Boolean(record.workbookExported),
+    lessonGuideGenerated: Boolean(record.lessonGuideGenerated),
+    howToGenerated: Boolean(record.howToGenerated),
+    qcStatus: record.qcStatus ?? "Not Reviewed",
+    saleReady: Boolean(record.saleReady),
+    docHubReady: Boolean(record.docHubReady),
+    packageReady: Boolean(record.packageReady),
+    manifest: record.manifest ?? "",
+    createdAt: record.createdAt ?? now,
+    updatedAt: record.updatedAt ?? record.createdAt ?? now,
+  };
+}
+
+function createId(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}

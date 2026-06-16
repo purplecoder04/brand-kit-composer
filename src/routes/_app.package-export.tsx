@@ -3,18 +3,55 @@ import {
   Archive,
   BookOpenText,
   CheckCircle2,
+  ClipboardCheck,
   ExternalLink,
+  FileCheck2,
   FileText,
   PackageCheck,
   Printer,
+  StickyNote,
   TriangleAlert,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildBuilderKit, loadBuilderDraft, type BuilderDraft } from "@/lib/builder-content";
+import {
+  buildBuilderKit,
+  loadBuilderDraft,
+  RESERVED_BUILDER_KIT_ID,
+  saveBuilderDraft,
+  type BuilderDraft,
+} from "@/lib/builder-content";
 import { listVersionLibraryRecords } from "@/lib/api/version-library.functions";
+import {
+  findHowToKitForVersion,
+  loadHowToKitLibrary,
+  openHowToKitRecord,
+  saveHowToKitRecord,
+  saveHowToKitSource,
+  type HowToKitLibraryRecord,
+} from "@/lib/how-to-kit";
+import {
+  findLessonGuideForVersion,
+  loadLessonGuideLibrary,
+  openLessonGuideRecord,
+  saveLessonGuideRecord,
+  saveLessonGuideSource,
+  type LessonGuideLibraryRecord,
+} from "@/lib/lesson-guide";
+import {
+  buildPackageManifest,
+  countPrintablePages,
+  getPackageExportForSource,
+  isPackageReady,
+  loadPackageExports,
+  packageReadinessLabel,
+  upsertPackageExport,
+  type PackageAssetReadiness,
+  type PackageExportStatus,
+} from "@/lib/package-export";
 import { createQCReport } from "@/lib/qc-report";
 import {
   displayKitName,
@@ -23,10 +60,13 @@ import {
   saveVersionLibrary,
   type KitVersionRecord,
 } from "@/lib/version-library";
-import { saveLessonGuideSource } from "@/lib/lesson-guide";
-import { saveHowToKitSource } from "@/lib/how-to-kit";
+
+const searchSchema = z.object({
+  versionId: z.string().optional(),
+});
 
 export const Route = createFileRoute("/_app/package-export")({
+  validateSearch: searchSchema,
   head: () => ({ meta: [{ title: "Package Export | Kit Factory" }] }),
   component: PackageExportPage,
 });
@@ -37,11 +77,28 @@ type ReadinessState = "ready" | "review" | "missing" | "planned";
 
 function PackageExportPage() {
   const navigate = useNavigate();
+  const { versionId } = Route.useSearch();
   const [records, setRecords] = useState<KitVersionRecord[]>(() => loadVersionLibrary());
   const [storageMode, setStorageMode] = useState<StorageMode>("checking");
   const [builderDraft, setBuilderDraft] = useState<BuilderDraft | null>(() => loadBuilderDraft());
-  const [sourceMode, setSourceMode] = useState<SourceMode>("builder");
-  const [selectedVersionId, setSelectedVersionId] = useState(records[0]?.id ?? "");
+  const [sourceMode, setSourceMode] = useState<SourceMode>(versionId ? "version" : "builder");
+  const [selectedVersionId, setSelectedVersionId] = useState(versionId ?? records[0]?.id ?? "");
+  const [lessonGuides, setLessonGuides] = useState<LessonGuideLibraryRecord[]>(() =>
+    loadLessonGuideLibrary(),
+  );
+  const [howToGuides, setHowToGuides] = useState<HowToKitLibraryRecord[]>(() =>
+    loadHowToKitLibrary(),
+  );
+  const [packageRecords, setPackageRecords] = useState<PackageExportStatus[]>(() =>
+    loadPackageExports(),
+  );
+
+  useEffect(() => {
+    if (versionId) {
+      setSourceMode("version");
+      setSelectedVersionId(versionId);
+    }
+  }, [versionId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,7 +110,7 @@ function PackageExportPage() {
         if (result.ok) {
           const saved = saveVersionLibrary(result.data.records);
           setRecords(saved);
-          setSelectedVersionId((current) => current || saved[0]?.id || "");
+          setSelectedVersionId((current) => current || versionId || saved[0]?.id || "");
           setStorageMode("supabase");
           return;
         }
@@ -64,7 +121,7 @@ function PackageExportPage() {
       if (!cancelled) {
         const local = loadVersionLibrary();
         setRecords(local);
-        setSelectedVersionId((current) => current || local[0]?.id || "");
+        setSelectedVersionId((current) => current || versionId || local[0]?.id || "");
         setStorageMode("local");
       }
     }
@@ -74,7 +131,7 @@ function PackageExportPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [versionId]);
 
   const selectedRecord = useMemo(
     () => records.find((record) => record.id === selectedVersionId) ?? records[0] ?? null,
@@ -85,19 +142,38 @@ function PackageExportPage() {
   const activeRecord = sourceMode === "version" ? selectedRecord : null;
   const kit = useMemo(() => (activeDraft ? buildBuilderKit(activeDraft) : null), [activeDraft]);
   const report = useMemo(() => (activeDraft ? createQCReport(activeDraft) : null), [activeDraft]);
+  const pageCount = useMemo(
+    () => (activeDraft ? countPrintablePages(activeDraft) : 0),
+    [activeDraft],
+  );
   const blockers = report?.issues.filter((issue) => issue.severity === "blocker") ?? [];
   const warnings = report?.issues.filter((issue) => issue.severity === "warning") ?? [];
-  const hasSavedVersion =
-    Boolean(activeRecord) ||
-    (activeDraft
-      ? records.some(
-          (record) =>
-            record.kitName === activeDraft.kitName &&
-            record.draft.blocks.length === activeDraft.blocks.length,
-        )
-      : false);
+  const lessonGuide = activeRecord ? findLessonGuideForVersion(lessonGuides, activeRecord) : null;
+  const howToGuide = activeRecord ? findHowToKitForVersion(howToGuides, activeRecord) : null;
+  const activePackage = useMemo(() => {
+    if (!activeDraft) return null;
+    const base = getPackageExportForSource(packageRecords, activeDraft, activeRecord);
+    return {
+      ...base,
+      lessonGuideGenerated: base.lessonGuideGenerated || Boolean(lessonGuide),
+      howToGenerated: base.howToGenerated || Boolean(howToGuide),
+      qcStatus: activeRecord?.qcStatus ?? report?.qcStatus ?? base.qcStatus,
+      saleReady: activeRecord?.saleReady ?? report?.saleReady ?? base.saleReady,
+      docHubReady: activeRecord?.docHubReady ?? report?.docHubReady ?? base.docHubReady,
+    };
+  }, [activeDraft, activeRecord, howToGuide, lessonGuide, packageRecords, report]);
   const branchSelected = Boolean(activeDraft?.branch.trim());
   const hasPages = Boolean(kit && kit.blocks.length > 0);
+  const qcPassed = (activeRecord?.qcStatus ?? report?.qcStatus) === "Passed";
+  const readiness: PackageAssetReadiness = {
+    workbookReady: Boolean(activePackage?.workbookExported && hasPages),
+    lessonGuideGenerated: Boolean(activePackage?.lessonGuideGenerated || lessonGuide),
+    howToGenerated: Boolean(activePackage?.howToGenerated || howToGuide),
+    qcPassed,
+    packageNotesGenerated: Boolean(activePackage?.manifest.trim()),
+  };
+  const canMarkPackageReady = isPackageReady(readiness);
+  const packageLabel = activePackage ? packageReadinessLabel(activePackage) : "In Progress";
 
   const refreshBuilderDraft = () => {
     setBuilderDraft(loadBuilderDraft());
@@ -114,9 +190,41 @@ function PackageExportPage() {
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
   };
 
+  const savePackagePatch = (patch: Partial<PackageExportStatus>) => {
+    if (!activePackage || !activeDraft) return null;
+    const next = {
+      ...activePackage,
+      kitName: activeDraft.kitName,
+      branch: activeDraft.branch,
+      version: activeRecord?.version ?? activePackage.version,
+      qcStatus: activeRecord?.qcStatus ?? report?.qcStatus ?? activePackage.qcStatus,
+      saleReady: activeRecord?.saleReady ?? report?.saleReady ?? activePackage.saleReady,
+      docHubReady: activeRecord?.docHubReady ?? report?.docHubReady ?? activePackage.docHubReady,
+      ...patch,
+    };
+    const saved = upsertPackageExport(packageRecords, next);
+    setPackageRecords(saved);
+    return saved.find((record) => record.id === next.id) ?? null;
+  };
+
+  const openWorkbookPrintPreview = () => {
+    if (!activeDraft) return;
+    saveBuilderDraft(activeDraft);
+    toast.success("Workbook draft prepared for print preview");
+    navigate({ to: "/print-preview", search: { kitId: RESERVED_BUILDER_KIT_ID } });
+  };
+
+  const runQc = () => {
+    if (activeRecord) {
+      navigate({ to: "/qc", search: { versionId: activeRecord.id } });
+      return;
+    }
+    navigate({ to: "/qc" });
+  };
+
   const generateLessonGuide = () => {
     if (!activeDraft) return;
-    saveLessonGuideSource(
+    const source = saveLessonGuideSource(
       activeDraft,
       sourceMode === "version" && activeRecord
         ? {
@@ -126,13 +234,24 @@ function PackageExportPage() {
           }
         : "Current Builder Draft",
     );
-    toast.success("Lesson Guide generated");
+    const record = saveLessonGuideRecord(source);
+    setLessonGuides(loadLessonGuideLibrary());
+    savePackagePatch({ lessonGuideGenerated: true });
+    toast.success("Lesson Guide generated and saved");
+    openLessonGuideRecord(record);
+    navigate({ to: "/lesson-guide" });
+  };
+
+  const openLessonGuide = () => {
+    if (!lessonGuide) return;
+    openLessonGuideRecord(lessonGuide);
+    toast.success("Opened Lesson Guide");
     navigate({ to: "/lesson-guide" });
   };
 
   const generateHowToKit = () => {
     if (!activeDraft) return;
-    saveHowToKitSource(
+    const source = saveHowToKitSource(
       activeDraft,
       sourceMode === "version" && activeRecord
         ? {
@@ -142,27 +261,65 @@ function PackageExportPage() {
           }
         : "Current Builder Draft",
     );
-    toast.success("How-To PDF generated");
+    const record = saveHowToKitRecord(source);
+    setHowToGuides(loadHowToKitLibrary());
+    savePackagePatch({ howToGenerated: true });
+    toast.success("How-To PDF generated and saved");
+    openHowToKitRecord(record);
     navigate({ to: "/how-to-kit" });
+  };
+
+  const openHowToKit = () => {
+    if (!howToGuide) return;
+    openHowToKitRecord(howToGuide);
+    toast.success("Opened How-To PDF");
+    navigate({ to: "/how-to-kit" });
+  };
+
+  const markWorkbookExported = () => {
+    savePackagePatch({ workbookExported: true, packageReady: false });
+    toast.success("Workbook PDF marked exported");
+  };
+
+  const generateManifest = () => {
+    if (!activeDraft || !activePackage) return;
+    const manifest = buildPackageManifest({
+      draft: activeDraft,
+      version: activeRecord?.version ?? activePackage.version,
+      lessonGuideGenerated: readiness.lessonGuideGenerated,
+      howToGenerated: readiness.howToGenerated,
+      workbookExported: Boolean(activePackage.workbookExported),
+    });
+    savePackagePatch({ manifest, packageReady: false });
+    toast.success("Package notes generated");
+  };
+
+  const markPackageReady = () => {
+    if (!canMarkPackageReady) {
+      toast.error("Complete Workbook, Lesson Guide, How-To, QC Passed, and Package Notes first");
+      return;
+    }
+    savePackagePatch({ packageReady: true });
+    toast.success("Package marked ready");
   };
 
   return (
     <div className="p-8">
       <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Product Package Export MVP
+        Product Package Export V2
       </div>
       <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
         Package Export
       </h1>
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Review whether the current kit is ready to package. This MVP prepares the export checklist;
-        ZIP packaging and extra guide PDFs come later.
+        Track the full product package for a kit version. This stores readiness and generated asset
+        snapshots; ZIP files and stored PDFs are still out of scope.
         <span className="ml-2">
           Storage:{" "}
           {storageMode === "checking"
             ? "Checking private Supabase..."
             : storageMode === "supabase"
-              ? "Private Supabase"
+              ? "Private Supabase for versions, local package status"
               : "Local fallback"}
         </span>
       </p>
@@ -193,7 +350,7 @@ function PackageExportPage() {
               >
                 <div className="font-semibold">Saved Version</div>
                 <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
-                  Review a Version Library snapshot.
+                  Track a Version Library snapshot.
                 </div>
               </button>
 
@@ -246,7 +403,7 @@ function PackageExportPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Export Actions</CardTitle>
+              <CardTitle className="text-base">Package Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button
@@ -254,17 +411,12 @@ function PackageExportPage() {
                 className="w-full"
                 disabled={!hasPages}
                 style={{ background: "#4F2D68", color: "#fff" }}
-                onClick={() => navigate({ to: "/print-preview" })}
+                onClick={openWorkbookPrintPreview}
               >
-                <Printer className="mr-2 h-4 w-4" /> Open Print Preview
+                <Printer className="mr-2 h-4 w-4" /> Open Workbook Print Preview
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate({ to: "/qc" })}
-              >
-                <CheckCircle2 className="mr-2 h-4 w-4" /> Open QC Report
+              <Button type="button" variant="outline" className="w-full" onClick={runQc}>
+                <ClipboardCheck className="mr-2 h-4 w-4" /> Run QC
               </Button>
               <Button
                 type="button"
@@ -279,6 +431,15 @@ function PackageExportPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
+                disabled={!lessonGuide}
+                onClick={openLessonGuide}
+              >
+                <BookOpenText className="mr-2 h-4 w-4" /> Open Lesson Guide
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
                 disabled={!activeDraft}
                 onClick={generateHowToKit}
               >
@@ -288,130 +449,161 @@ function PackageExportPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => navigate({ to: "/version-library" })}
+                disabled={!howToGuide}
+                onClick={openHowToKit}
               >
-                <FileText className="mr-2 h-4 w-4" /> Open Version Library
+                <FileText className="mr-2 h-4 w-4" /> Open How-To
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={!activeDraft}
+                onClick={generateManifest}
+              >
+                <StickyNote className="mr-2 h-4 w-4" /> Generate Package Notes
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={!hasPages}
+                onClick={markWorkbookExported}
+              >
+                <FileCheck2 className="mr-2 h-4 w-4" /> Mark Workbook PDF Exported
+              </Button>
+              <Button
+                type="button"
+                className="w-full"
+                disabled={!activeDraft}
+                onClick={markPackageReady}
+                style={{ background: canMarkPackageReady ? "#2E5B33" : "#D8CEC2", color: "#fff" }}
+              >
+                <PackageCheck className="mr-2 h-4 w-4" /> Mark Package Ready
               </Button>
             </CardContent>
           </Card>
         </aside>
 
         <main className="space-y-6">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCard title="Kit" value={activeDraft?.kitName.trim() || "Untitled"} />
             <SummaryCard title="Branch" value={activeDraft?.branch.trim() || "Missing"} />
-            <SummaryCard title="Pages" value={String(kit?.blocks.length ?? 0)} />
-            <SummaryCard title="QC" value={report?.qcStatus ?? "Not Reviewed"} />
-            <SummaryCard title="Source" value={sourceMode === "version" ? "Version" : "Builder"} />
+            <SummaryCard title="Version" value={activeRecord?.version ?? "Builder Draft"} />
+            <SummaryCard title="Package" value={packageLabel} />
+            <SummaryCard title="Pages" value={String(pageCount)} />
+            <SummaryCard title="QC" value={activePackage?.qcStatus ?? "Not Reviewed"} />
+            <SummaryCard title="Sale Ready" value={activePackage?.saleReady ? "Yes" : "No"} />
+            <SummaryCard title="DocHub Ready" value={activePackage?.docHubReady ? "Yes" : "No"} />
           </div>
 
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center text-base">
-                <PackageCheck className="mr-2 h-4 w-4" /> Package Readiness
+                <PackageCheck className="mr-2 h-4 w-4" /> Package Asset Checklist
               </CardTitle>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-2">
               <ReadinessItem
                 title="Workbook PDF"
+                state={activePackage?.workbookExported ? "ready" : hasPages ? "review" : "missing"}
+                detail={
+                  activePackage?.workbookExported
+                    ? "Marked exported."
+                    : hasPages
+                      ? "Ready to print/export in Chrome."
+                      : "No printable pages found yet."
+                }
+              />
+              <ReadinessItem
+                title="Lesson Guide"
+                state={readiness.lessonGuideGenerated ? "ready" : "missing"}
+                detail={readiness.lessonGuideGenerated ? "Generated." : "Missing."}
+              />
+              <ReadinessItem
+                title="How-To PDF"
+                state={readiness.howToGenerated ? "ready" : "missing"}
+                detail={readiness.howToGenerated ? "Generated." : "Missing."}
+              />
+              <ReadinessItem
+                title="QC Report"
                 state={
-                  hasPages && blockers.length === 0 ? "ready" : hasPages ? "review" : "missing"
+                  qcPassed
+                    ? "ready"
+                    : activePackage?.qcStatus === "Needs Repair"
+                      ? "review"
+                      : "missing"
                 }
                 detail={
-                  hasPages
-                    ? `${kit?.blocks.length ?? 0} printable page${kit?.blocks.length === 1 ? "" : "s"} available.`
-                    : "No printable pages found yet."
+                  activePackage?.qcStatus === "Passed"
+                    ? "Passed."
+                    : activePackage?.qcStatus === "Needs Repair"
+                      ? `${blockers.length} blocker${blockers.length === 1 ? "" : "s"} and ${warnings.length} warning${warnings.length === 1 ? "" : "s"}.`
+                      : "Not run or not saved yet."
                 }
               />
               <ReadinessItem
-                title="QC Passed"
-                state={blockers.length === 0 && hasPages ? "ready" : "review"}
-                detail={
-                  report
-                    ? `${blockers.length} blocker${blockers.length === 1 ? "" : "s"} and ${warnings.length} warning${warnings.length === 1 ? "" : "s"}.`
-                    : "Save or load a draft before checking QC."
-                }
+                title="Package Notes"
+                state={readiness.packageNotesGenerated ? "ready" : "missing"}
+                detail={readiness.packageNotesGenerated ? "Manifest generated." : "Missing."}
               />
-              <ReadinessItem
-                title="Version Saved"
-                state={hasSavedVersion ? "ready" : "review"}
-                detail={
-                  hasSavedVersion
-                    ? "A version snapshot exists for this kit."
-                    : "Save to Version Library before final packaging."
-                }
-              />
-              <ReadinessItem
-                title="Branch Selected"
-                state={branchSelected ? "ready" : "missing"}
-                detail={
-                  branchSelected
-                    ? `${activeDraft?.branch} profile will be used.`
-                    : "Choose Brand, Rise, Land, Rebuild, or Heal."
-                }
-              />
-              <ReadinessItem
-                title="Page Count Checked"
-                state={hasPages ? "ready" : "missing"}
-                detail={hasPages ? "Page count is available for review." : "No page count yet."}
-              />
-              <ReadinessItem
-                title="ZIP Package"
-                state="planned"
-                detail="Not built in this MVP. This screen prepares the package checklist first."
-              />
+              <ReadinessItem title="ZIP Package" state="planned" detail="Not built in V2." />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Package Checklist</CardTitle>
+              <CardTitle className="text-base">Package Readiness Rules</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <ChecklistRow
-                label="Export workbook PDF in Chrome"
-                detail="Use Print Preview, Save as PDF, Letter size, background graphics on."
-                done={hasPages}
+                label="Workbook PDF exported"
+                detail="Use Chrome print/save as PDF, then mark the workbook exported."
+                done={readiness.workbookReady}
               />
               <ChecklistRow
-                label="Confirm QC status"
-                detail="Save QC results to Version Library before final packaging."
-                done={Boolean(report && blockers.length === 0)}
+                label="Lesson Guide generated"
+                detail="Saved as a library snapshot connected to this version when possible."
+                done={readiness.lessonGuideGenerated}
               />
               <ChecklistRow
-                label="Confirm version snapshot"
-                detail="Version Library keeps rollback history and production status."
-                done={hasSavedVersion}
+                label="How-To PDF generated"
+                detail="Saved as a library snapshot connected to this version when possible."
+                done={readiness.howToGenerated}
               />
               <ChecklistRow
-                label="Confirm branch identity"
-                detail="Branch color/profile should match the kit being produced."
-                done={branchSelected}
+                label="QC passed"
+                detail="Run QC and save the result to Version Library."
+                done={readiness.qcPassed}
               />
               <ChecklistRow
-                label="Create extra guide files"
-                detail="Lesson Guide and How-To PDF MVPs are available now."
-                done={Boolean(activeDraft)}
+                label="Package notes generated"
+                detail="Manifest lists included files, buyer file names, and production notes."
+                done={readiness.packageNotesGenerated}
               />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Package Files</CardTitle>
+              <CardTitle className="text-base">Package Manifest</CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-3 md:grid-cols-2">
-              <PackageFile title="Workbook PDF" status={hasPages ? "Ready to export" : "Missing"} />
-              <PackageFile
-                title="Lesson Guide"
-                status={activeDraft ? "Ready to generate" : "Missing"}
-              />
-              <PackageFile
-                title="How To Use This Kit PDF"
-                status={activeDraft ? "Ready to generate" : "Missing"}
-              />
-              <PackageFile title="Package Notes" status="Checklist only" />
-              <PackageFile title="ZIP Bundle" status="Not built yet" />
+            <CardContent>
+              {activePackage?.manifest ? (
+                <pre
+                  className="whitespace-pre-wrap rounded-md border p-4 text-xs leading-6"
+                  style={{ borderColor: "#D8CEC2", background: "#fff", color: "#222026" }}
+                >
+                  {activePackage.manifest}
+                </pre>
+              ) : (
+                <div
+                  className="rounded-md border px-4 py-5 text-sm"
+                  style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#6b6470" }}
+                >
+                  Package notes have not been generated yet.
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -507,17 +699,7 @@ function StatusPill({ state }: { state: ReadinessState }) {
   );
 }
 
-function ChecklistRow({
-  label,
-  detail,
-  done,
-  planned = false,
-}: {
-  label: string;
-  detail: string;
-  done: boolean;
-  planned?: boolean;
-}) {
+function ChecklistRow({ label, detail, done }: { label: string; detail: string; done: boolean }) {
   return (
     <div
       className="flex gap-3 rounded-md border p-3"
@@ -526,7 +708,7 @@ function ChecklistRow({
       <div
         className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border"
         style={{
-          borderColor: done ? "#2E5B33" : planned ? "#D8CEC2" : "#C6A85B",
+          borderColor: done ? "#2E5B33" : "#C6A85B",
           background: done ? "#2E5B33" : "#fff",
           color: "#fff",
         }}
@@ -540,20 +722,6 @@ function ChecklistRow({
         <div className="mt-1 text-sm" style={{ color: "#6b6470" }}>
           {detail}
         </div>
-      </div>
-    </div>
-  );
-}
-
-function PackageFile({ title, status }: { title: string; status: string }) {
-  return (
-    <div className="rounded-md border p-3" style={{ borderColor: "#E7DFD2", background: "#fff" }}>
-      <div className="flex items-center gap-2 font-semibold" style={{ color: "#222026" }}>
-        <FileText className="h-4 w-4" style={{ color: "#4F2D68" }} />
-        {title}
-      </div>
-      <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
-        {status}
       </div>
     </div>
   );

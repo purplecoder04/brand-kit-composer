@@ -7,6 +7,7 @@ import {
   Copy,
   ExternalLink,
   FileCheck2,
+  PackageCheck,
   RotateCcw,
   StickyNote,
 } from "lucide-react";
@@ -45,6 +46,12 @@ import {
   saveHowToKitSource,
   type HowToKitLibraryRecord,
 } from "@/lib/how-to-kit";
+import {
+  findPackageExportForVersion,
+  loadPackageExports,
+  packageReadinessLabel,
+  type PackageExportStatus,
+} from "@/lib/package-export";
 
 export const Route = createFileRoute("/_app/version-library")({
   head: () => ({ meta: [{ title: "Version Library | Kit Factory" }] }),
@@ -69,6 +76,7 @@ function VersionLibraryPage() {
   const [storageMode, setStorageMode] = useState<StorageMode>("checking");
   const [lessonGuides] = useState<LessonGuideLibraryRecord[]>(() => loadLessonGuideLibrary());
   const [howToGuides] = useState<HowToKitLibraryRecord[]>(() => loadHowToKitLibrary());
+  const [packages] = useState<PackageExportStatus[]>(() => loadPackageExports());
 
   useEffect(() => {
     let cancelled = false;
@@ -283,6 +291,7 @@ function VersionLibraryPage() {
               records.map((record) => {
                 const lessonGuide = findLessonGuideForVersion(lessonGuides, record);
                 const howToGuide = findHowToKitForVersion(howToGuides, record);
+                const packageExport = findPackageExportForVersion(packages, record.id);
 
                 return (
                   <tr key={record.id} style={{ borderTop: "1px solid #E7DFD2" }}>
@@ -309,6 +318,15 @@ function VersionLibraryPage() {
                           style={{ color: howToGuide ? "#2E5B33" : "#9a929d" }}
                         >
                           {howToGuide ? "Generated" : "Not generated"}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                        Package:{" "}
+                        <span
+                          className="font-semibold"
+                          style={{ color: packageExport?.packageReady ? "#2E5B33" : "#9a929d" }}
+                        >
+                          {packageReadinessLabel(packageExport)}
                         </span>
                       </div>
                       {editingNotesId === record.id ? (
@@ -407,6 +425,14 @@ function VersionLibraryPage() {
                           onClick={() => navigate({ to: "/qc", search: { versionId: record.id } })}
                         >
                           <ClipboardCheck className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label="Open Package Export"
+                          onClick={() =>
+                            navigate({ to: "/package-export", search: { versionId: record.id } })
+                          }
+                        >
+                          <PackageCheck className="h-3.5 w-3.5" />
                         </ActionButton>
                         <ActionButton
                           label="Generate Lesson Guide"
