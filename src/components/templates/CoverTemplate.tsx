@@ -1,5 +1,11 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import { BotanicalSprig, CoverOrganicFrame, Diamond, KitFooterBand, SparkleRule } from "./_decor";
 
@@ -26,7 +32,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
           },
           [""],
         );
-  const titleSize = titleLines.length <= 1 ? "138px" : titleLines.length === 2 ? "108px" : "86px";
+  const titleSize = titleLines.length <= 1 ? 138 : titleLines.length === 2 ? 108 : 86;
 
   return (
     <PageCanvas
@@ -92,13 +98,14 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: titleSize,
             lineHeight: 0.98,
             fontWeight: 500,
             color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0.005em",
             textShadow: "0 8px 22px rgba(40, 36, 44, 0.045)",
+            ...titleTextStyle(block, titleSize, "center"),
+            ...titleOffsetStyle(block),
           }}
         >
           {titleLines.map((line) => (
@@ -145,50 +152,52 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
           />
         </div>
 
-        <Diamond color={smallMark} size={14} style={{ margin: "0 auto 0.2in" }} />
+        <div style={bodyOffsetStyle(block)}>
+          <Diamond color={smallMark} size={14} style={{ margin: "0 auto 0.2in" }} />
 
-        <div
-          style={{
-            fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            color: branchProfile.primaryColor,
-            fontSize: "20px",
-            fontStyle: "italic",
-            fontWeight: 600,
-            marginBottom: "0.24in",
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "0.09in",
-          }}
-        >
-          {(() => {
-            const pillars = block.keywords ?? [];
-            return pillars.map((word, i) => (
-              <span
-                key={`${word}-${i}`}
-                style={{ display: "inline-flex", alignItems: "center", gap: "0.09in" }}
-              >
-                {i > 0 ? <Diamond color={smallMark} size={9} inline /> : null}
-                <span>{word}</span>
-              </span>
-            ));
-          })()}
-        </div>
-
-        {block.body ? (
-          <p
+          <div
             style={{
-              margin: "0 auto",
-              maxWidth: "4.1in",
-              fontSize: "16px",
-              lineHeight: 1.58,
-              color: branchProfile.textColor,
               fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+              color: branchProfile.primaryColor,
+              fontSize: "20px",
+              fontStyle: "italic",
+              fontWeight: 600,
+              marginBottom: "0.24in",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "0.09in",
             }}
           >
-            {block.body}
-          </p>
-        ) : null}
+            {(() => {
+              const pillars = block.keywords ?? [];
+              return pillars.map((word, i) => (
+                <span
+                  key={`${word}-${i}`}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "0.09in" }}
+                >
+                  {i > 0 ? <Diamond color={smallMark} size={9} inline /> : null}
+                  <span>{word}</span>
+                </span>
+              ));
+            })()}
+          </div>
+
+          {block.body ? (
+            <p
+              style={{
+                margin: "0 auto",
+                maxWidth: "4.1in",
+                lineHeight: 1.58,
+                color: branchProfile.textColor,
+                fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+                ...bodyTextStyle(block, 16, "center"),
+              }}
+            >
+              {block.body}
+            </p>
+          ) : null}
+        </div>
       </main>
 
       <KitFooterBand

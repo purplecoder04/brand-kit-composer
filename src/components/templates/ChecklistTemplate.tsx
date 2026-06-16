@@ -1,5 +1,13 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  spacingValues,
+  sparkleAlign,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import {
   CornerWash,
@@ -24,6 +32,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
     .filter(Boolean);
   const lineAccent = branchProfile.lineAccentColor;
   const smallMark = branchProfile.smallMarkColor;
+  const spacing = spacingValues(block);
 
   return (
     <PageCanvas
@@ -77,12 +86,13 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "40px",
             lineHeight: 1.05,
             fontWeight: 500,
             color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
+            ...titleTextStyle(block, 40),
+            ...titleOffsetStyle(block),
           }}
         >
           {block.title}
@@ -93,7 +103,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
           width="2in"
           marginTop="0.24in"
           marginBottom="0.34in"
-          align="left"
+          align={sparkleAlign(block)}
         />
 
         <div
@@ -103,8 +113,9 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
             boxSizing: "border-box",
             background: PAPER_PANEL,
             borderLeft: `2px solid ${lineAccent}`,
-            padding: "0.18in 0.3in 0.08in",
+            padding: spacing.panelPadding,
             boxShadow: "0 10px 22px rgba(40, 36, 44, 0.05)",
+            ...bodyOffsetStyle(block),
           }}
         >
           {items.map((item, index) => (
@@ -116,7 +127,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
                 columnGap: "0.16in",
                 alignItems: "start",
                 minHeight: "0.42in",
-                padding: "0.06in 0",
+                padding: spacing.itemPadding,
                 borderBottom:
                   index < items.length - 1
                     ? `1px solid ${branchProfile.worksheetLineColor}`
@@ -136,10 +147,10 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
               />
               <span
                 style={{
-                  fontSize: "14px",
-                  lineHeight: 1.55,
+                  lineHeight: spacing.lineHeight,
                   color: branchProfile.textColor,
                   wordBreak: "break-word",
+                  ...bodyTextStyle(block, 14),
                 }}
               >
                 {item}

@@ -1,5 +1,13 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  spacingValues,
+  sparkleAlign,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import {
   CornerWash,
@@ -22,6 +30,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
   const rows = block.tableData?.rows ?? [];
   const lineAccent = branchProfile.lineAccentColor;
   const smallMark = branchProfile.smallMarkColor;
+  const spacing = spacingValues(block);
 
   return (
     <PageCanvas
@@ -75,12 +84,13 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "40px",
             lineHeight: 1.05,
             fontWeight: 500,
             color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
+            ...titleTextStyle(block, 40),
+            ...titleOffsetStyle(block),
           }}
         >
           {block.title}
@@ -91,7 +101,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
           width="2in"
           marginTop="0.24in"
           marginBottom="0.34in"
-          align="left"
+          align={sparkleAlign(block)}
         />
 
         <div
@@ -106,6 +116,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
             border: `2px solid ${branchProfile.tableHeaderColor}`,
             boxShadow: "0 12px 24px rgba(40, 36, 44, 0.08)",
             overflow: "hidden",
+            ...bodyOffsetStyle(block),
           }}
         >
           <table
@@ -128,7 +139,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                       background: branchProfile.tableHeaderColor,
                       color: PAPER_PANEL,
                       padding: "0.18in 0.2in",
-                      fontSize: "11px",
+                      ...bodyTextStyle(block, 11),
                       letterSpacing: "0.22em",
                       textTransform: "uppercase",
                       fontWeight: 600,
@@ -153,7 +164,12 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                     <td
                       key={ci}
                       style={{
-                        padding: "0.24in 0.2in",
+                        padding:
+                          block.layoutOverrides?.spacing === "compact"
+                            ? "0.18in 0.18in"
+                            : block.layoutOverrides?.spacing === "spacious"
+                              ? "0.3in 0.22in"
+                              : "0.24in 0.2in",
                         borderTop:
                           ri === 0 ? `1px solid ${branchProfile.worksheetLineColor}` : "none",
                         borderBottom:
@@ -165,8 +181,9 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                             ? `1px solid ${branchProfile.worksheetLineColor}`
                             : "none",
                         verticalAlign: "top",
-                        lineHeight: 1.6,
+                        lineHeight: spacing.lineHeight,
                         wordWrap: "break-word",
+                        ...bodyTextStyle(block, 13),
                       }}
                     >
                       {cell}

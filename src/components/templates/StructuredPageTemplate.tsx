@@ -1,5 +1,13 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block, PageType } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  spacingValues,
+  sparkleAlign,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import {
   CornerWash,
@@ -45,6 +53,8 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
   const isActionPlan = block.pageType === "action-plan";
   const isProgressCheck = block.pageType === "progress-check";
   const listItems = isActionPlan || isProgressCheck ? splitLines(block.body) : [];
+  const defaultAlign = isModuleIntro || isQuote ? "center" : "left";
+  const spacing = spacingValues(block);
 
   return (
     <PageCanvas
@@ -84,7 +94,7 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
           display: "flex",
           flexDirection: "column",
           justifyContent: isModuleIntro || isQuote ? "center" : "flex-start",
-          textAlign: isModuleIntro || isQuote ? "center" : "left",
+          textAlign: defaultAlign,
         }}
       >
         <div
@@ -103,7 +113,6 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: isModuleIntro ? "58px" : isQuote ? "50px" : "40px",
             lineHeight: 1.06,
             fontWeight: 500,
             color: branchProfile.primaryColor,
@@ -111,6 +120,8 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
             letterSpacing: "0",
             maxWidth: isModuleIntro || isQuote ? "6.35in" : "6.1in",
             alignSelf: isModuleIntro || isQuote ? "center" : "auto",
+            ...titleTextStyle(block, isModuleIntro ? 58 : isQuote ? 50 : 40, defaultAlign),
+            ...titleOffsetStyle(block),
           }}
         >
           {block.title}
@@ -121,19 +132,25 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
           width={isModuleIntro || isQuote ? "2.35in" : "2in"}
           marginTop="0.24in"
           marginBottom={isModuleIntro || isQuote ? "0.32in" : "0.28in"}
-          align={isModuleIntro || isQuote ? "center" : "left"}
+          align={sparkleAlign(block, defaultAlign)}
         />
 
         {isQuote ? (
           <QuoteBody block={block} branchProfile={branchProfile} smallMark={smallMark} />
         ) : isActionPlan || isProgressCheck ? (
-          <ActionList items={listItems} branchProfile={branchProfile} smallMark={smallMark} />
+          <ActionList
+            block={block}
+            items={listItems}
+            branchProfile={branchProfile}
+            smallMark={smallMark}
+          />
         ) : (
-          <BodyCopy paragraphs={paragraphs} branchProfile={branchProfile} />
+          <BodyCopy block={block} paragraphs={paragraphs} branchProfile={branchProfile} />
         )}
 
         {block.prompt ? (
           <PromptPanel
+            block={block}
             label={WRITING_PAGE_TYPES.includes(block.pageType) ? "Prompt" : "Focus"}
             prompt={block.prompt}
             branchProfile={branchProfile}
@@ -142,7 +159,13 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
           />
         ) : null}
 
-        {lineCount > 0 ? <WritingLines count={lineCount} branchProfile={branchProfile} /> : null}
+        {lineCount > 0 ? (
+          <WritingLines
+            count={lineCount}
+            branchProfile={branchProfile}
+            lineHeight={spacing.writingLineHeight}
+          />
+        ) : null}
       </div>
 
       <KitFooterBand
@@ -155,29 +178,33 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
 }
 
 function BodyCopy({
+  block,
   paragraphs,
   branchProfile,
 }: {
+  block: Block;
   paragraphs: string[];
   branchProfile: BranchProfile;
 }) {
+  const spacing = spacingValues(block);
   if (paragraphs.length === 0) return null;
 
   return (
     <div
       style={{
         maxWidth: "5.95in",
-        padding: "0.12in 0.28in 0.04in",
+        padding: spacing.panelPadding,
         background: "rgba(255,253,248,0.72)",
         borderLeft: `2px solid ${branchProfile.lineAccentColor}`,
         boxShadow: "0 10px 22px rgba(40, 36, 44, 0.045)",
         color: branchProfile.textColor,
-        fontSize: "14px",
-        lineHeight: 1.7,
+        lineHeight: spacing.lineHeight,
+        ...bodyTextStyle(block, 14),
+        ...bodyOffsetStyle(block),
       }}
     >
       {paragraphs.map((paragraph, index) => (
-        <p key={index} style={{ margin: "0 0 0.18in" }}>
+        <p key={index} style={{ margin: spacing.paragraphMargin }}>
           {paragraph}
         </p>
       ))}
@@ -195,16 +222,16 @@ function QuoteBody({
   smallMark: string;
 }) {
   return (
-    <div style={{ alignSelf: "center", maxWidth: "5.6in" }}>
+    <div style={{ alignSelf: "center", maxWidth: "5.6in", ...bodyOffsetStyle(block) }}>
       {block.body ? (
         <p
           style={{
             margin: 0,
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "24px",
             lineHeight: 1.38,
             color: branchProfile.textColor,
             fontStyle: "italic",
+            ...bodyTextStyle(block, 24, "center"),
           }}
         >
           {block.body}
@@ -233,14 +260,17 @@ function QuoteBody({
 }
 
 function ActionList({
+  block,
   items,
   branchProfile,
   smallMark,
 }: {
+  block: Block;
   items: string[];
   branchProfile: BranchProfile;
   smallMark: string;
 }) {
+  const spacing = spacingValues(block);
   if (items.length === 0) return null;
 
   return (
@@ -250,7 +280,8 @@ function ActionList({
         background: PAPER_PANEL,
         borderLeft: `2px solid ${branchProfile.lineAccentColor}`,
         boxShadow: "0 10px 22px rgba(40, 36, 44, 0.05)",
-        padding: "0.14in 0.3in",
+        padding: spacing.panelPadding,
+        ...bodyOffsetStyle(block),
       }}
     >
       {items.map((item, index) => (
@@ -260,12 +291,12 @@ function ActionList({
             display: "grid",
             gridTemplateColumns: "0.22in 1fr",
             gap: "0.13in",
-            padding: "0.08in 0",
+            padding: spacing.itemPadding,
             borderBottom:
               index < items.length - 1 ? `1px solid ${branchProfile.worksheetLineColor}` : "none",
             color: branchProfile.textColor,
-            fontSize: "14px",
-            lineHeight: 1.5,
+            lineHeight: spacing.lineHeight,
+            ...bodyTextStyle(block, 14),
           }}
         >
           <Diamond color={smallMark} inline size={9} style={{ marginTop: "0.05in" }} />
@@ -277,27 +308,31 @@ function ActionList({
 }
 
 function PromptPanel({
+  block,
   label,
   prompt,
   branchProfile,
   lineAccent,
   smallMark,
 }: {
+  block: Block;
   label: string;
   prompt: string;
   branchProfile: BranchProfile;
   lineAccent: string;
   smallMark: string;
 }) {
+  const spacing = spacingValues(block);
   return (
     <div
       style={{
         maxWidth: "5.95in",
         marginTop: "0.24in",
-        padding: "0.16in 0.28in",
+        padding: spacing.panelPadding,
         borderLeft: `2px solid ${lineAccent}`,
         background: PAPER_PANEL,
         boxShadow: "0 10px 22px rgba(40, 36, 44, 0.05)",
+        ...bodyOffsetStyle(block),
       }}
     >
       <div
@@ -320,10 +355,10 @@ function PromptPanel({
         style={{
           margin: 0,
           fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-          fontSize: "15px",
-          lineHeight: 1.55,
+          lineHeight: spacing.lineHeight,
           color: branchProfile.textColor,
           fontStyle: "italic",
+          ...bodyTextStyle(block, 15),
         }}
       >
         {prompt}
@@ -332,7 +367,15 @@ function PromptPanel({
   );
 }
 
-function WritingLines({ count, branchProfile }: { count: number; branchProfile: BranchProfile }) {
+function WritingLines({
+  count,
+  branchProfile,
+  lineHeight,
+}: {
+  count: number;
+  branchProfile: BranchProfile;
+  lineHeight: string;
+}) {
   return (
     <div
       style={{
@@ -347,6 +390,7 @@ function WritingLines({ count, branchProfile }: { count: number; branchProfile: 
           key={index}
           style={{
             height: "0.36in",
+            minHeight: lineHeight,
             borderBottom: `1px solid ${branchProfile.worksheetLineColor}`,
           }}
         />

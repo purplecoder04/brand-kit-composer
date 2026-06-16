@@ -1,5 +1,5 @@
 import { resolveBranchProfile } from "./branch-profile";
-import type { Block, Kit, PageType, TableData } from "./kit-types";
+import type { Block, Kit, LayoutOverrides, PageType, TableData } from "./kit-types";
 import { SAMPLE_KIT } from "./sample-kit";
 
 export const RESERVED_BUILDER_KIT_ID = "builder-preview";
@@ -18,6 +18,7 @@ export type BuilderBlock = {
   prompt: string;
   lines: number | "";
   tableData: TableData;
+  layoutOverrides?: LayoutOverrides;
 };
 
 export type BuilderDraft = {
@@ -521,6 +522,7 @@ function toRenderableBlock(block: BuilderBlock): Block {
       headers: renderBlock.tableData.headers.slice(),
       rows: renderBlock.tableData.rows.map((row) => row.slice()),
     },
+    layoutOverrides: renderBlock.layoutOverrides,
   };
 }
 
@@ -550,9 +552,66 @@ function normalizeBlock(block: BuilderBlock): BuilderBlock {
       headers: normalizeHeaders(block.tableData?.headers),
       rows: normalizeRows(block.tableData?.rows),
     },
+    layoutOverrides: normalizeLayoutOverrides(block.layoutOverrides),
     lines:
       block.lines === "" ? "" : Number.isFinite(Number(block.lines)) ? Number(block.lines) : "",
   };
+}
+
+function normalizeLayoutOverrides(overrides?: LayoutOverrides): LayoutOverrides | undefined {
+  if (!overrides || typeof overrides !== "object") return undefined;
+
+  const normalized: LayoutOverrides = {};
+  if (Number.isFinite(Number(overrides.titleOffset))) {
+    normalized.titleOffset = Math.max(-6, Math.min(6, Number(overrides.titleOffset)));
+  }
+  if (Number.isFinite(Number(overrides.bodyOffset))) {
+    normalized.bodyOffset = Math.max(-6, Math.min(6, Number(overrides.bodyOffset)));
+  }
+  if (Number.isFinite(Number(overrides.titleOffsetX))) {
+    normalized.titleOffsetX = Math.max(-6, Math.min(6, Number(overrides.titleOffsetX)));
+  }
+  if (Number.isFinite(Number(overrides.bodyOffsetX))) {
+    normalized.bodyOffsetX = Math.max(-6, Math.min(6, Number(overrides.bodyOffsetX)));
+  }
+  if (
+    overrides.titleAlign === "left" ||
+    overrides.titleAlign === "center" ||
+    overrides.titleAlign === "default"
+  ) {
+    normalized.titleAlign = overrides.titleAlign;
+  }
+  if (
+    overrides.bodyAlign === "left" ||
+    overrides.bodyAlign === "center" ||
+    overrides.bodyAlign === "default"
+  ) {
+    normalized.bodyAlign = overrides.bodyAlign;
+  }
+  if (
+    overrides.titleSize === "smaller" ||
+    overrides.titleSize === "larger" ||
+    overrides.titleSize === "default"
+  ) {
+    normalized.titleSize = overrides.titleSize;
+  }
+  if (
+    overrides.bodySize === "smaller" ||
+    overrides.bodySize === "larger" ||
+    overrides.bodySize === "default"
+  ) {
+    normalized.bodySize = overrides.bodySize;
+  }
+  if (
+    overrides.spacing === "compact" ||
+    overrides.spacing === "normal" ||
+    overrides.spacing === "spacious" ||
+    overrides.spacing === "default"
+  ) {
+    normalized.spacing = overrides.spacing;
+  }
+
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
 }
 
 function normalizeHeaders(headers?: string[]): string[] {

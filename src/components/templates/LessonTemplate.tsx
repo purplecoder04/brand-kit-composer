@@ -1,5 +1,13 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  spacingValues,
+  sparkleAlign,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import {
   BotanicalSprig,
@@ -22,6 +30,7 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
   const paragraphs = (block.body || "").split(/\n\s*\n/).filter(Boolean);
   const lineAccent = branchProfile.lineAccentColor;
   const smallMark = branchProfile.smallMarkColor;
+  const spacing = spacingValues(block);
 
   return (
     <PageCanvas
@@ -82,12 +91,13 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "44px",
             lineHeight: 1.05,
             fontWeight: 500,
             color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
+            ...titleTextStyle(block, 44),
+            ...titleOffsetStyle(block),
           }}
         >
           {block.title}
@@ -98,26 +108,27 @@ export function LessonTemplate({ block, branchProfile, pageNumber, totalPages }:
           width="2in"
           marginTop="0.28in"
           marginBottom="0.4in"
-          align="left"
+          align={sparkleAlign(block)}
         />
 
         <div
           style={{
             position: "relative",
             maxWidth: "5.9in",
-            padding: "0.08in 0.34in 0.08in 0.34in",
+            padding: spacing.panelPadding,
             borderLeft: `2px solid ${lineAccent}`,
             background: `linear-gradient(90deg, ${PAPER_PANEL} 0%, rgba(255,253,248,0) 92%)`,
+            ...bodyOffsetStyle(block),
           }}
         >
           {paragraphs.map((p, i) => (
             <p
               key={i}
               style={{
-                fontSize: "14.5px",
-                lineHeight: 1.72,
+                lineHeight: spacing.lineHeight,
                 color: branchProfile.textColor,
-                margin: "0 0 0.24in",
+                margin: spacing.paragraphMargin,
+                ...bodyTextStyle(block, 14.5),
               }}
             >
               {p}

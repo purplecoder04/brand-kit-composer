@@ -1,5 +1,11 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import {
   BotanicalSprig,
@@ -100,9 +106,10 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
             style={{
               marginTop: "0.2in",
               fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-              fontSize: "25px",
               lineHeight: 1.18,
               color: branchProfile.primaryColor,
+              ...titleTextStyle(block, 25, "center"),
+              ...titleOffsetStyle(block),
             }}
           >
             {block.title}
@@ -117,9 +124,10 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
               maxWidth: "5.65in",
               margin: 0,
               fontFamily: "var(--font-body, Inter, sans-serif)",
-              fontSize: "14px",
               lineHeight: 1.75,
               color: branchProfile.textColor,
+              ...bodyTextStyle(block, 14, "center"),
+              ...bodyOffsetStyle(block),
             }}
           >
             {block.body}

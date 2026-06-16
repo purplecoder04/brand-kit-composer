@@ -1,5 +1,13 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  spacingValues,
+  sparkleAlign,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import {
   BotanicalSprig,
@@ -22,6 +30,7 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
   const lineCount = Math.max(0, Math.min(block.lines ?? 0, 20));
   const lineAccent = branchProfile.lineAccentColor;
   const smallMark = branchProfile.smallMarkColor;
+  const spacing = spacingValues(block);
 
   return (
     <PageCanvas
@@ -88,12 +97,13 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
         <h1
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "40px",
             lineHeight: 1.05,
             fontWeight: 500,
             color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
+            ...titleTextStyle(block, 40),
+            ...titleOffsetStyle(block),
           }}
         >
           {block.title}
@@ -104,18 +114,19 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
           width="2in"
           marginTop="0.24in"
           marginBottom="0.32in"
-          align="left"
+          align={sparkleAlign(block)}
         />
 
         {block.prompt ? (
           <div
             style={{
               maxWidth: "5.9in",
-              padding: "0.18in 0.3in",
+              padding: spacing.panelPadding,
               borderLeft: `2px solid ${lineAccent}`,
               background: `linear-gradient(90deg, ${PAPER_PANEL} 0%, rgba(255,253,248,0.28) 100%)`,
               marginBottom: "0.26in",
               boxShadow: "0 10px 22px rgba(40, 36, 44, 0.05)",
+              ...bodyOffsetStyle(block),
             }}
           >
             <div
@@ -137,11 +148,11 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
             <p
               style={{
                 fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-                fontSize: "15px",
-                lineHeight: 1.55,
+                lineHeight: spacing.lineHeight,
                 color: branchProfile.textColor,
                 margin: 0,
                 fontStyle: "italic",
+                ...bodyTextStyle(block, 15),
               }}
             >
               {block.prompt}
@@ -157,6 +168,7 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
               key={i}
               style={{
                 height: "0.4in",
+                minHeight: spacing.writingLineHeight,
                 borderBottom: `1px solid ${branchProfile.worksheetLineColor}`,
               }}
             />

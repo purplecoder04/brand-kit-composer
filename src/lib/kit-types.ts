@@ -25,6 +25,22 @@ export type TableData = {
   rows: string[][];
 };
 
+export type LayoutAlignment = "default" | "left" | "center";
+export type LayoutSize = "default" | "smaller" | "larger";
+export type LayoutSpacing = "default" | "compact" | "normal" | "spacious";
+
+export type LayoutOverrides = {
+  titleOffset?: number;
+  bodyOffset?: number;
+  titleOffsetX?: number;
+  bodyOffsetX?: number;
+  titleAlign?: LayoutAlignment;
+  bodyAlign?: LayoutAlignment;
+  titleSize?: LayoutSize;
+  bodySize?: LayoutSize;
+  spacing?: LayoutSpacing;
+};
+
 export type Block = {
   id: string;
   pageType: PageType;
@@ -43,6 +59,7 @@ export type Block = {
    * template ignores this field.
    */
   keywords?: string[];
+  layoutOverrides?: LayoutOverrides;
 };
 
 export type KitStatus = "Draft" | "Template Test" | "QC Needed" | "Sale Ready";

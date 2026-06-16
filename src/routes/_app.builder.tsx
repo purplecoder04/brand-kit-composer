@@ -3,6 +3,8 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   AlertTriangle,
   ArrowDown,
+  ArrowLeft,
+  ArrowRight,
   ArrowUp,
   BookOpenText,
   Copy,
@@ -27,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PagePreview } from "@/components/PagePreview";
 import { PageRenderer } from "@/components/PageRenderer";
-import { BRANCH_TEMPLATE_PROFILES } from "@/lib/branch-profile";
+import { BRANCH_TEMPLATE_PROFILES, type BranchProfile } from "@/lib/branch-profile";
 import { createVersionLibraryRecord } from "@/lib/api/version-library.functions";
 import {
   BUILDER_BLOCK_TYPES,
@@ -54,7 +56,8 @@ import {
 } from "@/lib/version-library";
 import { saveLessonGuideSource } from "@/lib/lesson-guide";
 import { saveHowToKitSource } from "@/lib/how-to-kit";
-import type { PageType } from "@/lib/kit-types";
+import { hasLayoutOverrides, patchLayoutOverrides } from "@/lib/layout-polish";
+import type { Block, LayoutOverrides, PageType } from "@/lib/kit-types";
 
 const searchSchema = z.object({
   draftReload: z.coerce.number().optional(),
@@ -114,6 +117,11 @@ function BuilderPage() {
     normalizedDraft.blocks.find((block) => block.id === normalizedDraft.selectedBlockId) ??
     normalizedDraft.blocks[0] ??
     null;
+  const selectedPreviewIndex = selectedBlock
+    ? kit.blocks.findIndex((block) => block.id === selectedBlock.id)
+    : -1;
+  const selectedPreviewBlock =
+    selectedPreviewIndex >= 0 ? kit.blocks[selectedPreviewIndex] : (kit.blocks[0] ?? null);
 
   const commitDraft = (
     updater: BuilderDraft | ((current: BuilderDraft) => BuilderDraft),
@@ -384,6 +392,10 @@ function BuilderPage() {
 
         <CurrentBlockEditor
           block={selectedBlock}
+          previewBlock={selectedPreviewBlock}
+          branchProfile={kit.branchProfile}
+          pageNumber={selectedPreviewIndex >= 0 ? selectedPreviewIndex + 1 : 1}
+          totalPages={kit.blocks.length}
           onAdd={addBlock}
           onChange={updateBlock}
           onDuplicate={duplicateBlock}
@@ -590,6 +602,7 @@ function BlockListCard({
                         {warningCount} warning{warningCount === 1 ? "" : "s"}
                       </span>
                     ) : null}
+                    {hasLayoutOverrides(block) ? <PolishedBadge /> : null}
                   </div>
                   <div
                     className="mt-1 flex items-center gap-1 text-xs"
@@ -646,6 +659,10 @@ function BlockListCard({
 
 function CurrentBlockEditor({
   block,
+  previewBlock,
+  branchProfile,
+  pageNumber,
+  totalPages,
   onAdd,
   onChange,
   onDuplicate,
@@ -653,6 +670,10 @@ function CurrentBlockEditor({
   onMove,
 }: {
   block: BuilderBlock | null;
+  previewBlock: Block | null;
+  branchProfile: BranchProfile;
+  pageNumber: number;
+  totalPages: number;
   onAdd: (type: PageType) => void;
   onChange: (blockId: string, patch: Partial<BuilderBlock>) => void;
   onDuplicate: (id: string) => void;
@@ -692,6 +713,7 @@ function CurrentBlockEditor({
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
           <CardTitle className="text-base">Current Block</CardTitle>
+          {hasLayoutOverrides(block) ? <PolishedBadge /> : null}
           <div className="flex gap-1">
             <Button
               type="button"
@@ -906,9 +928,345 @@ function CurrentBlockEditor({
             </Field>
           </>
         ) : null}
+
+        <PagePolishPanel
+          block={block}
+          previewBlock={previewBlock}
+          branchProfile={branchProfile}
+          pageNumber={pageNumber}
+          totalPages={totalPages}
+          onChange={(patch) => onChange(block.id, patch)}
+        />
       </CardContent>
     </Card>
   );
+}
+
+function PagePolishPanel({
+  block,
+  previewBlock,
+  branchProfile,
+  pageNumber,
+  totalPages,
+  onChange,
+}: {
+  block: BuilderBlock;
+  previewBlock: Block | null;
+  branchProfile: BranchProfile;
+  pageNumber: number;
+  totalPages: number;
+  onChange: (patch: Partial<BuilderBlock>) => void;
+}) {
+  const overrides = block.layoutOverrides;
+  const contentField = getPolishContentField(block.pageType);
+
+  const updatePolish = (patch: NonNullable<BuilderBlock["layoutOverrides"]>) => {
+    onChange({ layoutOverrides: patchLayoutOverrides(overrides, patch) });
+  };
+
+  const nudge = (
+    key: "titleOffset" | "bodyOffset" | "titleOffsetX" | "bodyOffsetX",
+    direction: -1 | 1,
+  ) => {
+    const current = overrides?.[key] ?? 0;
+    updatePolish({ [key]: Math.max(-6, Math.min(6, current + direction)) });
+  };
+
+  return (
+    <div
+      className="space-y-3 rounded-md border p-3"
+      style={{ borderColor: "#D8CEC2", background: "#FAF6F0" }}
+    >
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div
+                className="text-xs font-medium uppercase tracking-[0.18em]"
+                style={{ color: "#4F2D68" }}
+              >
+                Page Polish
+              </div>
+              <div className="text-xs" style={{ color: "#6b6470" }}>
+                Small page-only edits before export.
+              </div>
+            </div>
+            {hasLayoutOverrides(block) ? <PolishedBadge /> : null}
+          </div>
+
+          <Field label="Polish Title Text">
+            <Input
+              value={block.title}
+              onChange={(event) => onChange({ title: event.target.value })}
+            />
+          </Field>
+
+          {contentField ? (
+            <Field label={contentField.label}>
+              <Textarea
+                rows={contentField.rows}
+                value={block[contentField.key]}
+                onChange={(event) => onChange({ [contentField.key]: event.target.value })}
+              />
+            </Field>
+          ) : null}
+
+          <div className="grid grid-cols-2 gap-2">
+            <PolishNudgeControls
+              label="Title Position"
+              xValue={overrides?.titleOffsetX ?? 0}
+              yValue={overrides?.titleOffset ?? 0}
+              onUp={() => nudge("titleOffset", -1)}
+              onDown={() => nudge("titleOffset", 1)}
+              onLeft={() => nudge("titleOffsetX", -1)}
+              onRight={() => nudge("titleOffsetX", 1)}
+            />
+            <PolishNudgeControls
+              label="Body / Prompt Position"
+              xValue={overrides?.bodyOffsetX ?? 0}
+              yValue={overrides?.bodyOffset ?? 0}
+              onUp={() => nudge("bodyOffset", -1)}
+              onDown={() => nudge("bodyOffset", 1)}
+              onLeft={() => nudge("bodyOffsetX", -1)}
+              onRight={() => nudge("bodyOffsetX", 1)}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <PolishSelect
+              label="Title Align"
+              value={overrides?.titleAlign ?? "default"}
+              options={[
+                ["default", "Default"],
+                ["left", "Left"],
+                ["center", "Center"],
+              ]}
+              onChange={(value) =>
+                updatePolish({ titleAlign: value as LayoutOverrides["titleAlign"] })
+              }
+            />
+            <PolishSelect
+              label="Body Align"
+              value={overrides?.bodyAlign ?? "default"}
+              options={[
+                ["default", "Default"],
+                ["left", "Left"],
+                ["center", "Center"],
+              ]}
+              onChange={(value) =>
+                updatePolish({ bodyAlign: value as LayoutOverrides["bodyAlign"] })
+              }
+            />
+            <PolishSelect
+              label="Title Size"
+              value={overrides?.titleSize ?? "default"}
+              options={[
+                ["default", "Default"],
+                ["smaller", "Smaller"],
+                ["larger", "Larger"],
+              ]}
+              onChange={(value) =>
+                updatePolish({ titleSize: value as LayoutOverrides["titleSize"] })
+              }
+            />
+            <PolishSelect
+              label="Body Size"
+              value={overrides?.bodySize ?? "default"}
+              options={[
+                ["default", "Default"],
+                ["smaller", "Smaller"],
+                ["larger", "Larger"],
+              ]}
+              onChange={(value) => updatePolish({ bodySize: value as LayoutOverrides["bodySize"] })}
+            />
+          </div>
+
+          <PolishSelect
+            label="Spacing"
+            value={overrides?.spacing ?? "default"}
+            options={[
+              ["default", "Default"],
+              ["compact", "Compact"],
+              ["normal", "Normal"],
+              ["spacious", "Spacious"],
+            ]}
+            onChange={(value) => updatePolish({ spacing: value as LayoutOverrides["spacing"] })}
+          />
+
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onChange({ layoutOverrides: undefined })}
+          >
+            <RotateCcw className="mr-2 h-3 w-3" /> Reset Page Polish
+          </Button>
+        </div>
+
+        <SelectedPagePreview
+          block={previewBlock}
+          branchProfile={branchProfile}
+          pageNumber={pageNumber}
+          totalPages={totalPages}
+        />
+      </div>
+    </div>
+  );
+}
+
+function SelectedPagePreview({
+  block,
+  branchProfile,
+  pageNumber,
+  totalPages,
+}: {
+  block: Block | null;
+  branchProfile: BranchProfile;
+  pageNumber: number;
+  totalPages: number;
+}) {
+  return (
+    <div className="lg:sticky lg:top-24">
+      <div className="mb-2 text-[10px] uppercase tracking-[0.18em]" style={{ color: "#4F2D68" }}>
+        Selected Page Preview
+      </div>
+      {block ? (
+        <div
+          className="overflow-hidden rounded-md border bg-white p-2"
+          style={{ borderColor: "#D8CEC2" }}
+        >
+          <PagePreview scale={0.25}>
+            <PageRenderer
+              block={block}
+              branchProfile={branchProfile}
+              pageNumber={pageNumber}
+              totalPages={totalPages}
+            />
+          </PagePreview>
+        </div>
+      ) : (
+        <div
+          className="rounded-md border bg-white px-3 py-4 text-xs"
+          style={{ borderColor: "#D8CEC2", color: "#6b6470" }}
+        >
+          Select a page to preview polish changes.
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PolishNudgeControls({
+  label,
+  xValue,
+  yValue,
+  onUp,
+  onDown,
+  onLeft,
+  onRight,
+}: {
+  label: string;
+  xValue: number;
+  yValue: number;
+  onUp: () => void;
+  onDown: () => void;
+  onLeft: () => void;
+  onRight: () => void;
+}) {
+  return (
+    <div className="rounded-md border bg-white p-2" style={{ borderColor: "#D8CEC2" }}>
+      <div className="mb-1 text-xs uppercase tracking-wide" style={{ color: "#4F2D68" }}>
+        {label}
+      </div>
+      <div className="grid grid-cols-3 gap-1">
+        <span />
+        <Button type="button" variant="outline" size="sm" onClick={onUp}>
+          <ArrowUp className="h-3 w-3" />
+        </Button>
+        <span />
+        <Button type="button" variant="outline" size="sm" onClick={onLeft}>
+          <ArrowLeft className="h-3 w-3" />
+        </Button>
+        <div className="flex items-center justify-center text-[10px]" style={{ color: "#6b6470" }}>
+          X {xValue} / Y {yValue}
+        </div>
+        <Button type="button" variant="outline" size="sm" onClick={onRight}>
+          <ArrowRight className="h-3 w-3" />
+        </Button>
+        <span />
+        <Button type="button" variant="outline" size="sm" onClick={onDown}>
+          <ArrowDown className="h-3 w-3" />
+        </Button>
+        <span />
+      </div>
+    </div>
+  );
+}
+
+function PolishSelect({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  options: Array<[string, string]>;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Field label={label}>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="w-full rounded-md border px-3 py-2 text-sm"
+        style={{ borderColor: "#D8CEC2", background: "#fff" }}
+      >
+        {options.map(([optionValue, optionLabel]) => (
+          <option key={optionValue} value={optionValue}>
+            {optionLabel}
+          </option>
+        ))}
+      </select>
+    </Field>
+  );
+}
+
+function PolishedBadge() {
+  return (
+    <span
+      className="rounded-full border px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.14em]"
+      style={{ borderColor: "#C6A85B", color: "#4F2D68", background: "#FFF8E1" }}
+    >
+      Polished
+    </span>
+  );
+}
+
+function getPolishContentField(
+  pageType: PageType,
+): { key: "body" | "prompt"; label: string; rows: number } | null {
+  if (
+    pageType === "cover" ||
+    pageType === "divider" ||
+    pageType === "lesson" ||
+    pageType === "checklist" ||
+    pageType === "back-cover" ||
+    BODY_EDITOR_PAGE_TYPES.includes(pageType)
+  ) {
+    return { key: "body", label: "Polish Body Text", rows: pageType === "lesson" ? 6 : 4 };
+  }
+
+  if (
+    pageType === "workbook" ||
+    pageType === "notes" ||
+    pageType === "reflection" ||
+    pageType === "prompt-page"
+  ) {
+    return { key: "prompt", label: "Polish Prompt Text", rows: 4 };
+  }
+
+  return null;
 }
 
 function bodyFieldLabel(pageType: PageType): string {

@@ -1,5 +1,11 @@
 import type { BranchProfile } from "@/lib/branch-profile";
 import type { Block } from "@/lib/kit-types";
+import {
+  bodyOffsetStyle,
+  bodyTextStyle,
+  titleOffsetStyle,
+  titleTextStyle,
+} from "@/lib/layout-polish";
 import { PageCanvas } from "../PageCanvas";
 import {
   BotanicalSprig,
@@ -77,13 +83,14 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
         <h2
           style={{
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
-            fontSize: "64px",
             lineHeight: 1.05,
             fontWeight: 500,
             color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0",
             maxWidth: "6in",
+            ...titleTextStyle(block, 64, "center"),
+            ...titleOffsetStyle(block),
           }}
         >
           {block.subtitle}
@@ -108,6 +115,8 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
               fontStyle: "italic",
               opacity: 0.85,
               fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+              ...bodyTextStyle(block, 14, "center"),
+              ...bodyOffsetStyle(block),
             }}
           >
             {block.body}
