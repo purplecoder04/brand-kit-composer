@@ -13,6 +13,7 @@ import {
   PackageCheck,
   BookOpenText,
   FileText,
+  MousePointer2,
 } from "lucide-react";
 
 const NAV = [
@@ -28,6 +29,7 @@ const NAV = [
   { to: "/package-export", label: "Package Export", icon: PackageCheck },
   { to: "/lesson-guide", label: "Lesson Guide", icon: BookOpenText },
   { to: "/how-to-kit", label: "How-To PDF", icon: FileText },
+  { to: "/fillable-fields", label: "Fillable Fields", icon: MousePointer2 },
 ] as const;
 
 export function AppLayout() {

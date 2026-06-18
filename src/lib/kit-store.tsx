@@ -158,6 +158,8 @@ function defaultTitleFor(pageType: PageType): string {
       return "Case Study";
     case "prompt-page":
       return "Prompt";
+    case "multi-prompt":
+      return "Multi-Prompt";
     case "progress-check":
       return "Progress Check";
     case "closing":

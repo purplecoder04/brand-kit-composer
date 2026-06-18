@@ -8,6 +8,7 @@ import { WorkbookTemplate } from "./templates/WorkbookTemplate";
 import { ChecklistTemplate } from "./templates/ChecklistTemplate";
 import { BackCoverTemplate } from "./templates/BackCoverTemplate";
 import { StructuredPageTemplate } from "./templates/StructuredPageTemplate";
+import { MultiPromptTemplate } from "./templates/MultiPromptTemplate";
 
 type Props = {
   block: Block;
@@ -34,6 +35,8 @@ export function PageRenderer(props: Props) {
       return <WorkbookTemplate {...props} />;
     case "back-cover":
       return <BackCoverTemplate {...props} />;
+    case "multi-prompt":
+      return <MultiPromptTemplate {...props} />;
     case "start-here":
     case "module-intro":
     case "quote":

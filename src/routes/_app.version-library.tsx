@@ -7,6 +7,7 @@ import {
   Copy,
   ExternalLink,
   FileCheck2,
+  MousePointer2,
   PackageCheck,
   RotateCcw,
   StickyNote,
@@ -52,6 +53,13 @@ import {
   packageReadinessLabel,
   type PackageExportStatus,
 } from "@/lib/package-export";
+import {
+  findFieldMapForVersion,
+  loadFillableFieldMaps,
+  saveFillableFieldSource,
+  saveFillableFieldSourceFromVersion,
+  type FillableFieldMapRecord,
+} from "@/lib/fillable-fields";
 
 export const Route = createFileRoute("/_app/version-library")({
   head: () => ({ meta: [{ title: "Version Library | Kit Factory" }] }),
@@ -77,6 +85,7 @@ function VersionLibraryPage() {
   const [lessonGuides] = useState<LessonGuideLibraryRecord[]>(() => loadLessonGuideLibrary());
   const [howToGuides] = useState<HowToKitLibraryRecord[]>(() => loadHowToKitLibrary());
   const [packages] = useState<PackageExportStatus[]>(() => loadPackageExports());
+  const [fieldMaps] = useState<FillableFieldMapRecord[]>(() => loadFillableFieldMaps());
 
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +133,10 @@ function VersionLibraryPage() {
     () => howToGuides.filter((record) => !record.sourceVersionId),
     [howToGuides],
   );
+  const standaloneFieldMaps = useMemo(
+    () => fieldMaps.filter((record) => !record.sourceVersionId && record.draft),
+    [fieldMaps],
+  );
 
   const persistLocal = (next: KitVersionRecord[]) => {
     const saved = saveVersionLibrary(next);
@@ -167,6 +180,23 @@ function VersionLibraryPage() {
     openHowToKitRecord(record);
     toast.success("Opened How-To PDF");
     navigate({ to: "/how-to-kit" });
+  };
+
+  const openFillableFields = (record: KitVersionRecord) => {
+    saveFillableFieldSourceFromVersion(record);
+    toast.success("Opened Fillable Fields");
+    navigate({ to: "/fillable-fields" });
+  };
+
+  const openStandaloneFieldMap = (record: FillableFieldMapRecord) => {
+    if (!record.draft) return;
+    saveFillableFieldSource(record.draft, {
+      sourceLabel: record.sourceLabel,
+      sourceKitId: record.sourceKitId ?? record.draft.id,
+      sourceVersionId: record.sourceVersionId,
+    });
+    toast.success("Opened Fillable Fields");
+    navigate({ to: "/fillable-fields" });
   };
 
   const duplicateRecord = async (record: KitVersionRecord) => {
@@ -292,6 +322,7 @@ function VersionLibraryPage() {
                 const lessonGuide = findLessonGuideForVersion(lessonGuides, record);
                 const howToGuide = findHowToKitForVersion(howToGuides, record);
                 const packageExport = findPackageExportForVersion(packages, record.id);
+                const fieldMap = findFieldMapForVersion(fieldMaps, record.id);
 
                 return (
                   <tr key={record.id} style={{ borderTop: "1px solid #E7DFD2" }}>
@@ -327,6 +358,15 @@ function VersionLibraryPage() {
                           style={{ color: packageExport?.packageReady ? "#2E5B33" : "#9a929d" }}
                         >
                           {packageReadinessLabel(packageExport)}
+                        </span>
+                      </div>
+                      <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                        Fillable Map:{" "}
+                        <span
+                          className="font-semibold"
+                          style={{ color: fieldMap ? "#2E5B33" : "#9a929d" }}
+                        >
+                          {fieldMap ? "Created" : "Not created"}
                         </span>
                       </div>
                       {editingNotesId === record.id ? (
@@ -433,6 +473,12 @@ function VersionLibraryPage() {
                           }
                         >
                           <PackageCheck className="h-3.5 w-3.5" />
+                        </ActionButton>
+                        <ActionButton
+                          label={fieldMap ? "Open Fillable Map" : "Create Fillable Map"}
+                          onClick={() => openFillableFields(record)}
+                        >
+                          <MousePointer2 className="h-3.5 w-3.5" />
                         </ActionButton>
                         <ActionButton
                           label="Generate Lesson Guide"
@@ -586,6 +632,36 @@ function VersionLibraryPage() {
                 </div>
                 <Button type="button" variant="outline" onClick={() => openHowToKit(guide)}>
                   <FileCheck2 className="mr-2 h-4 w-4" /> Open How-To
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {standaloneFieldMaps.length > 0 ? (
+        <Card className="mt-8">
+          <CardHeader>
+            <CardTitle className="text-base">Standalone Fillable Field Maps</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {standaloneFieldMaps.map((map) => (
+              <div
+                key={map.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3"
+                style={{ borderColor: "#D8CEC2", background: "#fff" }}
+              >
+                <div>
+                  <div className="font-semibold" style={{ color: "#222026" }}>
+                    {map.kitName || "Untitled"}
+                  </div>
+                  <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                    {map.branch || "Brand"} / {map.fields.length} fields / Updated{" "}
+                    {new Date(map.updatedAt).toLocaleString()}
+                  </div>
+                </div>
+                <Button type="button" variant="outline" onClick={() => openStandaloneFieldMap(map)}>
+                  <MousePointer2 className="mr-2 h-4 w-4" /> Open Fillable Map
                 </Button>
               </div>
             ))}

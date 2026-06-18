@@ -55,6 +55,7 @@ export type BuilderWarning = {
     | "resource"
     | "case-study"
     | "prompt-page"
+    | "multi-prompt"
     | "progress-check"
     | "closing";
   message: string;
@@ -97,6 +98,7 @@ export const BUILDER_BLOCK_TYPES: Array<{ type: PageType; label: string }> = [
   { type: "resource", label: "Resource Page" },
   { type: "case-study", label: "Case Study / Example Page" },
   { type: "prompt-page", label: "Prompt Page" },
+  { type: "multi-prompt", label: "Multi-Prompt Page" },
   { type: "progress-check", label: "Progress Check Page" },
   { type: "closing", label: "Closing / Next Steps Page" },
 ];
@@ -128,7 +130,11 @@ export function createBuilderBlock(pageType: PageType, order = 1): BuilderBlock 
     keywords: "",
     prompt: "",
     lines:
-      pageType === "workbook" || pageType === "reflection" || pageType === "prompt-page" ? 12 : "",
+      pageType === "prompt-page"
+        ? 4
+        : pageType === "workbook" || pageType === "reflection"
+          ? 12
+          : "",
     tableData: {
       headers: ["", "", ""],
       rows: [["", "", ""]],
@@ -382,23 +388,29 @@ export function getBuilderWarnings(draft: BuilderDraft): BuilderWarning[] {
     if (
       block.pageType === "notes" ||
       block.pageType === "reflection" ||
-      block.pageType === "prompt-page"
+      block.pageType === "prompt-page" ||
+      block.pageType === "multi-prompt"
     ) {
-      if (block.prompt.length > NOTES_PROMPT_LIMIT) {
+      const promptText = block.pageType === "multi-prompt" ? block.body : block.prompt;
+      if (promptText.length > NOTES_PROMPT_LIMIT * 2) {
         warnings.push({
           blockId: block.id,
           scope: block.pageType,
-          message: `${block.title || pageTypeLabel(block.pageType)} has a long prompt that may reduce writing space.`,
+          message: `${block.title || pageTypeLabel(block.pageType)} has long prompt text that may reduce writing space.`,
         });
       }
-      if (block.lines === "") {
+      if (block.pageType !== "multi-prompt" && block.lines === "") {
         warnings.push({
           blockId: block.id,
           scope: block.pageType,
           message: `${block.title || pageTypeLabel(block.pageType)} is missing a writing line count.`,
         });
       }
-      if (typeof block.lines === "number" && (block.lines < 4 || block.lines > 20)) {
+      if (
+        block.pageType !== "multi-prompt" &&
+        typeof block.lines === "number" &&
+        (block.lines < 4 || block.lines > 20)
+      ) {
         warnings.push({
           blockId: block.id,
           scope: block.pageType,

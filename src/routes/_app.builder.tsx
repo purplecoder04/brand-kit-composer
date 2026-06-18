@@ -11,6 +11,7 @@ import {
   Eraser,
   FileText,
   Library,
+  MousePointer2,
   Plus,
   Printer,
   RefreshCw,
@@ -56,6 +57,7 @@ import {
 } from "@/lib/version-library";
 import { saveLessonGuideSource } from "@/lib/lesson-guide";
 import { saveHowToKitSource } from "@/lib/how-to-kit";
+import { saveFillableFieldSource } from "@/lib/fillable-fields";
 import { hasLayoutOverrides, patchLayoutOverrides } from "@/lib/layout-polish";
 import type { Block, LayoutOverrides, PageType } from "@/lib/kit-types";
 
@@ -73,6 +75,7 @@ const BODY_EDITOR_PAGE_TYPES: PageType[] = [
   "action-plan",
   "resource",
   "case-study",
+  "multi-prompt",
   "progress-check",
   "closing",
 ];
@@ -265,6 +268,13 @@ function BuilderPage() {
     navigate({ to: "/how-to-kit" });
   };
 
+  const openFillableFields = () => {
+    const savedDraft = persist();
+    saveFillableFieldSource(savedDraft, "Current Builder Draft");
+    toast.success("Fillable field map opened");
+    navigate({ to: "/fillable-fields" });
+  };
+
   const resetToSample = () => {
     const sample = saveBuilderDraft(createSampleBuilderDraft());
     setDraft(sample);
@@ -312,6 +322,9 @@ function BuilderPage() {
         </Button>
         <Button onClick={generateHowToKit} variant="outline">
           <FileText className="mr-2 h-4 w-4" /> Generate How-To PDF
+        </Button>
+        <Button onClick={openFillableFields} variant="outline">
+          <MousePointer2 className="mr-2 h-4 w-4" /> Fillable Fields
         </Button>
         <Button onClick={resetToSample} variant="outline">
           <RotateCcw className="mr-2 h-4 w-4" /> Reset to Sample Content
@@ -1251,6 +1264,7 @@ function getPolishContentField(
     pageType === "divider" ||
     pageType === "lesson" ||
     pageType === "checklist" ||
+    pageType === "multi-prompt" ||
     pageType === "back-cover" ||
     BODY_EDITOR_PAGE_TYPES.includes(pageType)
   ) {
@@ -1281,6 +1295,8 @@ function bodyFieldLabel(pageType: PageType): string {
       return "Resources / References";
     case "case-study":
       return "Example / Scenario";
+    case "multi-prompt":
+      return "Prompt Sections";
     case "closing":
       return "Closing Message";
     case "module-intro":
@@ -1295,6 +1311,8 @@ function bodyFieldLabel(pageType: PageType): string {
 function bodyFieldHint(pageType: PageType): string | undefined {
   if (pageType === "action-plan" || pageType === "progress-check") return "One item per line.";
   if (pageType === "resource") return "Add links, tools, terms, reminders, or references.";
+  if (pageType === "multi-prompt")
+    return "Use repeated sections: Prompt: ... then Writing Lines: 4. Each section becomes its own prompt area on the same page.";
   if (pageType === "quote") return "Use the main quote or opening thought here.";
   return undefined;
 }
@@ -1303,6 +1321,7 @@ function bodyFieldRows(pageType: PageType): number {
   if (pageType === "lesson") return 9;
   if (pageType === "quote") return 4;
   if (pageType === "action-plan" || pageType === "progress-check") return 8;
+  if (pageType === "multi-prompt") return 10;
   return 5;
 }
 

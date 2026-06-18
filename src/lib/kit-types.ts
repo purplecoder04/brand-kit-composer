@@ -17,6 +17,7 @@ export type PageType =
   | "resource"
   | "case-study"
   | "prompt-page"
+  | "multi-prompt"
   | "progress-check"
   | "closing";
 

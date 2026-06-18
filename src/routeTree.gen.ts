@@ -24,6 +24,7 @@ import { Route as AppMapperRouteImport } from './routes/_app.mapper'
 import { Route as AppLessonGuideRouteImport } from './routes/_app.lesson-guide'
 import { Route as AppImportRouteImport } from './routes/_app.import'
 import { Route as AppHowToKitRouteImport } from './routes/_app.how-to-kit'
+import { Route as AppFillableFieldsRouteImport } from './routes/_app.fillable-fields'
 import { Route as AppDashboardRouteImport } from './routes/_app.dashboard'
 import { Route as AppCreateRouteImport } from './routes/_app.create'
 import { Route as AppBuilderRouteImport } from './routes/_app.builder'
@@ -102,6 +103,11 @@ const AppHowToKitRoute = AppHowToKitRouteImport.update({
   path: '/how-to-kit',
   getParentRoute: () => AppRoute,
 } as any)
+const AppFillableFieldsRoute = AppFillableFieldsRouteImport.update({
+  id: '/fillable-fields',
+  path: '/fillable-fields',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppDashboardRoute = AppDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
+  '/fillable-fields': typeof AppFillableFieldsRoute
   '/how-to-kit': typeof AppHowToKitRoute
   '/import': typeof AppImportRoute
   '/lesson-guide': typeof AppLessonGuideRoute
@@ -144,6 +151,7 @@ export interface FileRoutesByTo {
   '/builder': typeof AppBuilderRoute
   '/create': typeof AppCreateRoute
   '/dashboard': typeof AppDashboardRoute
+  '/fillable-fields': typeof AppFillableFieldsRoute
   '/how-to-kit': typeof AppHowToKitRoute
   '/import': typeof AppImportRoute
   '/lesson-guide': typeof AppLessonGuideRoute
@@ -165,6 +173,7 @@ export interface FileRoutesById {
   '/_app/builder': typeof AppBuilderRoute
   '/_app/create': typeof AppCreateRoute
   '/_app/dashboard': typeof AppDashboardRoute
+  '/_app/fillable-fields': typeof AppFillableFieldsRoute
   '/_app/how-to-kit': typeof AppHowToKitRoute
   '/_app/import': typeof AppImportRoute
   '/_app/lesson-guide': typeof AppLessonGuideRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/create'
     | '/dashboard'
+    | '/fillable-fields'
     | '/how-to-kit'
     | '/import'
     | '/lesson-guide'
@@ -205,6 +215,7 @@ export interface FileRouteTypes {
     | '/builder'
     | '/create'
     | '/dashboard'
+    | '/fillable-fields'
     | '/how-to-kit'
     | '/import'
     | '/lesson-guide'
@@ -225,6 +236,7 @@ export interface FileRouteTypes {
     | '/_app/builder'
     | '/_app/create'
     | '/_app/dashboard'
+    | '/_app/fillable-fields'
     | '/_app/how-to-kit'
     | '/_app/import'
     | '/_app/lesson-guide'
@@ -353,6 +365,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppHowToKitRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/fillable-fields': {
+      id: '/_app/fillable-fields'
+      path: '/fillable-fields'
+      fullPath: '/fillable-fields'
+      preLoaderRoute: typeof AppFillableFieldsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/dashboard': {
       id: '/_app/dashboard'
       path: '/dashboard'
@@ -381,6 +400,7 @@ interface AppRouteChildren {
   AppBuilderRoute: typeof AppBuilderRoute
   AppCreateRoute: typeof AppCreateRoute
   AppDashboardRoute: typeof AppDashboardRoute
+  AppFillableFieldsRoute: typeof AppFillableFieldsRoute
   AppHowToKitRoute: typeof AppHowToKitRoute
   AppImportRoute: typeof AppImportRoute
   AppLessonGuideRoute: typeof AppLessonGuideRoute
@@ -397,6 +417,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppBuilderRoute: AppBuilderRoute,
   AppCreateRoute: AppCreateRoute,
   AppDashboardRoute: AppDashboardRoute,
+  AppFillableFieldsRoute: AppFillableFieldsRoute,
   AppHowToKitRoute: AppHowToKitRoute,
   AppImportRoute: AppImportRoute,
   AppLessonGuideRoute: AppLessonGuideRoute,

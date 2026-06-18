@@ -25,6 +25,7 @@ type ParsedSection = {
   subtitle: string;
   body: string;
   prompt: string;
+  lines: number | "";
   checklistItems: string[];
   tableHeaders: string[];
   tableRows: string[][];
@@ -37,16 +38,18 @@ const AUDIENCE_RE = /^audience\s*:\s*(.+)$/i;
 const TONE_RE = /^tone\s*:\s*(.+)$/i;
 const TAGLINE_RE = /^tagline\s*:\s*(.+)$/i;
 const HEADING_RE =
-  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
+  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|multi prompt|multi prompts|multi-prompt|multiple prompt|multiple prompts|prompt group|prompt set|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
 const BARE_HEADING_RE =
-  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
+  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|multi prompt|multi prompts|multi-prompt|multiple prompt|multiple prompts|prompt group|prompt set|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
 const PAGE_LABEL_HEADING_RE =
-  /^(cover page|section divider|lesson page|table\s*\/\s*tracker page|table page|tracker page|workbook page|checklist page|notes page|back cover page|start here page|module intro page|quote\s*\/\s*opening thought page|quote page|opening thought page|reflection page|action plan page|resource page|case study\s*\/\s*example page|case study page|example page|prompt page|progress check page|closing\s*\/\s*next steps page|closing page|next steps page)\s*(?::|[-.])?\s*(.*)$/i;
+  /^(cover page|section divider|lesson page|table\s*\/\s*tracker page|table page|tracker page|workbook page|checklist page|notes page|back cover page|start here page|module intro page|quote\s*\/\s*opening thought page|quote page|opening thought page|reflection page|action plan page|resource page|case study\s*\/\s*example page|case study page|example page|prompt page|multi prompt page|multi prompts page|multi-prompt page|multiple prompt page|multiple prompts page|prompt group page|prompt set page|progress check page|closing\s*\/\s*next steps page|closing page|next steps page)\s*(?::|[-.])?\s*(.*)$/i;
 const NUMBERED_HEADING_RE =
   /^(?:\d+[).]\s*)?(lesson|step|module|worksheet|reflection|tracker)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.+)$/i;
 const BODY_RE = /^(body|lesson body|description)\s*:\s*(.*)$/i;
 const PROMPT_RE =
-  /^(prompt|workbook prompt|notes prompt|question|reflection question)\s*:\s*(.*)$/i;
+  /^(prompt\s*\d*|workbook prompt|notes prompt|question|reflection question)\s*:\s*(.*)$/i;
+const WRITING_LINES_RE =
+  /^(writing\s*lines?|writing\s*line\s*count|line\s*count|lines)\s*:\s*(\d{1,2})\s*$/i;
 const TABLE_HEADERS_RE = /^(headers|columns)\s*:\s*(.+)$/i;
 const TABLE_ROW_RE = /^(row|table row)\s*:\s*(.+)$/i;
 const CHECKLIST_ITEM_RE = /^[-*]\s+(.+)$/;
@@ -147,8 +150,30 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
 
     const prompt = line.match(PROMPT_RE);
     if (prompt) {
-      current.type = current.type === "notes" ? "notes" : "workbook";
+      if (shouldTreatPromptAsMultiPrompt(current, prompt[1] ?? "")) {
+        ensureMultiPromptSection(current);
+        appendText(current, "body", `Prompt: ${prompt[2] ?? ""}`);
+        continue;
+      }
+      if (
+        current.type !== "workbook" &&
+        current.type !== "notes" &&
+        current.type !== "reflection" &&
+        current.type !== "prompt-page"
+      ) {
+        current.type = "workbook";
+      }
       appendText(current, "prompt", prompt[2] ?? "");
+      continue;
+    }
+
+    const writingLines = line.match(WRITING_LINES_RE);
+    if (writingLines) {
+      if (current.type === "multi-prompt") {
+        appendText(current, "body", `Writing Lines: ${writingLines[2]}`);
+        continue;
+      }
+      current.lines = Number(writingLines[2]);
       continue;
     }
 
@@ -375,6 +400,7 @@ function createSection(rawType: string, rawTitle: string): ParsedSection {
     subtitle: "",
     body: "",
     prompt,
+    lines: "",
     checklistItems: [],
     tableHeaders: [],
     tableRows: [],
@@ -387,15 +413,25 @@ function toBlock(section: ParsedSection, index: number): BuilderBlock {
   const tableHeaders = normalizeCells(section.tableHeaders);
   const tableRows =
     section.tableRows.length > 0 ? section.tableRows.map(normalizeCells) : [["", "", ""]];
+  const supportsWritingLines =
+    section.type === "workbook" ||
+    section.type === "notes" ||
+    section.type === "reflection" ||
+    section.type === "prompt-page";
+  const importedLines =
+    section.lines === ""
+      ? section.type === "workbook" || section.type === "notes"
+        ? 12
+        : block.lines
+      : section.lines;
 
   return {
     ...block,
     title: section.title,
     subtitle: section.subtitle,
     body: section.type === "checklist" ? checklistBody : section.body,
-    prompt:
-      section.type === "workbook" || section.type === "notes" ? section.prompt || section.body : "",
-    lines: section.type === "workbook" || section.type === "notes" ? 12 : block.lines,
+    prompt: supportsWritingLines ? section.prompt || section.body : "",
+    lines: supportsWritingLines ? importedLines : block.lines,
     tableData: {
       headers: section.type === "table" ? tableHeaders : block.tableData.headers,
       rows: section.type === "table" ? tableRows : block.tableData.rows,
@@ -447,6 +483,23 @@ function normalizeSectionType(value: string): PageType {
   )
     return "case-study";
   if (lower === "prompt page") return "prompt-page";
+  if (
+    lower === "multi prompt" ||
+    lower === "multi prompts" ||
+    lower === "multi prompt page" ||
+    lower === "multi prompts page" ||
+    lower === "multi-prompt" ||
+    lower === "multi-prompt page" ||
+    lower === "multiple prompt" ||
+    lower === "multiple prompts" ||
+    lower === "multiple prompt page" ||
+    lower === "multiple prompts page" ||
+    lower === "prompt group" ||
+    lower === "prompt group page" ||
+    lower === "prompt set" ||
+    lower === "prompt set page"
+  )
+    return "multi-prompt";
   if (lower === "progress check" || lower === "progress check page") return "progress-check";
   if (
     lower === "closing" ||
@@ -491,6 +544,27 @@ function appendText(section: ParsedSection, field: "body" | "prompt", value: str
   const trimmed = value.trim();
   if (!trimmed) return;
   section[field] = section[field] ? `${section[field]}\n\n${trimmed}` : trimmed;
+}
+
+function shouldTreatPromptAsMultiPrompt(section: ParsedSection, label: string): boolean {
+  if (section.type === "multi-prompt") return true;
+  if (/^prompt\s*\d+$/i.test(label.trim())) return true;
+  return section.type === "prompt-page" && Boolean(section.prompt.trim() || section.lines !== "");
+}
+
+function ensureMultiPromptSection(section: ParsedSection) {
+  if (section.type === "multi-prompt") return;
+
+  const existingPrompt = section.prompt.trim();
+  const existingLines = section.lines;
+  section.type = "multi-prompt";
+  section.prompt = "";
+  section.lines = "";
+
+  if (!existingPrompt) return;
+
+  appendText(section, "body", `Prompt: ${existingPrompt}`);
+  if (existingLines !== "") appendText(section, "body", `Writing Lines: ${existingLines}`);
 }
 
 function looksLikeTableLine(line: string): boolean {
@@ -594,6 +668,8 @@ function pageTypeName(pageType: PageType): string {
       return "Case Study";
     case "prompt-page":
       return "Prompt";
+    case "multi-prompt":
+      return "Multi-Prompt";
     case "progress-check":
       return "Progress Check";
     case "closing":
