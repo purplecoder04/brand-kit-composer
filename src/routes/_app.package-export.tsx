@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ProductionUI";
 import {
   buildBuilderKit,
   loadBuilderDraft,
@@ -67,7 +68,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_app/package-export")({
   validateSearch: searchSchema,
-  head: () => ({ meta: [{ title: "Package Export | Kit Factory" }] }),
+  head: () => ({ meta: [{ title: "Package | Kit Factory" }] }),
   component: PackageExportPage,
 });
 
@@ -305,24 +306,23 @@ function PackageExportPage() {
 
   return (
     <div className="p-8">
-      <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Product Package Export V2
-      </div>
-      <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
-        Package Export
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Track the full product package for a kit version. This stores readiness and generated asset
-        snapshots; ZIP files and stored PDFs are still out of scope.
-        <span className="ml-2">
-          Storage:{" "}
-          {storageMode === "checking"
-            ? "Checking private Supabase..."
-            : storageMode === "supabase"
-              ? "Private Supabase for versions, local package status"
-              : "Local fallback"}
-        </span>
-      </p>
+      <PageHeader
+        eyebrow="Production package"
+        title="Package"
+        description={
+          <>
+            Track workbook, guide, how-to, QC, and package readiness for a saved kit version.
+            <span className="ml-2">
+              Storage:{" "}
+              {storageMode === "checking"
+                ? "Checking private Supabase..."
+                : storageMode === "supabase"
+                  ? "Private Supabase for versions, local package status"
+                  : "Local fallback"}
+            </span>
+          </>
+        }
+      />
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="space-y-6">
@@ -526,7 +526,7 @@ function PackageExportPage() {
                 detail={readiness.howToGenerated ? "Generated." : "Missing."}
               />
               <ReadinessItem
-                title="QC Report"
+                title="QC"
                 state={
                   qcPassed
                     ? "ready"
@@ -547,7 +547,11 @@ function PackageExportPage() {
                 state={readiness.packageNotesGenerated ? "ready" : "missing"}
                 detail={readiness.packageNotesGenerated ? "Manifest generated." : "Missing."}
               />
-              <ReadinessItem title="ZIP Package" state="planned" detail="Not built in V2." />
+              <ReadinessItem
+                title="ZIP Package"
+                state="planned"
+                detail="Planned for a later pass."
+              />
             </CardContent>
           </Card>
 

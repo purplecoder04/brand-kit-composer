@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ProductionUI";
 import {
   listVersionLibraryRecords,
   updateVersionLibraryRecord,
@@ -143,23 +144,23 @@ function DashboardPage() {
 
   return (
     <div className="p-8">
-      <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Level 7 Production Command Center
-      </div>
-      <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
-        Production Dashboard
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Track what needs repair, what passed QC, and what is ready for export.
-        <span className="ml-2">
-          Storage:{" "}
-          {storageMode === "checking"
-            ? "Checking private Supabase..."
-            : storageMode === "supabase"
-              ? "Private Supabase"
-              : "Local fallback"}
-        </span>
-      </p>
+      <PageHeader
+        eyebrow="Production command center"
+        title="Production Dashboard"
+        description={
+          <>
+            Track active versions, repair work, QC status, and package readiness.
+            <span className="ml-2">
+              Storage:{" "}
+              {storageMode === "checking"
+                ? "Checking private Supabase..."
+                : storageMode === "supabase"
+                  ? "Private Supabase"
+                  : "Local fallback"}
+            </span>
+          </>
+        }
+      />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
         <SummaryCard title="Total Versions" value={summary.total} />

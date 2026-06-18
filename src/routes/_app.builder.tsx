@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PagePreview } from "@/components/PagePreview";
 import { PageRenderer } from "@/components/PageRenderer";
+import { ActionBar, ActionGroup, PageHeader, StatusStrip } from "@/components/ProductionUI";
 import { BRANCH_TEMPLATE_PROFILES, type BranchProfile } from "@/lib/branch-profile";
 import { createVersionLibraryRecord } from "@/lib/api/version-library.functions";
 import {
@@ -90,7 +91,7 @@ const PROMPT_EDITOR_PAGE_TYPES: PageType[] = [
 
 export const Route = createFileRoute("/_app/builder")({
   validateSearch: searchSchema,
-  head: () => ({ meta: [{ title: "Multi-Page Kit Builder | Kit Factory" }] }),
+  head: () => ({ meta: [{ title: "Builder | Kit Factory" }] }),
   component: BuilderPage,
 });
 
@@ -214,7 +215,7 @@ function BuilderPage() {
 
   const saveDraft = () => {
     persist();
-    toast.success("Level 3B draft saved");
+    toast.success("Draft saved");
   };
 
   const saveToVersionLibrary = async () => {
@@ -286,52 +287,53 @@ function BuilderPage() {
     const blank = saveBuilderDraft(createBlankBuilderDraft());
     setDraft(blank);
     setDirty(false);
-    toast.message("Cleared Level 3B builder");
+    toast.message("Builder cleared");
   };
 
   return (
     <div className="screen-only p-8">
-      <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Level 3B · Local Multi-Page Kit Builder
-      </div>
-      <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
-        Multi-Page Kit Builder
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Build multiple ordered content blocks using the locked Brand Template V1 pages.
-      </p>
+      <PageHeader
+        eyebrow="Production builder"
+        title="Builder"
+        description="Build and polish workbook pages, then save versions or export production files."
+      />
 
-      <div
-        className="sticky top-0 z-20 -mx-8 mt-6 mb-4 flex flex-wrap items-center gap-2 border-y px-8 py-3"
-        style={{ background: "#FAF6F0", borderColor: "#D8CEC2" }}
-      >
-        <Button onClick={generatePreview} style={{ background: "#4F2D68", color: "#fff" }}>
-          <RefreshCw className="mr-2 h-4 w-4" /> Generate Preview
-        </Button>
-        <Button onClick={saveDraft} variant="outline">
-          <Save className="mr-2 h-4 w-4" /> Save Draft
-        </Button>
-        <Button onClick={saveToVersionLibrary} variant="outline" disabled={savingVersion}>
-          <Library className="mr-2 h-4 w-4" /> Save to Version Library
-        </Button>
-        <Button onClick={printDraft} variant="outline">
-          <Printer className="mr-2 h-4 w-4" /> Print / Save as PDF
-        </Button>
-        <Button onClick={generateLessonGuide} variant="outline">
-          <BookOpenText className="mr-2 h-4 w-4" /> Generate Lesson Guide
-        </Button>
-        <Button onClick={generateHowToKit} variant="outline">
-          <FileText className="mr-2 h-4 w-4" /> Generate How-To PDF
-        </Button>
-        <Button onClick={openFillableFields} variant="outline">
-          <MousePointer2 className="mr-2 h-4 w-4" /> Fillable Fields
-        </Button>
-        <Button onClick={resetToSample} variant="outline">
-          <RotateCcw className="mr-2 h-4 w-4" /> Reset to Sample Content
-        </Button>
-        <Button onClick={clearAll} variant="outline">
-          <Eraser className="mr-2 h-4 w-4" /> Clear All
-        </Button>
+      <ActionBar>
+        <ActionGroup label="Draft">
+          <Button onClick={saveDraft} style={{ background: "#4F2D68", color: "#fff" }}>
+            <Save className="mr-2 h-4 w-4" /> Save Draft
+          </Button>
+          <Button onClick={generatePreview} variant="outline">
+            <RefreshCw className="mr-2 h-4 w-4" /> Preview
+          </Button>
+        </ActionGroup>
+        <ActionGroup label="Library">
+          <Button onClick={saveToVersionLibrary} variant="outline" disabled={savingVersion}>
+            <Library className="mr-2 h-4 w-4" /> Save Version
+          </Button>
+        </ActionGroup>
+        <ActionGroup label="Export">
+          <Button onClick={printDraft} variant="outline">
+            <Printer className="mr-2 h-4 w-4" /> Print PDF
+          </Button>
+          <Button onClick={generateLessonGuide} variant="outline">
+            <BookOpenText className="mr-2 h-4 w-4" /> Lesson Guide
+          </Button>
+          <Button onClick={generateHowToKit} variant="outline">
+            <FileText className="mr-2 h-4 w-4" /> How-To
+          </Button>
+          <Button onClick={openFillableFields} variant="outline">
+            <MousePointer2 className="mr-2 h-4 w-4" /> Fillable
+          </Button>
+        </ActionGroup>
+        <ActionGroup label="Tools">
+          <Button onClick={resetToSample} variant="outline">
+            <RotateCcw className="mr-2 h-4 w-4" /> Sample
+          </Button>
+          <Button onClick={clearAll} variant="outline">
+            <Eraser className="mr-2 h-4 w-4" /> Clear
+          </Button>
+        </ActionGroup>
         {warnings.length > 0 ? (
           <span
             className="ml-auto inline-flex items-center gap-2 text-xs"
@@ -341,12 +343,9 @@ function BuilderPage() {
             {warnings.length === 1 ? "" : "s"}
           </span>
         ) : null}
-      </div>
+      </ActionBar>
 
-      <div
-        className="mb-6 grid grid-cols-1 gap-2 rounded-md border px-4 py-3 text-xs lg:grid-cols-4"
-        style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#4F2D68" }}
-      >
+      <StatusStrip>
         <StatusItem label="Current Kit Name" value={normalizedDraft.kitName} />
         <StatusItem
           label="Last Saved"
@@ -367,7 +366,7 @@ function BuilderPage() {
           }
         />
         <StatusItem label="Pages" value={`${kit.blocks.length}`} />
-      </div>
+      </StatusStrip>
 
       {warnings.length > 0 ? (
         <Alert className="mb-6" style={{ borderColor: "#E0B040", background: "#FFF8E1" }}>
@@ -422,7 +421,7 @@ function BuilderPage() {
               className="rounded-md border px-4 py-6 text-sm"
               style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#6b6470" }}
             >
-              Add a block to begin the Level 3B preview.
+              Add a block to begin the workbook preview.
             </div>
           ) : (
             kit.blocks.map((block, index) => (
@@ -454,7 +453,7 @@ function StatusItem({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <span className="uppercase tracking-wider opacity-70">{label}: </span>
-      <span style={{ color: "#222026" }}>{value || "—"}</span>
+      <span style={{ color: "#222026" }}>{value || "--"}</span>
     </div>
   );
 }

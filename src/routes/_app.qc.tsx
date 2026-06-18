@@ -26,7 +26,7 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/_app/qc")({
   validateSearch: searchSchema,
-  head: () => ({ meta: [{ title: "QC Report | Kit Factory" }] }),
+  head: () => ({ meta: [{ title: "QC | Kit Factory" }] }),
   component: QCPage,
 });
 
@@ -246,10 +246,10 @@ function PageHeader({ storageMode }: { storageMode: StorageMode }) {
   return (
     <>
       <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Level 6 Internal QC
+        Production QC
       </div>
       <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
-        QC Report
+        QC
       </h1>
       <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
         Review saved versions for sale readiness, repair needs, and DocHub readiness.

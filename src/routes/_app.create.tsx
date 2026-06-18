@@ -1,112 +1,80 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
-import { toast } from "sonner";
-import { useKitStore } from "@/lib/kit-store";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import type { ReactNode } from "react";
+import { Library, Upload, Wrench } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PageHeader } from "@/components/ProductionUI";
 
 export const Route = createFileRoute("/_app/create")({
-  head: () => ({ meta: [{ title: "Create Kit | Kit Factory" }] }),
-  component: CreateKitPage,
+  head: () => ({ meta: [{ title: "Start Kit | Kit Factory" }] }),
+  component: StartKitPage,
 });
 
-function CreateKitPage() {
-  const { createKit } = useKitStore();
-  const navigate = useNavigate();
-  const [form, setForm] = useState({
-    name: "",
-    branch: "Brand",
-    audience: "",
-    tone: "",
-    description: "",
-    lessonGuide: "",
-    workbook: "",
-    tracker: "",
-  });
-
-  const onChange = (k: keyof typeof form) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => setForm({ ...form, [k]: e.target.value });
-
-  const onSave = () => {
-    const id = createKit(form);
-    toast.success("Draft saved");
-    navigate({ to: "/builder", search: { kitId: id } });
-  };
-
+function StartKitPage() {
   return (
-    <div className="p-10 max-w-3xl">
-      <div
-        className="text-[10px] uppercase tracking-[0.28em]"
-        style={{ color: "#4F2D68" }}
-      >
-        New kit
-      </div>
-      <h1
-        className="mt-1 text-4xl"
-        style={{ fontFamily: "var(--font-display)", color: "#222026" }}
-      >
-        Create Kit
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Enter the kit content. You will edit pages in the Kit Builder next.
-      </p>
+    <div className="p-8">
+      <PageHeader
+        eyebrow="Production start"
+        title="Start a Kit"
+        description="Create Kit has moved into the cleaner production flow. Start with an import, open the builder, or continue from the library."
+      />
 
-      <div className="mt-8 space-y-5">
-        <Field label="Kit Name">
-          <input className={inputCls} value={form.name} onChange={onChange("name")} />
-        </Field>
-        <Field label="Branch">
-          <select className={inputCls} value={form.branch} onChange={onChange("branch")}>
-            <option value="Brand">Brand</option>
-          </select>
-        </Field>
-        <Field label="Audience">
-          <input className={inputCls} value={form.audience} onChange={onChange("audience")} />
-        </Field>
-        <Field label="Tone">
-          <input className={inputCls} value={form.tone} onChange={onChange("tone")} />
-        </Field>
-        <Field label="Kit Description">
-          <textarea className={textareaCls} rows={3} value={form.description} onChange={onChange("description")} />
-        </Field>
-        <Field label="Lesson Guide Content">
-          <textarea className={textareaCls} rows={3} value={form.lessonGuide} onChange={onChange("lessonGuide")} />
-        </Field>
-        <Field label="Workbook Content">
-          <textarea className={textareaCls} rows={3} value={form.workbook} onChange={onChange("workbook")} />
-        </Field>
-        <Field label="Tracker Content">
-          <textarea className={textareaCls} rows={3} value={form.tracker} onChange={onChange("tracker")} />
-        </Field>
-
-        <div className="pt-2">
-          <button
-            onClick={onSave}
-            className="rounded-md px-5 py-2.5 text-sm font-medium text-white"
-            style={{ background: "#4F2D68" }}
-          >
-            Save Draft
-          </button>
-        </div>
+      <div className="grid max-w-5xl gap-4 md:grid-cols-3">
+        <StartCard
+          icon={<Upload className="h-5 w-5" />}
+          title="Import Content"
+          description="Upload or paste markdown, text, or Word content and turn it into builder blocks."
+          to="/import"
+          cta="Open Import"
+        />
+        <StartCard
+          icon={<Wrench className="h-5 w-5" />}
+          title="Open Builder"
+          description="Build or edit pages directly using the current local draft."
+          to="/builder"
+          cta="Open Builder"
+        />
+        <StartCard
+          icon={<Library className="h-5 w-5" />}
+          title="Version Library"
+          description="Reopen a saved kit, guide, package, or fillable field map."
+          to="/version-library"
+          cta="Open Library"
+        />
       </div>
     </div>
   );
 }
 
-const inputCls =
-  "w-full rounded-md border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4F2D68]/30";
-const textareaCls =
-  "w-full rounded-md border bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#4F2D68]/30 leading-relaxed";
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function StartCard({
+  icon,
+  title,
+  description,
+  to,
+  cta,
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  to: "/import" | "/builder" | "/version-library";
+  cta: string;
+}) {
   return (
-    <label className="block">
-      <div
-        className="mb-1.5 text-[10px] uppercase tracking-[0.18em]"
-        style={{ color: "#4F2D68" }}
-      >
-        {label}
-      </div>
-      <div style={{ borderColor: "#D8CEC2" }}>{children}</div>
-    </label>
+    <Card>
+      <CardHeader>
+        <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-md bg-[#F4EFE6] text-[#4F2D68]">
+          {icon}
+        </div>
+        <CardTitle className="text-base">{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="min-h-[72px] text-sm leading-6" style={{ color: "#6b6470" }}>
+          {description}
+        </p>
+        <Button asChild className="mt-4 w-full" style={{ background: "#4F2D68", color: "#fff" }}>
+          <Link to={to}>{cta}</Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

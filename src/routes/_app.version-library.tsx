@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
+import { PageHeader } from "@/components/ProductionUI";
 import {
   duplicateVersionLibraryRecord,
   listVersionLibraryRecords,
@@ -253,23 +254,23 @@ function VersionLibraryPage() {
 
   return (
     <div className="p-8">
-      <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Local Version Tracking
-      </div>
-      <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
-        Version Library
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Track saved builder snapshots, QC status, sale readiness, and DocHub readiness.
-        <span className="ml-2">
-          Storage:{" "}
-          {storageMode === "checking"
-            ? "Checking private Supabase..."
-            : storageMode === "supabase"
-              ? "Private Supabase"
-              : "Local fallback"}
-        </span>
-      </p>
+      <PageHeader
+        eyebrow="Production library"
+        title="Version Library"
+        description={
+          <>
+            Reopen saved kits, generated guides, package records, and fillable field maps.
+            <span className="ml-2">
+              Storage:{" "}
+              {storageMode === "checking"
+                ? "Checking private Supabase..."
+                : storageMode === "supabase"
+                  ? "Private Supabase"
+                  : "Local fallback"}
+            </span>
+          </>
+        }
+      />
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <SummaryCard title="Total Versions" value={summary.total} />
@@ -314,7 +315,7 @@ function VersionLibraryPage() {
                   className="px-4 py-8 text-center text-sm"
                   style={{ color: "#6b6470" }}
                 >
-                  No versions saved yet. Use Save to Version Library in the Multi-Page Builder.
+                  No versions saved yet. Use Save Version in Builder.
                 </td>
               </tr>
             ) : (
@@ -467,7 +468,7 @@ function VersionLibraryPage() {
                           <ClipboardCheck className="h-3.5 w-3.5" />
                         </ActionButton>
                         <ActionButton
-                          label="Open Package Export"
+                          label="Open Package"
                           onClick={() =>
                             navigate({ to: "/package-export", search: { versionId: record.id } })
                           }

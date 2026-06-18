@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageRenderer } from "@/components/PageRenderer";
+import { EmptyState, PageHeader } from "@/components/ProductionUI";
 import { buildBuilderKit, buildPagesFromKitDraft, type BuilderDraft } from "@/lib/builder-content";
 import {
   clearFillableFieldSource,
@@ -355,38 +356,39 @@ function FillableFieldsPage() {
   if (!source || !draft || !kit || !fieldMap) {
     return (
       <div className="p-8">
-        <h1 className="text-3xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
-          Fillable Fields
-        </h1>
-        <Card className="mt-6 max-w-2xl">
-          <CardContent className="p-6">
-            <p className="text-sm" style={{ color: "#6b6470" }}>
-              Open Fillable Fields from Builder or Version Library so the editor knows which kit to
-              use.
-            </p>
-            <Button className="mt-4" onClick={() => navigate({ to: "/builder" })}>
-              Open Builder
-            </Button>
-          </CardContent>
-        </Card>
+        <PageHeader
+          eyebrow="Production fillable fields"
+          title="Fillable Fields"
+          description="Create, save, and export fillable field maps for workbook-style PDFs."
+        />
+        <div className="max-w-2xl">
+          <EmptyState
+            title="No kit loaded"
+            description="Open Fillable Fields from Builder or Version Library so the editor knows which kit to use."
+            actions={
+              <>
+                <Button onClick={() => navigate({ to: "/builder" })}>Open Builder</Button>
+                <Button variant="outline" onClick={() => navigate({ to: "/version-library" })}>
+                  Open Version Library
+                </Button>
+              </>
+            }
+          />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-8">
-      <div className="text-[10px] uppercase tracking-[0.28em]" style={{ color: "#4F2D68" }}>
-        Manual Fillable Field Mode MVP
-      </div>
-      <h1 className="mt-1 text-4xl" style={{ fontFamily: "var(--font-display)", color: "#222026" }}>
-        Fillable Fields
-      </h1>
-      <p className="mt-2 text-sm" style={{ color: "#6b6470" }}>
-        Create and save a visual field map for workbook-style pages. Fillable PDF export: Next step.
-      </p>
+      <PageHeader
+        eyebrow="Production fillable fields"
+        title="Fillable Fields"
+        description="Create, save, and export fillable field maps for workbook-style PDFs."
+      />
 
       <div
-        className="mt-5 rounded-md border px-4 py-3 text-sm"
+        className="rounded-md border px-4 py-3 text-sm"
         style={{ borderColor: "#C6A85B", background: "#FFF8E1", color: "#7a4a00" }}
       >
         If you edit or reflow the workbook after creating fields, review the field map again.
