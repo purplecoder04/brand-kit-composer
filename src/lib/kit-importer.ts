@@ -167,7 +167,12 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
 
     const subtitle = line.match(SUBTITLE_RE);
     if (subtitle) {
-      draft.subtitle = subtitle[1]?.trim() ?? "";
+      const subtitleValue = subtitle[1]?.trim() ?? "";
+      if (current) {
+        current.subtitle = subtitleValue;
+      } else {
+        draft.subtitle = subtitleValue;
+      }
       continue;
     }
 

@@ -1,7 +1,8 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
   ArrowRight,
   AlertTriangle,
+  BookOpen,
   CheckCircle2,
   ClipboardPaste,
   FileText,
@@ -133,6 +134,7 @@ function ImportPage() {
   const [importQueue, setImportQueue] = useState<ImportQueueItem[]>(() => loadImportQueue());
   const [savingVersion, setSavingVersion] = useState(false);
   const [showImportQc, setShowImportQc] = useState(false);
+  const [step, setStep] = useState<"edit" | "preview">("edit");
   const detected = useMemo(() => detectImportedKitText(rawText), [rawText]);
   const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(
     savedSession?.reviewDraft ?? detected.draft,
@@ -157,6 +159,7 @@ function ImportPage() {
     restoredSessionRef.current = false;
     setReviewDraft(detected.draft);
     setShowImportQc(false);
+    setStep("edit");
   }, [detected.draft, rawText, savedSession?.rawText]);
 
   useEffect(() => {
@@ -191,6 +194,7 @@ function ImportPage() {
     setCurrentHistoryId(historyId);
     setReviewDraft(nextDraft);
     setShowImportQc(false);
+    setStep("edit");
 
     if (!text.trim() && nextDraft.blocks.length === 0 && !fileName) {
       clearImportSession();
@@ -212,6 +216,7 @@ function ImportPage() {
     setCurrentHistoryId(null);
     setReviewDraft(detectImportedKitText("").draft);
     setShowImportQc(false);
+    setStep("edit");
     clearImportSession();
   };
 
@@ -242,8 +247,7 @@ function ImportPage() {
   };
 
   const createDraft = () => {
-    const saved = saveBuilderDraft(reviewDraft);
-    if (saved.blocks.length === 0) {
+    if (reviewDraft.blocks.length === 0) {
       toast.message("Paste kit content before creating a builder draft");
       return;
     }
@@ -252,6 +256,11 @@ function ImportPage() {
       toast.error("Fix import QC blockers before creating a Builder draft");
       return;
     }
+    setStep("preview");
+  };
+
+  const confirmDraft = () => {
+    const saved = saveBuilderDraft(reviewDraft);
     markCurrentImportCreated(saved);
     toast.success("Builder draft created");
     navigate({ to: "/builder", search: { draftReload: Date.now() } });
@@ -461,7 +470,17 @@ function ImportPage() {
         description="Use this screen for source content only: MD, TXT, or DOCX. Final styled PDFs belong in Fillable Fields after the workbook is exported."
       />
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(420px,0.8fr)_minmax(0,1fr)]">
+      {step === "preview" ? (
+        <DetectionPreviewScreen
+          draft={reviewDraft}
+          warnings={warnings}
+          qcReport={importQcReport}
+          onBack={() => setStep("edit")}
+          onConfirm={confirmDraft}
+        />
+      ) : null}
+
+      <div className={step === "preview" ? "hidden" : "grid gap-6 xl:grid-cols-[minmax(420px,0.8fr)_minmax(0,1fr)]"}>
         <div className="space-y-6">
           <Card>
             <CardHeader>
@@ -485,7 +504,16 @@ function ImportPage() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Import Kit Content</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Import Kit Content</CardTitle>
+                <Link
+                  to="/import-guide"
+                  className="flex items-center gap-1 text-xs"
+                  style={{ color: "#4F2D68" }}
+                >
+                  <BookOpen className="h-3 w-3" /> Format Guide
+                </Link>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-md border p-3" style={{ borderColor: "#D8CEC2" }}>
@@ -719,6 +747,136 @@ function ImportPage() {
           </Card>
         </div>
       </div>
+    </div>
+  );
+}
+
+function DetectionPreviewScreen({
+  draft,
+  warnings,
+  qcReport,
+  onBack,
+  onConfirm,
+}: {
+  draft: BuilderDraft;
+  warnings: ImportWarning[];
+  qcReport: QCReportMvp;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  const blockers = qcReport.issues.filter((i) => i.severity === "blocker");
+
+  return (
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Button type="button" variant="outline" onClick={onBack}>
+          Back to Edit
+        </Button>
+        <Button
+          type="button"
+          onClick={onConfirm}
+          disabled={blockers.length > 0}
+          style={{ background: "#4F2D68", color: "#fff" }}
+        >
+          <ArrowRight className="mr-2 h-4 w-4" /> Confirm — Open Builder
+        </Button>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Kit Summary</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div>
+              <div className="text-[10px] uppercase tracking-[0.18em]" style={{ color: "#4F2D68" }}>
+                Kit Name
+              </div>
+              <div className="font-semibold" style={{ color: "#222026" }}>
+                {draft.kitName || "(not detected)"}
+              </div>
+            </div>
+            {draft.subtitle ? (
+              <div>
+                <div
+                  className="text-[10px] uppercase tracking-[0.18em]"
+                  style={{ color: "#4F2D68" }}
+                >
+                  Subtitle
+                </div>
+                <div style={{ color: "#222026" }}>{draft.subtitle}</div>
+              </div>
+            ) : null}
+            <div
+              className="grid grid-cols-3 gap-3 rounded-md border p-3"
+              style={{ borderColor: "#D8CEC2", background: "#FBF7F1" }}
+            >
+              <PlanMetric label="Pages" value={String(draft.blocks.length)} />
+              <PlanMetric label="Warnings" value={String(warnings.length)} />
+              <PlanMetric label="QC Blockers" value={String(blockers.length)} />
+            </div>
+          </CardContent>
+        </Card>
+
+        {warnings.length > 0 ? (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Warnings to review</AlertTitle>
+            <AlertDescription>
+              <ul className="mt-2 list-disc space-y-1 pl-5">
+                {warnings.slice(0, 6).map((w, i) => (
+                  <li key={`${w.blockId ?? "kit"}-${i}`}>{w.message}</li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert>
+            <CheckCircle2 className="h-4 w-4" style={{ color: "#2E5B33" }} />
+            <AlertTitle>No warnings</AlertTitle>
+            <AlertDescription>
+              All detected pages passed the import check.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">
+            Detected Pages ({draft.blocks.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {draft.blocks.map((block, index) => (
+              <div
+                key={block.id}
+                className="flex items-baseline gap-3 rounded-md border px-3 py-2 text-sm"
+                style={{ borderColor: "#D8CEC2", background: "#fff" }}
+              >
+                <span
+                  className="shrink-0 text-[10px] uppercase tracking-[0.18em]"
+                  style={{ color: "#4F2D68" }}
+                >
+                  #{index + 1} {pageTypeLabel(block.pageType)}
+                </span>
+                <span style={{ color: "#222026" }}>{block.title || "(no title)"}</span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {blockers.length > 0 ? (
+        <Alert>
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Fix QC blockers before opening Builder</AlertTitle>
+          <AlertDescription>
+            Go back to edit and resolve the blockers shown in Import Readiness.
+          </AlertDescription>
+        </Alert>
+      ) : null}
     </div>
   );
 }
