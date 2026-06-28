@@ -26,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageRenderer } from "@/components/PageRenderer";
 import { EmptyState, PageHeader } from "@/components/ProductionUI";
+import { WorkflowContext } from "@/components/WorkflowContext";
 import {
   buildBuilderKit,
   buildPagesFromKitDraft,
@@ -420,6 +421,7 @@ function FillableFieldsPage() {
         title="Fillable Fields"
         description="Map fields on the final styled workbook PDF. Export the workbook from Builder first, then upload that exact PDF here."
       />
+      <WorkflowContext currentStep={4} />
 
       <Card className="mb-6">
         <CardHeader>
@@ -511,6 +513,31 @@ function FillableFieldsPage() {
         </aside>
 
         <main>
+          {!basePdfBytes ? (
+            <div
+              className="mb-4 flex items-start gap-3 rounded-md border-2 p-4"
+              style={{ borderColor: "#C6A85B", background: "#FFF8E1" }}
+            >
+              <div className="shrink-0 text-lg">⚠</div>
+              <div className="flex-1">
+                <div className="mb-1 font-semibold text-sm" style={{ color: "#7a4a00" }}>
+                  Upload your final workbook PDF before mapping fields
+                </div>
+                <div className="text-xs" style={{ color: "#7a4a00" }}>
+                  Fields placed here are overlaid on the PDF you export from the Builder. Upload
+                  that PDF in the Save / Export panel (right sidebar) to enable fillable export.
+                </div>
+                <button
+                  type="button"
+                  className="mt-2 rounded-md px-3 py-1.5 text-xs font-medium"
+                  style={{ background: "#C6A85B", color: "#fff" }}
+                  onClick={() => basePdfInputRef.current?.click()}
+                >
+                  Upload PDF now
+                </button>
+              </div>
+            </div>
+          ) : null}
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <div className="text-sm font-semibold" style={{ color: "#222026" }}>
               Page {selectedPageNumber}: {selectedPage?.title || selectedPage?.pageType}
@@ -881,6 +908,7 @@ function SelectedFieldControls({
   onDuplicate: () => void;
   onDelete: () => void;
 }) {
+  const [nudgeStep, setNudgeStep] = useState<0.5 | 1 | 5>(1);
   const nudge = (patch: Partial<FillableField>) => onChange(patch);
 
   return (
@@ -932,12 +960,32 @@ function SelectedFieldControls({
           />
         </Field>
       </div>
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs" style={{ color: "#6b6470" }}>
+          Nudge step:
+        </span>
+        {([0.5, 1, 5] as const).map((step) => (
+          <button
+            key={step}
+            type="button"
+            onClick={() => setNudgeStep(step)}
+            className="rounded px-2 py-0.5 text-xs"
+            style={{
+              background: nudgeStep === step ? "#4F2D68" : "#FAF6F0",
+              color: nudgeStep === step ? "#fff" : "#4b4450",
+              border: `1px solid ${nudgeStep === step ? "#4F2D68" : "#D8CEC2"}`,
+            }}
+          >
+            {step === 0.5 ? "Fine" : step === 1 ? "Normal" : "Coarse"}
+          </button>
+        ))}
+      </div>
       <div className="grid grid-cols-4 gap-1">
         <Button
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ xPercent: field.xPercent - 1 })}
+          onClick={() => nudge({ xPercent: field.xPercent - nudgeStep })}
         >
           Left
         </Button>
@@ -945,7 +993,7 @@ function SelectedFieldControls({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ xPercent: field.xPercent + 1 })}
+          onClick={() => nudge({ xPercent: field.xPercent + nudgeStep })}
         >
           Right
         </Button>
@@ -953,7 +1001,7 @@ function SelectedFieldControls({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ yPercent: field.yPercent - 1 })}
+          onClick={() => nudge({ yPercent: field.yPercent - nudgeStep })}
         >
           Up
         </Button>
@@ -961,7 +1009,7 @@ function SelectedFieldControls({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ yPercent: field.yPercent + 1 })}
+          onClick={() => nudge({ yPercent: field.yPercent + nudgeStep })}
         >
           Down
         </Button>
@@ -971,7 +1019,7 @@ function SelectedFieldControls({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ widthPercent: field.widthPercent - 3 })}
+          onClick={() => nudge({ widthPercent: field.widthPercent - nudgeStep })}
         >
           Narrower
         </Button>
@@ -979,7 +1027,7 @@ function SelectedFieldControls({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ widthPercent: field.widthPercent + 3 })}
+          onClick={() => nudge({ widthPercent: field.widthPercent + nudgeStep })}
         >
           Wider
         </Button>
@@ -987,7 +1035,7 @@ function SelectedFieldControls({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ heightPercent: field.heightPercent - 2 })}
+          onClick={() => nudge({ heightPercent: field.heightPercent - nudgeStep })}
         >
           Shorter
         </Button>
@@ -995,7 +1043,7 @@ function SelectedFieldControls({
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => nudge({ heightPercent: field.heightPercent + 2 })}
+          onClick={() => nudge({ heightPercent: field.heightPercent + nudgeStep })}
         >
           Taller
         </Button>
