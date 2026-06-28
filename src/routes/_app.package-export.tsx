@@ -47,6 +47,7 @@ import {
   buildPackageManifest,
   countPrintablePages,
   getPackageExportForSource,
+  hasCleanFilenames,
   isPackageReady,
   loadPackageExports,
   packageReadinessLabel,
@@ -169,12 +170,15 @@ function PackageExportPage() {
   const hasPages = Boolean(kit && kit.blocks.length > 0);
   const qcPassed = (activeRecord?.qcStatus ?? report?.qcStatus) === "Passed";
   const excelCalculatorRequired = activeDraft ? requiresExcelCalculator(activeDraft) : false;
+  const fillableReady = Boolean(activePackage?.fillablePdfExported);
+  const filenamesClean = hasCleanFilenames(activeDraft);
   const readiness: PackageAssetReadiness = {
     workbookReady: Boolean(activePackage?.workbookExported && hasPages),
     lessonGuideGenerated: Boolean(activePackage?.lessonGuideGenerated || lessonGuide),
     howToGenerated: Boolean(activePackage?.howToGenerated || howToGuide),
     excelCalculatorRequired,
     excelCalculatorReady: !excelCalculatorRequired || Boolean(activePackage?.excelCalculatorIncluded),
+    fillableReady,
     qcPassed,
     packageNotesGenerated: Boolean(activePackage?.manifest.trim()),
   };
@@ -287,6 +291,11 @@ function PackageExportPage() {
     toast.success("Workbook PDF marked exported");
   };
 
+  const markFillablePdfExported = () => {
+    savePackagePatch({ fillablePdfExported: true, packageReady: false });
+    toast.success("Fillable PDF marked exported");
+  };
+
   const generateManifest = () => {
     if (!activeDraft || !activePackage) return;
     const manifest = buildPackageManifest({
@@ -296,6 +305,7 @@ function PackageExportPage() {
       howToGenerated: readiness.howToGenerated,
       workbookExported: Boolean(activePackage.workbookExported),
       excelCalculatorIncluded: Boolean(activePackage.excelCalculatorIncluded),
+      fillablePdfExported: Boolean(activePackage.fillablePdfExported),
     });
     savePackagePatch({ manifest, packageReady: false });
     toast.success("Package notes generated");
@@ -310,8 +320,8 @@ function PackageExportPage() {
     if (!canMarkPackageReady) {
       toast.error(
         excelCalculatorRequired
-          ? "Complete Workbook, Lesson Guide, How-To, Excel calculator, QC Passed, and Package Notes first"
-          : "Complete Workbook, Lesson Guide, How-To, QC Passed, and Package Notes first",
+          ? "Complete Workbook, Lesson Guide, How-To, Excel calculator, Fillable PDF, QC Passed, and Package Notes first"
+          : "Complete Workbook, Lesson Guide, How-To, Fillable PDF, QC Passed, and Package Notes first",
       );
       return;
     }
@@ -498,6 +508,15 @@ function PackageExportPage() {
               >
                 <FileCheck2 className="mr-2 h-4 w-4" /> Mark Workbook PDF Exported
               </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                disabled={!activeDraft}
+                onClick={markFillablePdfExported}
+              >
+                <FileCheck2 className="mr-2 h-4 w-4" /> Mark Fillable PDF Exported
+              </Button>
               {excelCalculatorRequired ? (
                 <Button
                   type="button"
@@ -523,6 +542,41 @@ function PackageExportPage() {
         </aside>
 
         <main className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Package Status</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              <PackageStatusItem label="Workbook" status={readiness.workbookReady ? "yes" : "no"} />
+              <PackageStatusItem
+                label="Lesson Guide"
+                status={readiness.lessonGuideGenerated ? "yes" : "no"}
+              />
+              <PackageStatusItem
+                label="How-To PDF"
+                status={readiness.howToGenerated ? "yes" : "no"}
+              />
+              <PackageStatusItem
+                label="Excel File"
+                status={
+                  excelCalculatorRequired
+                    ? readiness.excelCalculatorReady
+                      ? "yes"
+                      : "no"
+                    : "na"
+                }
+              />
+              <PackageStatusItem
+                label="Fillable PDF"
+                status={fillableReady ? "yes" : "no"}
+              />
+              <PackageStatusItem
+                label="Clean Filenames"
+                status={filenamesClean ? "yes" : "no"}
+              />
+            </CardContent>
+          </Card>
+
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <SummaryCard title="Kit" value={activeDraft?.kitName.trim() || "Untitled"} />
             <SummaryCard title="Branch" value={activeDraft?.branch.trim() || "Missing"} />
@@ -687,6 +741,40 @@ function PackageExportPage() {
           ) : null}
         </main>
       </div>
+    </div>
+  );
+}
+
+function PackageStatusItem({
+  label,
+  status,
+}: {
+  label: string;
+  status: "yes" | "no" | "na";
+}) {
+  const pillStyle =
+    status === "yes"
+      ? { background: "#E8F4EA", color: "#2E5B33" }
+      : status === "na"
+        ? { background: "#F4EFE6", color: "#6b6470" }
+        : { background: "#FFF1F0", color: "#7a1f1f" };
+  const borderColor =
+    status === "yes" ? "#9ECC9A" : status === "na" ? "#D8CEC2" : "#F0B8B5";
+
+  return (
+    <div
+      className="flex items-center justify-between gap-3 rounded-md border p-4"
+      style={{ borderColor, background: "#fff" }}
+    >
+      <span className="font-semibold text-sm" style={{ color: "#222026" }}>
+        {label}
+      </span>
+      <span
+        className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-widest"
+        style={pillStyle}
+      >
+        {status === "yes" ? "Yes" : status === "na" ? "N/A" : "No"}
+      </span>
     </div>
   );
 }

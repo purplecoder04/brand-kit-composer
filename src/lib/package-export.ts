@@ -14,6 +14,7 @@ export type PackageExportStatus = {
   lessonGuideGenerated: boolean;
   howToGenerated: boolean;
   excelCalculatorIncluded: boolean;
+  fillablePdfExported: boolean;
   qcStatus: VersionQcStatus;
   saleReady: boolean;
   docHubReady: boolean;
@@ -29,6 +30,7 @@ export type PackageAssetReadiness = {
   howToGenerated: boolean;
   excelCalculatorRequired: boolean;
   excelCalculatorReady: boolean;
+  fillableReady: boolean;
   qcPassed: boolean;
   packageNotesGenerated: boolean;
 };
@@ -105,6 +107,7 @@ export function getPackageExportForSource(
     lessonGuideGenerated: false,
     howToGenerated: false,
     excelCalculatorIncluded: false,
+    fillablePdfExported: false,
     qcStatus: version?.qcStatus ?? "Not Reviewed",
     saleReady: version?.saleReady ?? false,
     docHubReady: version?.docHubReady ?? false,
@@ -134,6 +137,7 @@ export function buildPackageManifest({
   howToGenerated,
   workbookExported,
   excelCalculatorIncluded,
+  fillablePdfExported,
 }: {
   draft: BuilderDraft;
   version: string;
@@ -141,17 +145,20 @@ export function buildPackageManifest({
   howToGenerated: boolean;
   workbookExported: boolean;
   excelCalculatorIncluded: boolean;
+  fillablePdfExported: boolean;
 }): string {
   const normalizedDraft = normalizeDraft(draft);
   const productName = normalizedDraft.kitName.trim() || "Untitled Kit";
   const branch = normalizedDraft.branch.trim() || "Unassigned";
   const safeName = productName.replace(/[\\/:*?"<>|]/g, "").trim() || "Untitled Kit";
   const workbookFileName = `${safeName} - Workbook + Action Planner.pdf`;
+  const fillableFileName = `${safeName} - Fillable Workbook.pdf`;
   const needsExcelCalculator = requiresExcelCalculator(normalizedDraft);
   const includedFiles = [
     workbookExported
       ? workbookFileName
       : `${workbookFileName} (export in Chrome before final package)`,
+    fillablePdfExported ? fillableFileName : null,
     howToGenerated ? `${safeName} - How To Use This Kit.pdf` : null,
     lessonGuideGenerated ? `${safeName} - Lesson Guide.pdf` : null,
     needsExcelCalculator && excelCalculatorIncluded
@@ -172,6 +179,7 @@ export function buildPackageManifest({
     ``,
     `Suggested buyer file names:`,
     `- ${workbookFileName}`,
+    fillablePdfExported ? `- ${fillableFileName}` : null,
     howToGenerated ? `- ${safeName} - How To Use This Kit.pdf` : null,
     lessonGuideGenerated ? `- ${safeName} - Lesson Guide.pdf` : null,
     needsExcelCalculator ? `- ${safeName} - Excel Calculator.xlsx` : null,
@@ -204,6 +212,7 @@ export function isPackageReady(readiness: PackageAssetReadiness): boolean {
     readiness.lessonGuideGenerated &&
     readiness.howToGenerated &&
     (!readiness.excelCalculatorRequired || readiness.excelCalculatorReady) &&
+    readiness.fillableReady &&
     readiness.qcPassed &&
     readiness.packageNotesGenerated
   );
@@ -232,6 +241,7 @@ function normalizePackageExport(record: Partial<PackageExportStatus>): PackageEx
     lessonGuideGenerated: Boolean(record.lessonGuideGenerated),
     howToGenerated: Boolean(record.howToGenerated),
     excelCalculatorIncluded: Boolean(record.excelCalculatorIncluded),
+    fillablePdfExported: Boolean(record.fillablePdfExported),
     qcStatus: record.qcStatus ?? "Not Reviewed",
     saleReady: Boolean(record.saleReady),
     docHubReady: Boolean(record.docHubReady),
@@ -264,6 +274,14 @@ export function requiresExcelCalculator(draft: BuilderDraft): boolean {
     .toLowerCase();
 
   return /\bexcel\b/.test(text) && /\b(calculator|spreadsheet|sheet|xlsx|xls)\b/.test(text);
+}
+
+export function hasCleanFilenames(draft: BuilderDraft | null): boolean {
+  if (!draft) return false;
+  const name = draft.kitName.trim();
+  if (!name || /^untitled$/i.test(name)) return false;
+  const safe = name.replace(/[\\/:*?"<>|]/g, "").trim();
+  return safe === name && safe.length > 3;
 }
 
 function createId(prefix: string): string {
