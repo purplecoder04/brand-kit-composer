@@ -31,6 +31,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { PagePreview } from "@/components/PagePreview";
 import { PageRenderer } from "@/components/PageRenderer";
 import { ActionBar, ActionGroup, PageHeader, StatusStrip } from "@/components/ProductionUI";
+import { WorkflowContext } from "@/components/WorkflowContext";
 import { BRANCH_TEMPLATE_PROFILES, type BranchProfile } from "@/lib/branch-profile";
 import { createVersionLibraryRecord } from "@/lib/api/version-library.functions";
 import {
@@ -309,6 +310,7 @@ function BuilderPage() {
         title="Builder"
         description="Build the workbook pages here. Use page types to control structure, then export the final PDF from this draft."
       />
+      <WorkflowContext currentStep={2} />
 
       <ActionBar>
         <ActionGroup label="Draft">
@@ -712,6 +714,8 @@ function CurrentBlockEditor({
   onDelete: (id: string) => void;
   onMove: (id: string, direction: -1 | 1) => void;
 }) {
+  const [showPolish, setShowPolish] = useState(() => Boolean(block && hasLayoutOverrides(block)));
+
   if (!block) {
     return (
       <Card>
@@ -789,19 +793,59 @@ function CurrentBlockEditor({
       <CardContent className="space-y-3">
         <Field
           label="Change Page Type"
-          hint="Use this if the importer picked the wrong page style. Lesson Activity keeps a short lesson plus checklist/action/prompt together. Multi-Prompt keeps several questions on one worksheet page."
+          hint="Lesson Activity keeps a short lesson plus checklist or action steps together. Multi-Prompt keeps several questions on one page."
         >
+          <div className="mb-2 flex flex-wrap gap-1.5">
+            {(
+              [
+                ["lesson", "Lesson"],
+                ["lesson-activity", "Lesson Activity"],
+                ["multi-prompt", "Multi-Prompt"],
+                ["table", "Tracker"],
+                ["resource", "Resource"],
+              ] as [PageType, string][]
+            ).map(([type, label]) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => onChange(block.id, { pageType: type })}
+                className="rounded border px-2 py-1 text-xs transition-colors"
+                style={{
+                  borderColor: block.pageType === type ? "#4F2D68" : "#D8CEC2",
+                  background: block.pageType === type ? "#4F2D68" : "#fff",
+                  color: block.pageType === type ? "#fff" : "#4b4450",
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           <select
             value={block.pageType}
             onChange={(event) => onChange(block.id, { pageType: event.target.value as PageType })}
             className="w-full rounded-md border px-3 py-2 text-sm"
             style={{ borderColor: "#D8CEC2", background: "#fff" }}
           >
-            {BUILDER_BLOCK_TYPES.map((item) => (
-              <option key={item.type} value={item.type}>
-                {item.label}
-              </option>
-            ))}
+            <optgroup label="Content">
+              {(["cover", "lesson", "lesson-activity", "start-here", "module-intro", "closing"] as PageType[]).map((type) => (
+                <option key={type} value={type}>{pageTypeLabel(type)}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Fillable">
+              {(["workbook", "notes", "prompt-page", "multi-prompt", "reflection", "checklist", "lesson-activity"] as PageType[]).map((type) => (
+                <option key={type} value={type}>{pageTypeLabel(type)}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Reference">
+              {(["table", "resource", "case-study", "action-plan", "progress-check", "quote"] as PageType[]).map((type) => (
+                <option key={type} value={type}>{pageTypeLabel(type)}</option>
+              ))}
+            </optgroup>
+            <optgroup label="Structure">
+              {(["divider", "back-cover"] as PageType[]).map((type) => (
+                <option key={type} value={type}>{pageTypeLabel(type)}</option>
+              ))}
+            </optgroup>
           </select>
         </Field>
         <Field label="Order Number">
@@ -981,14 +1025,38 @@ function CurrentBlockEditor({
           </Field>
         ) : null}
 
-        <PagePolishPanel
-          block={block}
-          previewBlock={previewBlock}
-          branchProfile={branchProfile}
-          pageNumber={pageNumber}
-          totalPages={totalPages}
-          onChange={(patch) => onChange(block.id, patch)}
-        />
+        <div
+          className="rounded-md border"
+          style={{ borderColor: "#D8CEC2" }}
+        >
+          <button
+            type="button"
+            className="flex w-full items-center justify-between px-3 py-2 text-left"
+            onClick={() => setShowPolish((v) => !v)}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium uppercase tracking-[0.18em]" style={{ color: "#4F2D68" }}>
+                Page Polish
+              </span>
+              {hasLayoutOverrides(block) ? <PolishedBadge /> : null}
+            </div>
+            <span className="text-xs" style={{ color: "#6b6470" }}>
+              {showPolish ? "Hide" : "Show"}
+            </span>
+          </button>
+          {showPolish ? (
+            <div className="border-t px-3 pb-3 pt-3" style={{ borderColor: "#D8CEC2" }}>
+              <PagePolishPanel
+                block={block}
+                previewBlock={previewBlock}
+                branchProfile={branchProfile}
+                pageNumber={pageNumber}
+                totalPages={totalPages}
+                onChange={(patch) => onChange(block.id, patch)}
+              />
+            </div>
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -1025,27 +1093,8 @@ function PagePolishPanel({
   };
 
   return (
-    <div
-      className="space-y-3 rounded-md border p-3"
-      style={{ borderColor: "#D8CEC2", background: "#FAF6F0" }}
-    >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
-        <div className="space-y-3">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <div
-                className="text-xs font-medium uppercase tracking-[0.18em]"
-                style={{ color: "#4F2D68" }}
-              >
-                Page Polish
-              </div>
-              <div className="text-xs" style={{ color: "#6b6470" }}>
-                Small page-only edits before export.
-              </div>
-            </div>
-            {hasLayoutOverrides(block) ? <PolishedBadge /> : null}
-          </div>
-
+    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_250px]">
+      <div className="space-y-3">
           <Field label="Polish Title Text">
             <Input
               value={block.title}
@@ -1162,7 +1211,6 @@ function PagePolishPanel({
           totalPages={totalPages}
         />
       </div>
-    </div>
   );
 }
 
