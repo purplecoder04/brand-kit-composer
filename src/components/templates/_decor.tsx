@@ -4,6 +4,27 @@ import type { BranchProfile } from "@/lib/branch-profile";
 export const CREAM_PAPER = "#FAF4EA";
 export const PAPER_PANEL = "#FFFDF8";
 
+export function RichText({ text }: { text?: string }) {
+  return <>{renderRichText(text)}</>;
+}
+
+export function renderRichText(text?: string) {
+  if (!text) return null;
+
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, index) => {
+    const boldMatch = part.match(/^\*\*([^*]+)\*\*$/);
+    if (boldMatch) {
+      return (
+        <strong key={`${part}-${index}`} style={{ fontWeight: 700 }}>
+          {boldMatch[1]}
+        </strong>
+      );
+    }
+    return <span key={`${part}-${index}`}>{part}</span>;
+  });
+}
+
 function shapeStrokeWidth(shapeWeight: BranchProfile["shapeWeight"], base = 1.25) {
   const multiplier =
     shapeWeight === "light-medium"
@@ -70,6 +91,42 @@ export function SparkleRule({
       <Diamond color={color} inline />
       <div style={{ flex: 1, height: "1px", background: color, opacity: 0.7 }} />
     </div>
+  );
+}
+
+export function BottomEncouragementNote({
+  text,
+  branchProfile,
+  style,
+}: {
+  text?: string;
+  branchProfile: BranchProfile;
+  style?: CSSProperties;
+}) {
+  if (!text?.trim()) return null;
+
+  return (
+    <aside
+      className="bottom-encouragement-note"
+      style={{
+        display: "flex",
+        alignItems: "start",
+        gap: "0.1in",
+        color: branchProfile.textColor,
+        fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
+        fontSize: "14px",
+        fontStyle: "italic",
+        lineHeight: 1.36,
+        paddingTop: "0.1in",
+        borderTop: `1px solid ${branchProfile.lineAccentColor}`,
+        ...style,
+      }}
+    >
+      <Diamond color={branchProfile.smallMarkColor} inline />
+      <span>
+        <RichText text={text} />
+      </span>
+    </aside>
   );
 }
 

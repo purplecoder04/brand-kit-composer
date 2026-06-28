@@ -13,6 +13,7 @@ export type PackageExportStatus = {
   workbookExported: boolean;
   lessonGuideGenerated: boolean;
   howToGenerated: boolean;
+  excelCalculatorIncluded: boolean;
   qcStatus: VersionQcStatus;
   saleReady: boolean;
   docHubReady: boolean;
@@ -26,6 +27,8 @@ export type PackageAssetReadiness = {
   workbookReady: boolean;
   lessonGuideGenerated: boolean;
   howToGenerated: boolean;
+  excelCalculatorRequired: boolean;
+  excelCalculatorReady: boolean;
   qcPassed: boolean;
   packageNotesGenerated: boolean;
 };
@@ -101,6 +104,7 @@ export function getPackageExportForSource(
     workbookExported: false,
     lessonGuideGenerated: false,
     howToGenerated: false,
+    excelCalculatorIncluded: false,
     qcStatus: version?.qcStatus ?? "Not Reviewed",
     saleReady: version?.saleReady ?? false,
     docHubReady: version?.docHubReady ?? false,
@@ -129,23 +133,30 @@ export function buildPackageManifest({
   lessonGuideGenerated,
   howToGenerated,
   workbookExported,
+  excelCalculatorIncluded,
 }: {
   draft: BuilderDraft;
   version: string;
   lessonGuideGenerated: boolean;
   howToGenerated: boolean;
   workbookExported: boolean;
+  excelCalculatorIncluded: boolean;
 }): string {
   const normalizedDraft = normalizeDraft(draft);
   const productName = normalizedDraft.kitName.trim() || "Untitled Kit";
   const branch = normalizedDraft.branch.trim() || "Unassigned";
   const safeName = productName.replace(/[\\/:*?"<>|]/g, "").trim() || "Untitled Kit";
+  const workbookFileName = `${safeName} - Workbook + Action Planner.pdf`;
+  const needsExcelCalculator = requiresExcelCalculator(normalizedDraft);
   const includedFiles = [
     workbookExported
-      ? `${safeName} - Workbook.pdf`
-      : `${safeName} - Workbook.pdf (export in Chrome before final package)`,
+      ? workbookFileName
+      : `${workbookFileName} (export in Chrome before final package)`,
     howToGenerated ? `${safeName} - How To Use This Kit.pdf` : null,
     lessonGuideGenerated ? `${safeName} - Lesson Guide.pdf` : null,
+    needsExcelCalculator && excelCalculatorIncluded
+      ? `${safeName} - Excel Calculator.xlsx`
+      : null,
   ].filter(Boolean);
 
   return [
@@ -160,9 +171,14 @@ export function buildPackageManifest({
     ...includedFiles.map((file) => `- ${file}`),
     ``,
     `Suggested buyer file names:`,
-    `- ${safeName} - Workbook.pdf`,
+    `- ${workbookFileName}`,
     howToGenerated ? `- ${safeName} - How To Use This Kit.pdf` : null,
     lessonGuideGenerated ? `- ${safeName} - Lesson Guide.pdf` : null,
+    needsExcelCalculator ? `- ${safeName} - Excel Calculator.xlsx` : null,
+    ``,
+    needsExcelCalculator && !excelCalculatorIncluded
+      ? `Excel calculator requirement: This kit references an Excel calculator, but it has not been marked included yet. Add the file before sale-ready approval or remove the calculator references.`
+      : null,
     ``,
     `Usage notes:`,
     `- Deliver the workbook PDF as the primary customer file.`,
@@ -171,7 +187,11 @@ export function buildPackageManifest({
     ``,
     `Internal production notes:`,
     `- Confirm the workbook PDF was exported from Chrome with background graphics enabled.`,
+    `- Export contact sheets for final visual review before sale-ready approval.`,
     `- Confirm QC status is Passed before marking the package ready.`,
+    needsExcelCalculator
+      ? `- Confirm the Excel calculator file is included before marking the package ready.`
+      : null,
     `- ZIP packaging and stored PDF files are not part of this MVP.`,
   ]
     .filter((line): line is string => line !== null)
@@ -183,6 +203,7 @@ export function isPackageReady(readiness: PackageAssetReadiness): boolean {
     readiness.workbookReady &&
     readiness.lessonGuideGenerated &&
     readiness.howToGenerated &&
+    (!readiness.excelCalculatorRequired || readiness.excelCalculatorReady) &&
     readiness.qcPassed &&
     readiness.packageNotesGenerated
   );
@@ -210,6 +231,7 @@ function normalizePackageExport(record: Partial<PackageExportStatus>): PackageEx
     workbookExported: Boolean(record.workbookExported),
     lessonGuideGenerated: Boolean(record.lessonGuideGenerated),
     howToGenerated: Boolean(record.howToGenerated),
+    excelCalculatorIncluded: Boolean(record.excelCalculatorIncluded),
     qcStatus: record.qcStatus ?? "Not Reviewed",
     saleReady: Boolean(record.saleReady),
     docHubReady: Boolean(record.docHubReady),
@@ -218,6 +240,30 @@ function normalizePackageExport(record: Partial<PackageExportStatus>): PackageEx
     createdAt: record.createdAt ?? now,
     updatedAt: record.updatedAt ?? record.createdAt ?? now,
   };
+}
+
+export function requiresExcelCalculator(draft: BuilderDraft): boolean {
+  const normalizedDraft = normalizeDraft(draft);
+  const text = [
+    normalizedDraft.kitName,
+    normalizedDraft.subtitle,
+    normalizedDraft.tagline,
+    ...normalizedDraft.blocks.flatMap((block) => [
+      block.title,
+      block.subtitle,
+      block.body,
+      block.bottomNote,
+      block.prompt,
+      block.activityTitle,
+      block.activityItems,
+      ...block.tableData.headers,
+      ...block.tableData.rows.flat(),
+    ]),
+  ]
+    .join("\n")
+    .toLowerCase();
+
+  return /\bexcel\b/.test(text) && /\b(calculator|spreadsheet|sheet|xlsx|xls)\b/.test(text);
 }
 
 function createId(prefix: string): string {

@@ -5,7 +5,7 @@ import {
   type BuilderBlock,
   type BuilderDraft,
 } from "./builder-content";
-import type { PageType } from "./kit-types";
+import type { LessonActivityType, PageType } from "./kit-types";
 
 export type ImportWarning = {
   blockId?: string;
@@ -24,6 +24,10 @@ type ParsedSection = {
   title: string;
   subtitle: string;
   body: string;
+  bottomNote: string;
+  activityType: LessonActivityType;
+  activityTitle: string;
+  activityItems: string[];
   prompt: string;
   lines: number | "";
   checklistItems: string[];
@@ -38,14 +42,18 @@ const AUDIENCE_RE = /^audience\s*:\s*(.+)$/i;
 const TONE_RE = /^tone\s*:\s*(.+)$/i;
 const TAGLINE_RE = /^tagline\s*:\s*(.+)$/i;
 const HEADING_RE =
-  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|multi prompt|multi prompts|multi-prompt|multiple prompt|multiple prompts|prompt group|prompt set|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
+  /^(cover|section|divider|module intro|module|lesson activity|lesson activity page|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|multi prompt|multi prompts|multi-prompt|multiple prompt|multiple prompts|prompt group|prompt set|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
 const BARE_HEADING_RE =
-  /^(cover|section|divider|module intro|module|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|multi prompt|multi prompts|multi-prompt|multiple prompt|multiple prompts|prompt group|prompt set|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
+  /^(cover|section|divider|module intro|module|lesson activity|lesson activity page|lesson|step|worksheet|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|multi prompt|multi prompts|multi-prompt|multiple prompt|multiple prompts|prompt group|prompt set|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?$/i;
 const PAGE_LABEL_HEADING_RE =
-  /^(cover page|section divider|lesson page|table\s*\/\s*tracker page|table page|tracker page|workbook page|checklist page|notes page|back cover page|start here page|module intro page|quote\s*\/\s*opening thought page|quote page|opening thought page|reflection page|action plan page|resource page|case study\s*\/\s*example page|case study page|example page|prompt page|multi prompt page|multi prompts page|multi-prompt page|multiple prompt page|multiple prompts page|prompt group page|prompt set page|progress check page|closing\s*\/\s*next steps page|closing page|next steps page)\s*(?::|[-.])?\s*(.*)$/i;
+  /^(cover page|section divider|lesson activity page|lesson page|table\s*\/\s*tracker page|table page|tracker page|workbook page|checklist page|notes page|back cover page|start here page|module intro page|quote\s*\/\s*opening thought page|quote page|opening thought page|reflection page|action plan page|resource page|case study\s*\/\s*example page|case study page|example page|prompt page|multi prompt page|multi prompts page|multi-prompt page|multiple prompt page|multiple prompts page|prompt group page|prompt set page|progress check page|closing\s*\/\s*next steps page|closing page|next steps page)\s*(?::|[-.])?\s*(.*)$/i;
 const NUMBERED_HEADING_RE =
   /^(?:\d+[).]\s*)?(lesson|step|module|worksheet|reflection|tracker)\s+(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.+)$/i;
 const BODY_RE = /^(body|lesson body|description)\s*:\s*(.*)$/i;
+const BOTTOM_NOTE_RE = /^(bottom note|motivation|motivational note|encouragement)\s*:\s*(.*)$/i;
+const ACTIVITY_TYPE_RE = /^(activity type|activity)\s*:\s*(.+)$/i;
+const ACTIVITY_TITLE_RE = /^(activity title|checklist title|action title|prompt title)\s*:\s*(.+)$/i;
+const ACTIVITY_ITEMS_RE = /^(checklist|checklist items|action steps|activity items)\s*:\s*(.*)$/i;
 const PROMPT_RE =
   /^(prompt\s*\d*|workbook prompt|notes prompt|question|reflection question)\s*:\s*(.*)$/i;
 const WRITING_LINES_RE =
@@ -79,6 +87,11 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
       const typedHeading = matchTypedHeading(headingText);
 
       if (typedHeading) {
+        if (shouldAppendHeadingToCurrentMultiPrompt(current, typedHeading.type)) {
+          appendText(current, "body", `Prompt: ${typedHeading.title}`);
+          continue;
+        }
+
         current = createSection(typedHeading.type, typedHeading.title);
         sections.push(current);
         continue;
@@ -130,8 +143,27 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
       continue;
     }
 
+    if (current?.type === "lesson-activity") {
+      const activityItems = line.match(ACTIVITY_ITEMS_RE);
+      if (activityItems) {
+        if ((activityItems[1] ?? "").toLowerCase().includes("action")) {
+          current.activityType = "action-steps";
+        } else if ((activityItems[1] ?? "").toLowerCase().includes("checklist")) {
+          current.activityType = "checklist";
+        }
+        const itemText = activityItems[2]?.trim() ?? "";
+        if (itemText) current.activityItems.push(itemText);
+        continue;
+      }
+    }
+
     const typedHeading = matchTypedHeading(line);
     if (typedHeading) {
+      if (shouldAppendHeadingToCurrentMultiPrompt(current, typedHeading.type)) {
+        appendText(current, "body", `Prompt: ${typedHeading.title}`);
+        continue;
+      }
+
       current = createSection(typedHeading.type, typedHeading.title);
       sections.push(current);
       continue;
@@ -148,8 +180,33 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
       continue;
     }
 
+    const bottomNote = line.match(BOTTOM_NOTE_RE);
+    if (bottomNote) {
+      current.bottomNote = [current.bottomNote, bottomNote[2]?.trim() ?? ""]
+        .filter(Boolean)
+        .join(" ");
+      continue;
+    }
+
+    const activityType = line.match(ACTIVITY_TYPE_RE);
+    if (activityType && current.type === "lesson-activity") {
+      current.activityType = normalizeLessonActivityType(activityType[2] ?? "");
+      continue;
+    }
+
+    const activityTitle = line.match(ACTIVITY_TITLE_RE);
+    if (activityTitle && current.type === "lesson-activity") {
+      current.activityTitle = activityTitle[2]?.trim() ?? "";
+      continue;
+    }
+
     const prompt = line.match(PROMPT_RE);
     if (prompt) {
+      if (current.type === "lesson-activity") {
+        current.activityType = "writing-prompt";
+        appendText(current, "prompt", prompt[2] ?? "");
+        continue;
+      }
       if (shouldTreatPromptAsMultiPrompt(current, prompt[1] ?? "")) {
         ensureMultiPromptSection(current);
         appendText(current, "body", `Prompt: ${prompt[2] ?? ""}`);
@@ -206,6 +263,10 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
 
     const checklistItem = line.match(CHECKLIST_ITEM_RE) ?? line.match(NUMBERED_ITEM_RE);
     if (checklistItem) {
+      if (current.type === "lesson-activity") {
+        current.activityItems.push(checklistItem[1]?.trim() ?? "");
+        continue;
+      }
       if (current.type === "checklist") {
         current.checklistItems.push(checklistItem[1]?.trim() ?? "");
         continue;
@@ -235,7 +296,7 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
     );
   }
 
-  const blocks = sections.map(toBlock);
+  const blocks = mergePromptPageSections(sections).map(toBlock);
   const hasCover = blocks.some((block) => block.pageType === "cover");
   if (!hasCover && draft.kitName.trim()) {
     blocks.unshift({
@@ -399,6 +460,10 @@ function createSection(rawType: string, rawTitle: string): ParsedSection {
     title,
     subtitle: "",
     body: "",
+    bottomNote: "",
+    activityType: "checklist",
+    activityTitle: "",
+    activityItems: [],
     prompt,
     lines: "",
     checklistItems: [],
@@ -410,6 +475,7 @@ function createSection(rawType: string, rawTitle: string): ParsedSection {
 function toBlock(section: ParsedSection, index: number): BuilderBlock {
   const block = createBuilderBlock(section.type, index + 1);
   const checklistBody = section.checklistItems.join("\n");
+  const activityItems = section.activityItems.join("\n");
   const tableHeaders = normalizeCells(section.tableHeaders);
   const tableRows =
     section.tableRows.length > 0 ? section.tableRows.map(normalizeCells) : [["", "", ""]];
@@ -417,7 +483,8 @@ function toBlock(section: ParsedSection, index: number): BuilderBlock {
     section.type === "workbook" ||
     section.type === "notes" ||
     section.type === "reflection" ||
-    section.type === "prompt-page";
+    section.type === "prompt-page" ||
+    section.type === "lesson-activity";
   const importedLines =
     section.lines === ""
       ? section.type === "workbook" || section.type === "notes"
@@ -429,6 +496,10 @@ function toBlock(section: ParsedSection, index: number): BuilderBlock {
     ...block,
     title: section.title,
     subtitle: section.subtitle,
+    bottomNote: section.bottomNote,
+    activityType: section.activityType,
+    activityTitle: section.activityTitle,
+    activityItems,
     body: section.type === "checklist" ? checklistBody : section.body,
     prompt: supportsWritingLines ? section.prompt || section.body : "",
     lines: supportsWritingLines ? importedLines : block.lines,
@@ -442,6 +513,7 @@ function toBlock(section: ParsedSection, index: number): BuilderBlock {
 function normalizeSectionType(value: string): PageType {
   const lower = value.toLowerCase().replace(/\s+/g, " ").trim();
   if (lower === "cover" || lower === "cover page") return "cover";
+  if (lower === "lesson activity" || lower === "lesson activity page") return "lesson-activity";
   if (
     lower === "section" ||
     lower === "divider" ||
@@ -520,8 +592,17 @@ function normalizeSectionType(value: string): PageType {
   return "lesson";
 }
 
+function normalizeLessonActivityType(value: string): LessonActivityType {
+  const lower = value.toLowerCase().replace(/\s+/g, " ").trim();
+  if (lower.includes("action")) return "action-steps";
+  if (lower.includes("prompt") || lower.includes("writing")) return "writing-prompt";
+  return "checklist";
+}
+
 function titleFromBareHeading(lowerType: string): string {
   if (lowerType.endsWith(" page") || lowerType === "table / tracker page") return "";
+  if (lowerType === "lesson activity" || lowerType === "lesson activity page")
+    return "Lesson Activity";
   if (lowerType === "checklist") return "Checklist";
   if (lowerType === "notes") return "Notes";
   if (lowerType === "back cover") return "Back Cover";
@@ -552,6 +633,13 @@ function shouldTreatPromptAsMultiPrompt(section: ParsedSection, label: string): 
   return section.type === "prompt-page" && Boolean(section.prompt.trim() || section.lines !== "");
 }
 
+function shouldAppendHeadingToCurrentMultiPrompt(
+  section: ParsedSection | null,
+  nextType: PageType,
+): section is ParsedSection {
+  return Boolean(section && section.type === "multi-prompt" && nextType === "prompt-page");
+}
+
 function ensureMultiPromptSection(section: ParsedSection) {
   if (section.type === "multi-prompt") return;
 
@@ -565,6 +653,41 @@ function ensureMultiPromptSection(section: ParsedSection) {
 
   appendText(section, "body", `Prompt: ${existingPrompt}`);
   if (existingLines !== "") appendText(section, "body", `Writing Lines: ${existingLines}`);
+}
+
+function mergePromptPageSections(sections: ParsedSection[]): ParsedSection[] {
+  const merged: ParsedSection[] = [];
+
+  for (const section of sections) {
+    const previous = merged[merged.length - 1];
+    if (shouldMergePromptPages(previous, section)) {
+      ensureMultiPromptSection(previous);
+      appendPromptSectionToMultiPrompt(previous, section);
+      continue;
+    }
+
+    merged.push(section);
+  }
+
+  return merged;
+}
+
+function shouldMergePromptPages(
+  previous: ParsedSection | undefined,
+  current: ParsedSection,
+): previous is ParsedSection {
+  if (!previous) return false;
+  if (current.type !== "prompt-page") return false;
+  if (previous.type !== "prompt-page" && previous.type !== "multi-prompt") return false;
+  const previousTitle = previous.title.trim().toLowerCase();
+  const currentTitle = current.title.trim().toLowerCase();
+  return Boolean(previousTitle && previousTitle === currentTitle);
+}
+
+function appendPromptSectionToMultiPrompt(target: ParsedSection, source: ParsedSection) {
+  const promptText = source.prompt.trim() || source.body.trim() || source.title.trim();
+  if (promptText) appendText(target, "body", `Prompt: ${promptText}`);
+  if (source.lines !== "") appendText(target, "body", `Writing Lines: ${source.lines}`);
 }
 
 function looksLikeTableLine(line: string): boolean {
@@ -599,8 +722,16 @@ const STRICT_LABEL_ALIASES: Record<string, string> = {
   "cover title": "Kit Name",
   description: "Body",
   "lesson title": "Lesson",
+  "lesson activity title": "Lesson Activity Page",
+  "lesson activity page": "Lesson Activity Page",
   "lesson page": "Lesson",
   "lesson body": "Body",
+  "bottom note": "Bottom Note",
+  "motivational note": "Bottom Note",
+  "activity type": "Activity Type",
+  "activity title": "Activity Title",
+  "action steps": "Action Steps",
+  "activity items": "Activity Items",
   "body text": "Body",
   "workbook title": "Workbook",
   "workbook page": "Workbook",
@@ -642,6 +773,8 @@ function pageTypeName(pageType: PageType): string {
       return "Section Divider";
     case "lesson":
       return "Lesson";
+    case "lesson-activity":
+      return "Lesson Activity";
     case "table":
       return "Table";
     case "workbook":

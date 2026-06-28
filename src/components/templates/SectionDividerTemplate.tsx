@@ -6,13 +6,14 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
+import { BasePage } from "./BasePage";
 import {
   BotanicalSprig,
   CornerWash,
   Diamond,
   InteriorEditorialFrame,
   KitFooterBand,
+  RichText,
   SparkleRule,
 } from "./_decor";
 
@@ -27,7 +28,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
   const lineAccent = branchProfile.lineAccentColor;
   const smallMark = branchProfile.smallMarkColor;
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -75,7 +76,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
             marginBottom: "0.24in",
           }}
         >
-          {block.title}
+          <RichText text={block.title} />
         </div>
 
         <SparkleRule color={lineAccent} width="2.2in" marginBottom="0.4in" />
@@ -93,7 +94,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
             ...titleOffsetStyle(block),
           }}
         >
-          {block.subtitle}
+          <RichText text={block.subtitle} />
         </h2>
 
         <Diamond color={smallMark} style={{ marginTop: "0.4in" }} />
@@ -119,7 +120,7 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
               ...bodyOffsetStyle(block),
             }}
           >
-            {block.body}
+            <RichText text={block.body} />
           </p>
         ) : null}
       </div>
@@ -128,6 +129,6 @@ export function SectionDividerTemplate({ block, branchProfile, pageNumber, total
         pageNumber={pageNumber}
         totalPages={totalPages}
       />
-    </PageCanvas>
+    </BasePage>
   );
 }

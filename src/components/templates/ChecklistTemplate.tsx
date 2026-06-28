@@ -8,13 +8,14 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
+import { BasePage } from "./BasePage";
 import {
   CornerWash,
   Diamond,
   InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
+  RichText,
   SparkleRule,
 } from "./_decor";
 
@@ -35,7 +36,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
   const spacing = spacingValues(block);
 
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -79,7 +80,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
               marginBottom: "0.16in",
             }}
           >
-            {block.subtitle}
+            <RichText text={block.subtitle} />
           </div>
         ) : null}
 
@@ -95,7 +96,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
             ...titleOffsetStyle(block),
           }}
         >
-          {block.title}
+          <RichText text={block.title} />
         </h1>
 
         <SparkleRule
@@ -153,7 +154,7 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
                   ...bodyTextStyle(block, 14),
                 }}
               >
-                {item}
+                <RichText text={item} />
               </span>
             </div>
           ))}
@@ -178,6 +179,6 @@ export function ChecklistTemplate({ block, branchProfile, pageNumber, totalPages
         pageNumber={pageNumber}
         totalPages={totalPages}
       />
-    </PageCanvas>
+    </BasePage>
   );
 }

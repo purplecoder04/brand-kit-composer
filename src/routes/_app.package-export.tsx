@@ -49,6 +49,7 @@ import {
   isPackageReady,
   loadPackageExports,
   packageReadinessLabel,
+  requiresExcelCalculator,
   upsertPackageExport,
   type PackageAssetReadiness,
   type PackageExportStatus,
@@ -166,10 +167,13 @@ function PackageExportPage() {
   const branchSelected = Boolean(activeDraft?.branch.trim());
   const hasPages = Boolean(kit && kit.blocks.length > 0);
   const qcPassed = (activeRecord?.qcStatus ?? report?.qcStatus) === "Passed";
+  const excelCalculatorRequired = activeDraft ? requiresExcelCalculator(activeDraft) : false;
   const readiness: PackageAssetReadiness = {
     workbookReady: Boolean(activePackage?.workbookExported && hasPages),
     lessonGuideGenerated: Boolean(activePackage?.lessonGuideGenerated || lessonGuide),
     howToGenerated: Boolean(activePackage?.howToGenerated || howToGuide),
+    excelCalculatorRequired,
+    excelCalculatorReady: !excelCalculatorRequired || Boolean(activePackage?.excelCalculatorIncluded),
     qcPassed,
     packageNotesGenerated: Boolean(activePackage?.manifest.trim()),
   };
@@ -290,14 +294,24 @@ function PackageExportPage() {
       lessonGuideGenerated: readiness.lessonGuideGenerated,
       howToGenerated: readiness.howToGenerated,
       workbookExported: Boolean(activePackage.workbookExported),
+      excelCalculatorIncluded: Boolean(activePackage.excelCalculatorIncluded),
     });
     savePackagePatch({ manifest, packageReady: false });
     toast.success("Package notes generated");
   };
 
+  const markExcelCalculatorIncluded = () => {
+    savePackagePatch({ excelCalculatorIncluded: true, packageReady: false });
+    toast.success("Excel calculator marked included");
+  };
+
   const markPackageReady = () => {
     if (!canMarkPackageReady) {
-      toast.error("Complete Workbook, Lesson Guide, How-To, QC Passed, and Package Notes first");
+      toast.error(
+        excelCalculatorRequired
+          ? "Complete Workbook, Lesson Guide, How-To, Excel calculator, QC Passed, and Package Notes first"
+          : "Complete Workbook, Lesson Guide, How-To, QC Passed, and Package Notes first",
+      );
       return;
     }
     savePackagePatch({ packageReady: true });
@@ -311,7 +325,8 @@ function PackageExportPage() {
         title="Package"
         description={
           <>
-            Track workbook, guide, how-to, QC, and package readiness for a saved kit version.
+            Track workbook, guide, how-to, QC, fillable readiness, and package notes. This is a
+            readiness tracker, not a ZIP exporter yet.
             <span className="ml-2">
               Storage:{" "}
               {storageMode === "checking"
@@ -323,6 +338,15 @@ function PackageExportPage() {
           </>
         }
       />
+
+      <div
+        className="rounded-md border px-4 py-3 text-sm"
+        style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#4b4450" }}
+      >
+        <strong>Package flow:</strong> choose a kit, confirm the workbook PDF is exported, generate
+        guides, run QC, create package notes, then mark the package ready only when every required
+        item is complete.
+      </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="space-y-6">
@@ -472,6 +496,17 @@ function PackageExportPage() {
               >
                 <FileCheck2 className="mr-2 h-4 w-4" /> Mark Workbook PDF Exported
               </Button>
+              {excelCalculatorRequired ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  disabled={!activeDraft}
+                  onClick={markExcelCalculatorIncluded}
+                >
+                  <FileCheck2 className="mr-2 h-4 w-4" /> Mark Excel Calculator Included
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 className="w-full"
@@ -525,6 +560,17 @@ function PackageExportPage() {
                 state={readiness.howToGenerated ? "ready" : "missing"}
                 detail={readiness.howToGenerated ? "Generated." : "Missing."}
               />
+              {excelCalculatorRequired ? (
+                <ReadinessItem
+                  title="Excel Calculator"
+                  state={readiness.excelCalculatorReady ? "ready" : "missing"}
+                  detail={
+                    readiness.excelCalculatorReady
+                      ? "Marked included."
+                      : "Referenced by this kit. Add the Excel file before sale-ready approval."
+                  }
+                />
+              ) : null}
               <ReadinessItem
                 title="QC"
                 state={
@@ -575,6 +621,13 @@ function PackageExportPage() {
                 detail="Saved as a library snapshot connected to this version when possible."
                 done={readiness.howToGenerated}
               />
+              {excelCalculatorRequired ? (
+                <ChecklistRow
+                  label="Excel calculator included"
+                  detail="This kit references an Excel calculator. Mark it included only after the file exists in the final product package."
+                  done={readiness.excelCalculatorReady}
+                />
+              ) : null}
               <ChecklistRow
                 label="QC passed"
                 detail="Run QC and save the result to Version Library."

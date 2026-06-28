@@ -8,13 +8,15 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
+import { BasePage } from "./BasePage";
 import {
   CornerWash,
+  BottomEncouragementNote,
   Diamond,
   InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
+  RichText,
   SparkleRule,
 } from "./_decor";
 
@@ -31,7 +33,7 @@ export function MultiPromptTemplate({ block, branchProfile, pageNumber, totalPag
   const smallMark = branchProfile.smallMarkColor;
 
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -62,6 +64,9 @@ export function MultiPromptTemplate({ block, branchProfile, pageNumber, totalPag
           left: "0.72in",
           right: "0.82in",
           bottom: "1in",
+          display: "flex",
+          flexDirection: "column",
+          paddingBottom: "60px",
         }}
       >
         {block.subtitle ? (
@@ -75,7 +80,7 @@ export function MultiPromptTemplate({ block, branchProfile, pageNumber, totalPag
               marginBottom: "0.16in",
             }}
           >
-            {block.subtitle}
+            <RichText text={block.subtitle} />
           </div>
         ) : null}
 
@@ -91,7 +96,7 @@ export function MultiPromptTemplate({ block, branchProfile, pageNumber, totalPag
             ...titleOffsetStyle(block),
           }}
         >
-          {block.title}
+          <RichText text={block.title} />
         </h1>
 
         <SparkleRule
@@ -102,11 +107,22 @@ export function MultiPromptTemplate({ block, branchProfile, pageNumber, totalPag
           align={sparkleAlign(block)}
         />
 
-        <div style={{ display: "grid", gap: "0.18in", ...bodyOffsetStyle(block) }}>
+        <div
+          style={{
+            display: "flex",
+            flex: 1,
+            flexDirection: "column",
+            gap: "0.18in",
+            ...bodyOffsetStyle(block),
+          }}
+        >
           {items.map((item, index) => (
             <section
               key={`${item.prompt}-${index}`}
               style={{
+                display: "flex",
+                flex: 1,
+                flexDirection: "column",
                 padding: "0.16in 0.18in",
                 borderLeft: `2px solid ${lineAccent}`,
                 background: PAPER_PANEL,
@@ -139,12 +155,17 @@ export function MultiPromptTemplate({ block, branchProfile, pageNumber, totalPag
                   ...bodyTextStyle(block, 14),
                 }}
               >
-                {item.prompt}
+                <RichText text={item.prompt} />
               </p>
               <WritingLines count={item.lines} branchProfile={branchProfile} />
             </section>
           ))}
         </div>
+        <BottomEncouragementNote
+          text={block.bottomNote}
+          branchProfile={branchProfile}
+          style={{ marginTop: "0.18in", maxWidth: "6.2in" }}
+        />
       </div>
 
       <KitFooterBand
@@ -152,7 +173,7 @@ export function MultiPromptTemplate({ block, branchProfile, pageNumber, totalPag
         pageNumber={pageNumber}
         totalPages={totalPages}
       />
-    </PageCanvas>
+    </BasePage>
   );
 }
 
@@ -162,13 +183,18 @@ function WritingLines({ count, branchProfile }: { count: number; branchProfile: 
       style={{
         borderTop: `1px solid ${branchProfile.worksheetLineColor}`,
         width: "100%",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={index}
           style={{
-            height: "0.28in",
+            flex: 1,
+            height: "auto",
+            minHeight: "0.28in",
             borderBottom: `1px solid ${branchProfile.worksheetLineColor}`,
           }}
         />

@@ -6,7 +6,7 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
+import { BasePage } from "./BasePage";
 import {
   BotanicalSprig,
   CornerWash,
@@ -14,6 +14,7 @@ import {
   InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
+  RichText,
   SparkleRule,
 } from "./_decor";
 
@@ -29,7 +30,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
   const smallMark = branchProfile.smallMarkColor;
 
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -112,7 +113,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
               ...titleOffsetStyle(block),
             }}
           >
-            {block.title}
+            <RichText text={block.title} />
           </div>
         ) : null}
 
@@ -130,7 +131,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
               ...bodyOffsetStyle(block),
             }}
           >
-            {block.body}
+            <RichText text={block.body} />
           </p>
         ) : null}
 
@@ -151,7 +152,7 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
               textTransform: "uppercase",
             }}
           >
-            {block.prompt}
+            <RichText text={block.prompt} />
           </div>
         ) : null}
 
@@ -170,7 +171,9 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
             }}
           >
             <Diamond color={smallMark} inline size={10} />
-            <span>{block.subtitle}</span>
+            <span>
+              <RichText text={block.subtitle} />
+            </span>
           </div>
         ) : null}
       </div>
@@ -180,6 +183,6 @@ export function BackCoverTemplate({ block, branchProfile, pageNumber, totalPages
         pageNumber={pageNumber}
         totalPages={totalPages}
       />
-    </PageCanvas>
+    </BasePage>
   );
 }

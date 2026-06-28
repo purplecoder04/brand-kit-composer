@@ -8,13 +8,15 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
+import { BasePage } from "./BasePage";
 import {
   CornerWash,
+  BottomEncouragementNote,
   Diamond,
   InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
+  RichText,
   SparkleRule,
 } from "./_decor";
 
@@ -57,7 +59,7 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
   const spacing = spacingValues(block);
 
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -95,6 +97,7 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
           flexDirection: "column",
           justifyContent: isModuleIntro || isQuote ? "center" : "flex-start",
           textAlign: defaultAlign,
+          paddingBottom: lineCount > 0 || block.prompt || block.bottomNote ? "60px" : undefined,
         }}
       >
         <div
@@ -124,7 +127,7 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
             ...titleOffsetStyle(block),
           }}
         >
-          {block.title}
+          <RichText text={block.title} />
         </h1>
 
         <SparkleRule
@@ -166,6 +169,16 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
             lineHeight={spacing.writingLineHeight}
           />
         ) : null}
+
+        <BottomEncouragementNote
+          text={block.bottomNote}
+          branchProfile={branchProfile}
+          style={{
+            marginTop: lineCount > 0 || block.prompt ? "0.18in" : "0.24in",
+            maxWidth: "5.95in",
+            alignSelf: isModuleIntro || isQuote ? "center" : "auto",
+          }}
+        />
       </div>
 
       <KitFooterBand
@@ -173,7 +186,7 @@ export function StructuredPageTemplate({ block, branchProfile, pageNumber, total
         pageNumber={pageNumber}
         totalPages={totalPages}
       />
-    </PageCanvas>
+    </BasePage>
   );
 }
 
@@ -205,7 +218,7 @@ function BodyCopy({
     >
       {paragraphs.map((paragraph, index) => (
         <p key={index} style={{ margin: spacing.paragraphMargin }}>
-          {paragraph}
+          <RichText text={paragraph} />
         </p>
       ))}
     </div>
@@ -233,8 +246,8 @@ function QuoteBody({
             fontStyle: "italic",
             ...bodyTextStyle(block, 24, "center"),
           }}
-        >
-          {block.body}
+      >
+          <RichText text={block.body} />
         </p>
       ) : null}
       {block.prompt ? (
@@ -252,7 +265,9 @@ function QuoteBody({
           }}
         >
           <Diamond color={smallMark} inline size={10} />
-          <span>{block.prompt}</span>
+          <span>
+            <RichText text={block.prompt} />
+          </span>
         </div>
       ) : null}
     </div>
@@ -300,7 +315,9 @@ function ActionList({
           }}
         >
           <Diamond color={smallMark} inline size={9} style={{ marginTop: "0.05in" }} />
-          <span>{item}</span>
+          <span>
+            <RichText text={item} />
+          </span>
         </div>
       ))}
     </div>
@@ -361,7 +378,7 @@ function PromptPanel({
           ...bodyTextStyle(block, 15),
         }}
       >
-        {prompt}
+        <RichText text={prompt} />
       </p>
     </div>
   );
@@ -383,13 +400,17 @@ function WritingLines({
         borderTop: `1px solid ${branchProfile.worksheetLineColor}`,
         maxWidth: "6.1in",
         width: "100%",
+        flex: 1,
+        display: "flex",
+        flexDirection: "column",
       }}
     >
       {Array.from({ length: count }).map((_, index) => (
         <div
           key={index}
           style={{
-            height: "0.36in",
+            flex: 1,
+            height: "auto",
             minHeight: lineHeight,
             borderBottom: `1px solid ${branchProfile.worksheetLineColor}`,
           }}

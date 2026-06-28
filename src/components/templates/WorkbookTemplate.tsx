@@ -8,14 +8,16 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
+import { BasePage } from "./BasePage";
 import {
   BotanicalSprig,
+  BottomEncouragementNote,
   CornerWash,
   Diamond,
   InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
+  RichText,
   SparkleRule,
 } from "./_decor";
 
@@ -33,7 +35,7 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
   const spacing = spacingValues(block);
 
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -77,6 +79,9 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
           left: "0.72in",
           right: "0.96in",
           bottom: "1in",
+          display: "flex",
+          flexDirection: "column",
+          paddingBottom: "60px",
         }}
       >
         {block.subtitle ? (
@@ -90,7 +95,7 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
               marginBottom: "0.16in",
             }}
           >
-            {block.subtitle}
+            <RichText text={block.subtitle} />
           </div>
         ) : null}
 
@@ -106,7 +111,7 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
             ...titleOffsetStyle(block),
           }}
         >
-          {block.title}
+          <RichText text={block.title} />
         </h1>
 
         <SparkleRule
@@ -155,31 +160,44 @@ export function WorkbookTemplate({ block, branchProfile, pageNumber, totalPages 
                 ...bodyTextStyle(block, 15),
               }}
             >
-              {block.prompt}
+              <RichText text={block.prompt} />
             </p>
           </div>
         ) : null}
 
         <div
-          style={{ borderTop: `1px solid ${branchProfile.worksheetLineColor}`, maxWidth: "6.1in" }}
+          style={{
+            borderTop: `1px solid ${branchProfile.worksheetLineColor}`,
+            maxWidth: "6.1in",
+            width: "100%",
+            flex: 1,
+            display: "flex",
+            flexDirection: "column",
+          }}
         >
           {Array.from({ length: lineCount }).map((_, i) => (
             <div
               key={i}
               style={{
-                height: "0.4in",
+                flex: 1,
+                height: "auto",
                 minHeight: spacing.writingLineHeight,
                 borderBottom: `1px solid ${branchProfile.worksheetLineColor}`,
               }}
             />
           ))}
         </div>
+        <BottomEncouragementNote
+          text={block.bottomNote}
+          branchProfile={branchProfile}
+          style={{ marginTop: "0.18in", maxWidth: "6.1in" }}
+        />
       </div>
       <KitFooterBand
         branchProfile={branchProfile}
         pageNumber={pageNumber}
         totalPages={totalPages}
       />
-    </PageCanvas>
+    </BasePage>
   );
 }

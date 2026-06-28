@@ -3,6 +3,7 @@ import type { Block } from "@/lib/kit-types";
 import { CoverTemplate } from "./templates/CoverTemplate";
 import { SectionDividerTemplate } from "./templates/SectionDividerTemplate";
 import { LessonTemplate } from "./templates/LessonTemplate";
+import { LessonActivityTemplate } from "./templates/LessonActivityTemplate";
 import { TableTemplate } from "./templates/TableTemplate";
 import { WorkbookTemplate } from "./templates/WorkbookTemplate";
 import { ChecklistTemplate } from "./templates/ChecklistTemplate";
@@ -25,6 +26,8 @@ export function PageRenderer(props: Props) {
       return <SectionDividerTemplate {...props} />;
     case "lesson":
       return <LessonTemplate {...props} />;
+    case "lesson-activity":
+      return <LessonActivityTemplate {...props} />;
     case "table":
       return <TableTemplate {...props} />;
     case "workbook":

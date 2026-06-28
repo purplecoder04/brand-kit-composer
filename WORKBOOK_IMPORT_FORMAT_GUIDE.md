@@ -1,12 +1,12 @@
-# Best Collective Kit Factory Import Format Guide
+# Best Collective Kit Factory Workbook Import Guide
 
-Use this guide when creating a `.md`, `.txt`, or `.docx` file that you want the Kit Factory importer to read cleanly.
+Use this guide when writing a `.md`, `.txt`, or `.docx` file for the Kit Factory importer.
 
-The best import format is simple Markdown/text with clear labels. The app is looking for structure more than formatting.
+The app reads structure. It does not need fancy formatting. The cleaner the labels, the cleaner the workbook.
 
 ## Best File Type
 
-Recommended:
+Best source file:
 
 ```text
 .md
@@ -19,11 +19,11 @@ Also works:
 .docx
 ```
 
-Avoid using PDF as the source file. PDF should be the final output after the kit is built.
+Use PDF only after the workbook is already built and styled. PDF is now the final fillable base file, not the best writing/import source.
 
 ## The Main Rule
 
-Every page needs a clear page label.
+Every page needs a page label.
 
 Good:
 
@@ -38,22 +38,104 @@ Risky:
 Know what you are building before you start.
 ```
 
-The risky version may import, but the app has to guess what kind of page it is.
+The risky version may import, but the app has to guess.
 
-## Kit Info Format
+## Choose The File You Are Making First
 
-Start the file with kit-level information.
+Before writing the file, decide which product piece this is.
+
+Most Best Collective products should use **two separate source files**:
 
 ```text
-Kit Name: Test Kit Erica
-Subtitle: A Best Collective workbook
-Branch: Brand
-Audience: Business owners
-Tone: Clear, warm, practical
-Tagline: A simple workbook to help the reader take the next right step.
+1. Lesson Guide file = teaching / reading content
+2. Workbook file = writing prompts / checklists / tables / activities
 ```
 
-Approved branch values:
+This matters because the importer follows the labels you give it.
+
+If a workbook file contains `Lesson Page:` labels with full teaching text, the app will build lesson pages inside the workbook. That makes the workbook longer and harder to make fillable.
+
+### Lesson Guide File
+
+Use this when the file is mainly teaching.
+
+Good labels:
+
+```text
+Lesson Page:
+Module Intro Page:
+Section Divider:
+Quote / Opening Thought Page:
+Case Study / Example Page:
+Resource Page:
+Closing / Next Steps Page:
+```
+
+Example:
+
+```text
+Lesson Page: Choosing Your Business Name
+Body: A business name should be useful, not just cute. This lesson explains how to choose a name that is clear, searchable, and realistic to use online.
+```
+
+### Workbook File
+
+Use this when the file is mainly for the buyer to write, check off, track, or plan.
+
+Good labels:
+
+```text
+Workbook Page:
+Prompt Page:
+Multi-Prompt Page:
+Checklist Page:
+Table / Tracker Page:
+Reflection Page:
+Action Plan Page:
+Progress Check Page:
+Notes Page:
+Back Cover Page:
+```
+
+Example:
+
+```text
+Multi-Prompt Page: Choosing Your Business Name
+Body: Use this page to narrow your name before buying domains, logos, or printed materials.
+
+Prompt: What business names are you considering?
+Writing Lines: 4
+
+Prompt: Which name is easiest to say, spell, and remember?
+Writing Lines: 4
+
+Bottom Note: Beginner mistake to avoid: buying a logo before checking whether the name is realistic to use.
+```
+
+### When To Use Lesson Activity Page
+
+Use `Lesson Activity Page:` only when you intentionally want one page to include:
+
+```text
+short teaching text + checklist/action steps/writing prompt
+```
+
+Do not use it for full lessons. Keep full lessons in the Lesson Guide.
+
+## Kit Info
+
+Put kit info at the top of the file.
+
+```text
+Kit Name: Cook With Confidence
+Subtitle: A simple kitchen confidence workbook
+Branch: Brand
+Audience: Beginner home cooks
+Tone: Clear, warm, practical
+Tagline: Build kitchen confidence one small meal at a time.
+```
+
+Approved branches:
 
 ```text
 Brand
@@ -63,11 +145,147 @@ Rebuild
 Heal
 ```
 
-If branch is blank or misspelled, the app may default to a general style or show a warning.
+## Branch Rule: One File = One Branch
 
-## Import-Safe Page Labels
+For branch kits, keep the source file focused on one branch at a time.
 
-Use these exact labels when possible:
+Good:
+
+```text
+Branch: Rise
+```
+
+Also good:
+
+```text
+Branch: Land
+```
+
+Do not put every branch in the same source file like this:
+
+```text
+Branch: Rise
+Branch: Land
+Branch: Heal
+Branch: Brand
+Branch: Rebuild
+```
+
+That makes the importer guess which branch the kit should use. If you want the same workbook for more than one branch, make one copy of the file per branch and change only the `Branch:` value.
+
+Use these clean branch values:
+
+```text
+Branch: Brand
+Branch: Rise
+Branch: Land
+Branch: Rebuild
+Branch: Heal
+```
+
+## Rise / Land / Heal File Pattern
+
+Self-help and relationship kits should usually be split into two files:
+
+```text
+Lesson Guide file = teaching
+Workbook file = prompts, reflection, checklist, action steps
+```
+
+### Lesson Guide Example
+
+```text
+Kit Name: Why Do Men Come Back?
+Subtitle: And Why Do I Let Him Come Back?
+Branch: Rise
+Audience: Women reviewing relationship patterns
+Tone: Warm, honest, emotionally grounded
+Tagline: Understand the return before you trust the repair.
+
+Cover Page: Why Do Men Come Back?
+Body: And Why Do I Let Him Come Back?
+
+Section Divider: Part 1 - Why Do Men Come Back?
+
+Lesson Page: The Return Is Not the Repair
+Body: Help the reader understand that coming back is not the same as changing.
+
+Why This Matters
+
+Lesson text goes here.
+
+The Lesson
+
+Main teaching goes here.
+
+What This Can Look Like In Real Life
+
+- Example one
+- Example two
+- Example three
+
+What This Chapter Is Really Saying
+
+Short summary.
+
+Bottom Note: A return is not proof. The behavior after the return is the answer.
+```
+
+### Matching Workbook Example
+
+```text
+Kit Name: Why Do Men Come Back?
+Subtitle: Workbook
+Branch: Rise
+Audience: Women reviewing relationship patterns
+Tone: Warm, honest, emotionally grounded
+Tagline: Understand the return before you trust the repair.
+
+Cover Page: Why Do Men Come Back?
+Body: Workbook
+
+Section Divider: Chapter 1 Reflection
+
+Multi-Prompt Page: The Return Is Not the Repair
+Body: Use this page to separate the feeling of the return from the proof of real repair.
+
+Prompt: What did his return make you feel?
+Writing Lines: 4
+
+Prompt: What are you hoping his return means?
+Writing Lines: 4
+
+Prompt: What behavior would prove real change?
+Writing Lines: 4
+
+Prompt: What behavior would prove this is the same pattern?
+Writing Lines: 4
+
+Checklist Page: Pattern Check
+- He returned with accountability.
+- He returned with pressure.
+- He returned with changed behavior.
+- He returned with the same excuses.
+
+Action Plan Page: One Next Step
+Body: Before deciding anything, write down what would need to be different this time.
+```
+
+To make a Land version, change only the branch:
+
+```text
+Branch: Land
+```
+
+To make a Heal version, change only the branch:
+
+```text
+Branch: Heal
+```
+
+## Page Labels The App Understands
+
+Use these labels exactly when possible:
 
 ```text
 Cover Page:
@@ -75,6 +293,7 @@ Start Here Page:
 Section Divider:
 Module Intro Page:
 Lesson Page:
+Lesson Activity Page:
 Quote / Opening Thought Page:
 Workbook Page:
 Checklist Page:
@@ -85,62 +304,177 @@ Action Plan Page:
 Resource Page:
 Case Study / Example Page:
 Prompt Page:
+Multi-Prompt Page:
 Progress Check Page:
 Closing / Next Steps Page:
 Back Cover Page:
 ```
 
-Each page label creates one Builder block. Some blocks can create extra print pages later if they overflow.
+One page label usually creates one Builder block. Long content can create continuation pages later.
 
-## Page Count Rule
+## When To Use Each Page Type
 
-One page label usually becomes one workbook page.
-
-This file creates about three pages:
+Use **Lesson Page** for teaching.
 
 ```text
-Cover Page: My Kit
-
-Lesson Page: First Lesson
-Body: Short lesson text.
-
-Workbook Page: First Prompt
-Prompt: What is one next step?
+Lesson Page: Cook One Good Breakfast
+Body: Breakfast does not need to be complicated. Choose one simple meal you can repeat until it feels easy.
 ```
 
-If you expected 10 pages but got 18, the file probably had 18 page labels or overflow content created continuation pages.
+Use **Lesson Activity Page** when teaching and a checklist/action/prompt should stay on the same page.
 
-## Overflow Rules
+Checklist example:
 
-The app may create continuation pages when content is long:
+```text
+Lesson Activity Page: Set Up Your Kitchen
+Body: Start with one simple setup choice. You do not need a perfect kitchen to cook with more confidence.
 
-- Lesson body over about 1400 characters or 6 paragraphs
-- Table over 8 rows
-- Checklist over 12 items
-- Very long prompts can trigger warnings
+Activity Type: Checklist
+Activity Title: Remember This
+Checklist:
+- Keep one clear counter space
+- Put your most-used pan where you can reach it
+- Choose one meal to practice first
 
-This is expected. The app should not shrink text tiny or crowd the page.
+Bottom Note: Small setup choices make cooking feel less overwhelming.
+```
 
-## Required Field Rules
+Action steps example:
 
-Blank fields stay blank. The app should not invent sample content.
+```text
+Lesson Activity Page: Choose Your First Meal
+Body: Pick one meal that is simple enough to repeat. The goal is confidence, not complexity.
 
-To avoid QC blockers, give these pages the right fields:
+Activity Type: Action Steps
+Activity Title: Try This
+Action Steps:
+- Pick one breakfast, lunch, or dinner
+- Write the ingredients you already have
+- Choose the next time you will cook it
+```
 
-- Lesson Page needs a title and body.
-- Workbook Page needs a title and prompt.
-- Checklist Page needs at least one checklist item.
-- Table / Tracker Page needs headers and at least one filled row.
-- Notes, Reflection, and Prompt pages work best with a title, prompt, and writing lines.
+Writing prompt example:
+
+```text
+Lesson Activity Page: Plan Your First Meal
+Body: Keep the first meal small and realistic.
+
+Activity Type: Writing Prompt
+Activity Title: Your First Plan
+Prompt: What meal will you make first, and what do you need before you start?
+Writing Lines: 4
+Bottom Note: One clear meal is enough to begin.
+```
+
+Use **Workbook Page** for one main prompt with writing space.
+
+```text
+Workbook Page: Cook One Good Breakfast
+Prompt: What is one breakfast you would like to make well, and what do you need to prep before the week starts?
+Writing Lines: 4
+```
+
+Use **Prompt Page** for one prompt page with writing lines. Prompt pages default best to 4 lines.
+
+```text
+Prompt Page: One Kitchen Decision
+Prompt: What is one small kitchen decision you can make today?
+Writing Lines: 4
+```
+
+Use **Multi-Prompt Page** when several short prompts should stay on the same page.
+
+```text
+Multi-Prompt Page: Pantry Planning
+
+Prompt: What three staples are running low right now?
+Writing Lines: 3
+
+Prompt: What is one item you keep buying but never finish?
+Writing Lines: 2
+
+Prompt: What do you want to add to your next shopping list?
+Writing Lines: 3
+```
+
+Do not write this if you want prompts on the same page:
+
+```text
+Prompt Page: First prompt
+Prompt: What is one thing?
+
+Prompt Page: Second prompt
+Prompt: What is another thing?
+```
+
+That can turn into separate pages. Use `Multi-Prompt Page:` instead.
+
+Use **Notes Page** for open notes.
+
+```text
+Notes Page: Kitchen Notes
+Prompt: What do you want to remember from this section?
+Writing Lines: 12
+```
+
+Use **Reflection Page** for deeper thinking.
+
+```text
+Reflection Page: What Feels Easier Now
+Prompt: What feels easier after practicing these meals?
+Writing Lines: 10
+```
+
+Use **Checklist Page** for checkboxes.
+
+```text
+Checklist Page: Pantry Starter Checklist
+- Stock cooking oil and salt
+- Add a grain like rice or pasta
+- Keep canned beans or tomatoes on hand
+- Choose three spices you use often
+```
+
+Use **Table / Tracker Page** for real table rows.
+
+```text
+Table / Tracker Page: Meal Practice Tracker
+Headers: Meal, Status, Notes
+Row: Breakfast, Tried once, Needs prep
+Row: Lunch, Not started, Pick one recipe
+Row: Dinner, Comfortable, Repeat next week
+```
+
+Use **Action Plan Page** for next steps.
+
+```text
+Action Plan Page: Your Next Three Meals
+Body: Choose the next three meals you will practice this week.
+```
+
+Use **Bottom Note** on pages that need a small encouragement or reminder near the bottom.
+
+```text
+Bottom Note: You do not need to finish everything today. Just choose the next honest step.
+```
+
+Bottom notes work best on Lesson, Lesson Activity, Workbook, Prompt, Reflection, Action Plan, Progress Check, and Closing pages.
+
+Use **Back Cover Page** only when you want an optional closing page.
+
+```text
+Back Cover Page: Your Next Step
+Body: Keep this workbook close and repeat the meals that help you feel steady.
+```
 
 ## Writing Lines
 
-For writing pages, add `Writing Lines:` when you want to control space.
+For workbook-style pages, use one of these labels:
 
 ```text
-Workbook Page: Define Your First Build
-Prompt: What are you building first, who is it for, and what result should it create?
-Writing Lines: 12
+Writing Lines: 4
+Lines: 4
+Writing Line Count: 4
 ```
 
 Recommended range:
@@ -149,295 +483,261 @@ Recommended range:
 4 to 20
 ```
 
-If you leave writing lines blank, the Builder may use its default or show a warning.
+Current defaults:
 
-## Lesson-Only File
+- Prompt Page: use 4 lines unless you need more.
+- Workbook Page: use 4 to 12 lines depending on the page.
+- Notes and Reflection: often use 10 to 12 lines.
+- Multi-Prompt Page: each prompt should have its own `Writing Lines:` value.
 
-Use this when you only want to upload lesson content.
+If you leave writing lines blank, the app may use a default or show a warning.
+
+## Page Count Rules
+
+One page label usually equals one workbook page.
+
+The app may create extra pages when content overflows:
+
+- Lesson body over about 1400 characters or 6 paragraphs
+- Table over 8 rows
+- Checklist over 12 items
+- Long writing pages or long prompts
+
+If you expected 10 pages and got 18, check:
+
+- Did the file have 18 page labels?
+- Did several prompts use `Prompt Page:` instead of one `Multi-Prompt Page:`?
+- Did long lessons create continuation pages?
+- Did long tables or checklists continue?
+
+## Page Count Warnings
+
+The app guides page count but does not block export.
+
+- 1 to 20 pages: normal
+- 21 to 40 pages: large workbook warning
+- 41+ pages: review before export warning
+
+## Required Fields For QC
+
+Blank fields stay blank. The app should not invent sample content.
+
+To avoid blockers:
+
+- Lesson Page needs title and body.
+- Lesson Activity Page needs title, body, and either checklist/action items or a writing prompt.
+- Workbook Page needs title and prompt.
+- Checklist Page needs at least one checklist item.
+- Table / Tracker Page needs headers and at least one filled row.
+- Notes, Reflection, Prompt, and Multi-Prompt pages should have prompts and writing lines.
+
+## Full Real Notebook Starter: Split Files
+
+Use these two starter shapes when the Lesson Guide and Workbook are separate products.
+
+### File 1: Lesson Guide Source
+
+This file is for teaching. It should not include writing lines unless you intentionally want notes inside the guide.
 
 ```text
-Kit Name: Test Kit Erica
-Subtitle: Lesson-only import test
+Kit Name: Cook With Confidence
+Subtitle: Lesson guide
 Branch: Brand
-Audience: Business owners
+Audience: Beginner home cooks
 Tone: Clear, warm, practical
-Tagline: A simple lesson import test.
+Tagline: Build kitchen confidence one small meal at a time.
 
-Lesson Page: Know What You Are Building
-Body: Before you build the full kit, define what the first version should help the reader do.
+Cover Page: Cook With Confidence Lesson Guide
+Body: A simple lesson guide for building kitchen confidence without overwhelm.
 
-A strong workbook helps the reader move from confusion to clarity with simple, focused steps.
+Start Here Page: How To Use This Lesson Guide
+Body: Read each lesson in order. Use the matching workbook pages when you are ready to write, plan, or practice.
 
-Lesson Page: Choose the First Result
-Body: The first version of a kit does not need to solve everything.
+Section Divider: Part One
+Body: Start with small meals that help the kitchen feel easier.
 
-It should create one useful result the reader can feel, name, or complete.
+Module Intro Page: Kitchen Confidence Basics
+Body: This module helps you choose simple meals, repeat what works, and reduce decision fatigue.
+
+Lesson Page: Set Up Your Kitchen
+Body: A good kitchen setup does not need to be fancy. Start by making the tools you use most easy to reach.
+
+Lesson Page: Cook One Good Breakfast
+Body: Breakfast does not need to be complicated. Choose one simple meal you can repeat until it feels easy.
+
+Lesson Page: Pantry Planning
+Body: Pantry confidence starts with knowing what you already use, what you waste, and what makes meals easier.
+
+Closing / Next Steps Page: Keep Cooking Simply
+Body: Repeat the meals that work. Add one new meal only when you feel ready.
 ```
 
-Expected result:
+### File 2: Workbook Source
 
-- Two Lesson Page blocks
-- No workbook prompts unless you add Workbook Page labels
-- No sample content
-
-## Workbook-Only File
-
-Use this when you only want writing pages.
+This file is for writing, checklists, trackers, and action pages. It can include a short setup sentence, but it should not include full lesson teaching.
 
 ```text
-Kit Name: Test Kit Erica
-Subtitle: Workbook-only import test
+Kit Name: Cook With Confidence Workbook
+Subtitle: Workbook and action planner
 Branch: Brand
-Audience: Business owners
+Audience: Beginner home cooks
 Tone: Clear, warm, practical
-Tagline: A simple workbook import test.
+Tagline: Build kitchen confidence one small meal at a time.
 
-Workbook Page: Define Your First Build
-Prompt: What are you building first, who is it for, and what result should it create?
-Writing Lines: 12
-
-Reflection Page: What Feels Clear
-Prompt: What feels clearer after naming the first version of this kit?
-Writing Lines: 10
-
-Action Plan Page: Choose Your Next Three Steps
-Body: Write the next three steps you will take to move this kit forward.
-```
-
-Expected result:
-
-- Workbook Page block
-- Reflection Page block
-- Action Plan Page block
-- No lesson pages unless you add Lesson Page labels
-
-## Full Kit Starter Template
-
-Copy this when you want a complete test kit.
-
-```text
-Kit Name: Test Kit Erica
-Subtitle: A Best Collective workbook
-Branch: Brand
-Audience: Business owners
-Tone: Clear, warm, practical
-Tagline: A simple workbook to help the reader take the next right step.
-
-Cover Page: Test Kit Erica
-Body: This workbook helps you clarify what you are building and turn it into a simple action plan.
+Cover Page: Cook With Confidence Workbook
+Body: A simple workbook for building kitchen confidence without overwhelm.
 
 Start Here Page: How To Use This Workbook
-Body: Move through each page in order. Keep your answers simple and focus on one clear next step at a time.
+Body: Complete the pages in order. Keep your answers simple and focus on one small kitchen win at a time.
 
-Section Divider: Module One
-Body: Start by naming the result this kit should create.
+Multi-Prompt Page: Set Up Your Kitchen
+Body: Use this page to make your kitchen easier to use this week.
 
-Module Intro Page: Build the First Version
-Body: This module helps you focus on the first useful version instead of trying to build everything at once.
+Prompt: What three tools do you reach for most?
+Writing Lines: 4
 
-Lesson Page: Know What You Are Building
-Body: Before you build anything, name the result you want the workbook to create.
+Prompt: What is one thing you can clear off your counter today?
+Writing Lines: 4
 
-The clearer the result, the easier it is to shape the lessons, prompts, and action steps.
+Bottom Note: Small setup choices make cooking feel less overwhelming.
 
-Quote / Opening Thought Page: Keep the First Version Simple
-Body: A clear first version is better than a crowded final version that never gets finished.
+Multi-Prompt Page: Pantry Planning
+Body: Use this page to review what you have, what you waste, and what you need.
 
-Workbook Page: Define Your First Build
-Prompt: What are you building first, who is it for, and what result should it create?
-Writing Lines: 12
+Prompt: What three staples are running low right now?
+Writing Lines: 3
 
-Checklist Page: Builder Checklist
-- Name the kit
-- Choose the branch
-- Write the first lesson
-- Add one workbook prompt
-- Review the PDF
+Prompt: What is one item you keep buying but never finish?
+Writing Lines: 2
 
-Table / Tracker Page: Build Tracker
-Headers: Task, Status, Notes
-Row: Draft lesson, Done, Keep it focused
-Row: Add workbook prompt, In progress, Keep prompt short
-Row: Test PDF, Not started, Review before export
+Prompt: What do you want to add to your next shopping list?
+Writing Lines: 3
 
-Notes Page: Reflection Notes
-Prompt: What needs to be clearer before this kit is ready?
-Writing Lines: 12
+Checklist Page: Pantry Starter Checklist
+- Stock cooking oil and salt
+- Add a grain like rice or pasta
+- Keep canned beans or tomatoes on hand
+- Choose three spices you use often
+- Clear out anything expired
 
-Reflection Page: What Is Working
-Prompt: What part of this kit already feels useful?
+Table / Tracker Page: Meal Practice Tracker
+Headers: Meal, Status, Notes
+Row: Breakfast, Tried once, Needs prep
+Row: Lunch, Not started, Pick one recipe
+Row: Dinner, Comfortable, Repeat next week
+
+Reflection Page: What Feels Easier Now
+Prompt: What feels easier after practicing these meals?
 Writing Lines: 10
 
-Action Plan Page: Next Three Steps
-Body: Choose the next three steps that will move this kit toward a clean first version.
+Action Plan Page: Your Next Three Meals
+Body: Choose the next three meals you will practice this week.
 
-Resource Page: Helpful Links and Reminders
-Body: Add any tools, links, reminders, or references that support this kit.
+Progress Check Page: Review Your Kitchen Confidence
+Body: What feels easier?
+What still needs practice?
+What is your next small kitchen win?
 
-Case Study / Example Page: Example Answer
-Body: Show a simple example of how a reader might complete one of the workbook prompts.
-
-Prompt Page: Main Writing Prompt
-Prompt: What is the most important decision you need to make before this kit is ready?
-Writing Lines: 12
-
-Progress Check Page: Review Your Progress
-Body: Confirm what is finished.
-Confirm what still needs work.
-Choose the next action.
-
-Closing / Next Steps Page: What To Do Next
-Body: Review your answers, choose your top three next actions, and revisit the kit in 30 days.
+Closing / Next Steps Page: Keep Cooking Simply
+Body: Repeat the meals that work. Add one new meal only when you feel ready.
 
 Back Cover Page: Your Next Step
-Body: Use this workbook as a clear starting point. Keep the next step simple and visible.
+Body: Keep this workbook close and come back when you need a simple reset.
 ```
 
-## Page Type Examples
+### Optional Mixed Page
 
-### Cover Page
+If one workbook page truly needs a short teaching note plus a checklist or prompt, use `Lesson Activity Page:`.
 
 ```text
-Cover Page: Test Kit Erica
-Body: This workbook helps you clarify what you are building.
+Lesson Activity Page: Set Up Your Kitchen
+Body: Start with one simple setup choice. You do not need a perfect kitchen to cook with more confidence.
+
+Activity Type: Checklist
+Activity Title: Remember This
+Checklist:
+- Keep one clear counter space
+- Put your most-used pan where you can reach it
+- Choose one meal to practice first
+
+Bottom Note: Small setup choices make cooking feel less overwhelming.
 ```
 
-### Start Here Page
+## Full Page Type Quick Examples
 
 ```text
+Cover Page: Kit Title
+Body: Short cover description.
+
 Start Here Page: How To Use This Workbook
-Body: Start at the beginning, move in order, and keep your answers simple.
-```
+Body: Short instructions for using the workbook.
 
-### Section Divider
-
-```text
 Section Divider: Module One
-Body: Begin with clarity before moving into action.
-```
+Body: Short section intro.
 
-### Module Intro Page
+Module Intro Page: Module Title
+Body: What this module helps the reader do.
 
-```text
-Module Intro Page: Build the First Version
-Body: This module helps you choose the first useful version of the kit.
-```
+Lesson Page: Lesson Title
+Body: Teaching content goes here.
 
-### Lesson Page
+Quote / Opening Thought Page: A Simple Thought
+Body: One quote, thought, or short idea.
 
-```text
-Lesson Page: Know What You Are Building
-Body: Before you build the full kit, define the first result this kit should create.
-```
+Workbook Page: Workbook Title
+Prompt: One main workbook question.
+Writing Lines: 8
 
-### Quote / Opening Thought Page
+Checklist Page: Checklist Title
+- First item
+- Second item
 
-```text
-Quote / Opening Thought Page: A Simple Start
-Body: The first version does not need to do everything. It needs to do one useful thing clearly.
-```
-
-### Workbook Page
-
-```text
-Workbook Page: Define Your First Build
-Prompt: What are you building first, who is it for, and what result should it create?
-Writing Lines: 12
-```
-
-### Checklist Page
-
-```text
-Checklist Page: Launch Checklist
-- Confirm the kit title
-- Confirm the branch
-- Review the workbook preview
-- Export the PDF
-```
-
-### Table / Tracker Page
-
-```text
-Table / Tracker Page: Build Tracker
+Table / Tracker Page: Tracker Title
 Headers: Task, Status, Notes
-Row: Draft lesson, Done, Keep it focused
-Row: Add workbook prompt, In progress, Keep prompt short
-Row: Test PDF, Not started, Review before export
-```
+Row: First task, Done, Short note
 
-Use three headers and three values per row when possible.
-
-### Notes Page
-
-```text
-Notes Page: Notes
-Prompt: What do you want to remember from this section?
+Notes Page: Notes Title
+Prompt: What do you want to remember?
 Writing Lines: 12
-```
 
-### Reflection Page
-
-```text
-Reflection Page: What Feels Clear
-Prompt: What feels clearer after completing this section?
+Reflection Page: Reflection Title
+Prompt: What are you noticing?
 Writing Lines: 10
+
+Action Plan Page: Action Title
+Body: Choose the next steps.
+
+Resource Page: Resource Title
+Body: Add links, tools, terms, reminders, or references.
+
+Case Study / Example Page: Example Title
+Body: Show a sample answer, scenario, or example.
+
+Prompt Page: Prompt Title
+Prompt: One main prompt.
+Writing Lines: 4
+
+Multi-Prompt Page: Prompt Group Title
+Prompt: First short prompt?
+Writing Lines: 3
+Prompt: Second short prompt?
+Writing Lines: 3
+
+Progress Check Page: Progress Title
+Body: What is done?
+What needs work?
+What comes next?
+
+Closing / Next Steps Page: Final Step
+Body: Close with the next action.
+
+Back Cover Page: Back Cover Title
+Body: Optional closing message.
 ```
-
-### Action Plan Page
-
-```text
-Action Plan Page: Next Three Steps
-Body: Choose three actions you can complete next.
-```
-
-### Resource Page
-
-```text
-Resource Page: Tools and Reminders
-Body: Add helpful links, tools, terms, reminders, or references here.
-```
-
-### Case Study / Example Page
-
-```text
-Case Study / Example Page: Example Answer
-Body: Show a sample answer or scenario that helps the reader understand what good work looks like.
-```
-
-### Prompt Page
-
-```text
-Prompt Page: Main Decision
-Prompt: What is the most important decision you need to make before moving forward?
-Writing Lines: 12
-```
-
-### Progress Check Page
-
-```text
-Progress Check Page: Review Your Progress
-Body: What is finished?
-What still needs work?
-What is the next action?
-```
-
-### Closing / Next Steps Page
-
-```text
-Closing / Next Steps Page: What To Do Next
-Body: Review your answers, choose the top three next actions, and revisit the kit in 30 days.
-```
-
-### Back Cover Page
-
-```text
-Back Cover Page: Your Next Step
-Body: You have everything you need to take the next step with clarity.
-```
-
-Back Cover is optional. Do not add it unless the kit needs a closing page.
 
 ## Table Rules
+
+Tables need headers and rows.
 
 Good:
 
@@ -455,9 +755,9 @@ Table / Tracker Page: Offer Tracker
 Body: Here is a table about offers.
 ```
 
-The app needs `Headers:` and `Row:` lines to build a real table.
-
 ## Checklist Rules
+
+Use one checklist item per line.
 
 Good:
 
@@ -475,24 +775,74 @@ Checklist Page: Review Checklist
 Check the title, check the branch, check the PDF.
 ```
 
-Use one checklist item per line.
+## Fillable PDF Workflow
+
+The fillable workflow now uses the final styled PDF as the source of truth.
+
+Best flow:
+
+1. Write the kit in `.md`.
+2. Import the kit.
+3. Create Builder draft.
+4. Review Builder pages.
+5. Export the final workbook PDF from Chrome.
+6. Open Fillable Fields.
+7. Reload Latest Builder Draft if needed.
+8. Upload the final workbook PDF.
+9. Make sure the PDF page count matches the field map page count.
+10. Add or auto-place fields.
+11. Save Field Map.
+12. Export Fillable PDF.
+
+Important:
+
+- The uploaded final workbook PDF must match the Builder/field-map page count.
+- If the PDF has 19 pages and the field map has 6 pages, export stays disabled.
+- Auto Fields should only be used on fillable pages.
+- Start Here, cover, lessons, dividers, closing pages, and back covers should not get auto writing fields unless you manually add fields.
 
 ## Common Import Problems
 
-### Missing Title
+### Prompts Split Into Too Many Pages
 
 Problem:
 
 ```text
-Lesson Page:
-Body: This lesson has no title.
+Prompt Page: Question One
+Prompt: What is one thing?
+Writing Lines: 3
+
+Prompt Page: Question Two
+Prompt: What is another thing?
+Writing Lines: 3
 ```
 
 Fix:
 
 ```text
-Lesson Page: Know What You Are Building
-Body: This lesson has a clear title.
+Multi-Prompt Page: Short Reflection
+
+Prompt: What is one thing?
+Writing Lines: 3
+
+Prompt: What is another thing?
+Writing Lines: 3
+```
+
+### Lesson Turns Into Workbook Page
+
+Problem:
+
+```text
+Lesson Page: First Lesson
+Prompt: This should have been teaching text.
+```
+
+Fix:
+
+```text
+Lesson Page: First Lesson
+Body: This is teaching text.
 ```
 
 ### Workbook Prompt Is Blank
@@ -509,6 +859,7 @@ Fix:
 ```text
 Workbook Page: First Build
 Prompt: What are you building first?
+Writing Lines: 8
 ```
 
 ### Checklist Has No Items
@@ -544,26 +895,9 @@ Headers: Task, Status, Notes
 Row: Draft lesson, Done, Looks good
 ```
 
-### Table Has No Rows
+## Words To Avoid In Real Kit Files
 
-Problem:
-
-```text
-Table / Tracker Page: Build Tracker
-Headers: Task, Status, Notes
-```
-
-Fix:
-
-```text
-Table / Tracker Page: Build Tracker
-Headers: Task, Status, Notes
-Row: Draft lesson, Done, Looks good
-```
-
-## Words To Avoid In Test Files
-
-The importer/QC may flag sample or placeholder language.
+The importer/QC may flag placeholder language.
 
 Avoid:
 
@@ -574,78 +908,37 @@ lorem ipsum
 TODO
 insert here
 replace this
-test ccccc
 dummy text
+test ccccc
 ```
 
-Use real working text, even if it is short.
+Use real working text, even if short.
 
-## Best Writing Rules
+## Best Workflow For A Real Notebook
 
-- One page equals one idea.
-- Use clear page labels.
-- Use `Body:` for teaching or explanation.
-- Use `Prompt:` for workbook, notes, reflection, and prompt pages.
-- Use `Writing Lines:` for writing pages.
-- Use `Headers:` and `Row:` for tables.
-- Use `-` for checklist items.
-- Keep lesson pages focused.
-- Keep workbook prompts short.
-- Do not paste the whole workbook into one block.
-- Do not use sample content unless you are intentionally testing sample content.
+1. Decide whether this file is the Lesson Guide or the Workbook.
+2. For the Lesson Guide, use `Lesson Page` for teaching.
+3. For the Workbook, use `Workbook Page`, `Prompt Page`, `Multi-Prompt Page`, `Checklist Page`, `Table / Tracker Page`, `Reflection Page`, and `Action Plan Page`.
+4. Do not put full lessons inside the Workbook file unless you truly want lesson pages inside the workbook.
+5. Add `Writing Lines:` anywhere you need writing space.
+6. Import into **Import Content**.
+7. Run Import QC.
+8. Fix blockers.
+9. Create Builder draft.
+10. Review in Builder.
+11. Save Version.
+12. Export workbook PDF from Chrome.
+13. Generate How-To PDF if needed.
+14. Generate Lesson Guide if needed.
+15. Open Fillable Fields, upload final PDF, save field map, export fillable PDF.
+16. Track the kit in Package.
 
-## 20-Page And 40-Page Tests
-
-To test page warnings, repeat short blocks.
-
-Normal:
-
-- 1 to 20 pages
-- No large workbook warning
-
-Large workbook:
-
-- 21 to 40 pages
-- Shows large workbook warning
-- Export still allowed
-
-Review before export:
-
-- 41+ pages
-- Shows stronger review warning
-- Export still allowed
-
-Short repeatable lesson:
+Simple memory rule:
 
 ```text
-Lesson Page: Test Lesson 01
-Body: This is a short page-count test lesson.
+Lesson Guide = read this
+Workbook = write this
 ```
-
-Short repeatable workbook page:
-
-```text
-Workbook Page: Test Prompt 01
-Prompt: What is one next step?
-Writing Lines: 8
-```
-
-Avoid long text during page-count tests because overflow pages can make the final PDF page count higher.
-
-## Best Workflow
-
-1. Write the kit in `.md` first.
-2. Use the exact labels from this guide.
-3. Import into Paste Importer.
-4. Run Import QC.
-5. Fix blockers.
-6. Create Builder draft.
-7. Review and edit in Builder.
-8. Run QC.
-9. Generate workbook PDF.
-10. Generate How-To PDF if needed.
-11. Generate Lesson Guide if this kit will be taught or reviewed.
-12. Track the package in Package Export.
 
 ## Quick Pass Test
 
@@ -667,7 +960,15 @@ Body: This is a short lesson.
 
 Workbook Page: First Prompt
 Prompt: What is one next step?
-Writing Lines: 10
+Writing Lines: 4
+
+Multi-Prompt Page: First Prompt Group
+
+Prompt: What is one thing you noticed?
+Writing Lines: 3
+
+Prompt: What is one thing you will do next?
+Writing Lines: 3
 
 Checklist Page: First Checklist
 - Confirm the title
@@ -687,7 +988,9 @@ Expected result:
 - Cover block
 - Lesson block
 - Workbook block
+- Multi-Prompt block
 - Checklist block
 - Table block
 - Back Cover block
 - No sample content
+- No prompts split into separate pages

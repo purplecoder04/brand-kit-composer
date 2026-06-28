@@ -149,7 +149,7 @@ function DashboardPage() {
         title="Production Dashboard"
         description={
           <>
-            Track active versions, repair work, QC status, and package readiness.
+            Start, continue, and package internal Best Collective kits from one workflow.
             <span className="ml-2">
               Storage:{" "}
               {storageMode === "checking"
@@ -161,6 +161,40 @@ function DashboardPage() {
           </>
         }
       />
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Main Production Workflow</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-3 md:grid-cols-4">
+            <WorkflowStep
+              step="1"
+              title="Import Content"
+              description="Bring in MD, TXT, or DOCX source content."
+              to="/import"
+            />
+            <WorkflowStep
+              step="2"
+              title="Open Builder"
+              description="Review pages, edit blocks, and export the workbook PDF."
+              to="/builder"
+            />
+            <WorkflowStep
+              step="3"
+              title="Open Version Library"
+              description="Reopen saved kits, guides, packages, and field maps."
+              to="/version-library"
+            />
+            <WorkflowStep
+              step="4"
+              title="Continue Package"
+              description="Track what is ready, missing, or needs review."
+              to="/package-export"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-7">
         <SummaryCard title="Total Versions" value={summary.total} />
@@ -431,6 +465,39 @@ function SummaryCard({ title, value, tone }: { title: string; value: number; ton
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function WorkflowStep({
+  step,
+  title,
+  description,
+  to,
+}: {
+  step: string;
+  title: string;
+  description: string;
+  to: string;
+}) {
+  return (
+    <Link
+      to={to}
+      className="block rounded-md border p-4 transition-colors hover:bg-[#F4EFE6]"
+      style={{ borderColor: "#D8CEC2", color: "#222026" }}
+    >
+      <div className="flex items-center gap-3">
+        <span
+          className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold"
+          style={{ background: "#4F2D68", color: "#fff" }}
+        >
+          {step}
+        </span>
+        <span className="font-semibold">{title}</span>
+      </div>
+      <p className="mt-2 text-sm leading-5" style={{ color: "#6b6470" }}>
+        {description}
+      </p>
+    </Link>
   );
 }
 

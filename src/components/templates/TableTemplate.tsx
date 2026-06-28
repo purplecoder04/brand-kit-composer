@@ -8,13 +8,14 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
+import { BasePage } from "./BasePage";
 import {
   CornerWash,
   Diamond,
   InteriorEditorialFrame,
   KitFooterBand,
   PAPER_PANEL,
+  RichText,
   SparkleRule,
 } from "./_decor";
 
@@ -31,9 +32,11 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
   const lineAccent = branchProfile.lineAccentColor;
   const smallMark = branchProfile.smallMarkColor;
   const spacing = spacingValues(block);
+  const columnWidths = tableColumnWidths(headers);
+  const setupTracker = isSetupTrackerTable(headers);
 
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -77,7 +80,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
               marginBottom: "0.16in",
             }}
           >
-            {block.subtitle}
+            <RichText text={block.subtitle} />
           </div>
         ) : null}
 
@@ -93,7 +96,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
             ...titleOffsetStyle(block),
           }}
         >
-          {block.title}
+          <RichText text={block.title} />
         </h1>
 
         <SparkleRule
@@ -108,14 +111,13 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
           className="kit-table-wrap"
           style={{
             width: "100%",
-            maxWidth: "6.65in",
+            maxWidth: setupTracker ? "7.1in" : "6.65in",
             marginLeft: "auto",
             marginRight: "auto",
             boxSizing: "border-box",
             background: PAPER_PANEL,
             border: `2px solid ${branchProfile.tableHeaderColor}`,
             boxShadow: "0 12px 24px rgba(40, 36, 44, 0.08)",
-            overflow: "hidden",
             ...bodyOffsetStyle(block),
           }}
         >
@@ -129,6 +131,13 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
               color: branchProfile.textColor,
             }}
           >
+            {columnWidths.length ? (
+              <colgroup>
+                {columnWidths.map((width, index) => (
+                  <col key={`${width}-${index}`} style={{ width }} />
+                ))}
+              </colgroup>
+            ) : null}
             <thead>
               <tr>
                 {headers.map((h, i) => (
@@ -149,7 +158,7 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                           : "none",
                     }}
                   >
-                    {h}
+                    <RichText text={h} />
                   </th>
                 ))}
               </tr>
@@ -165,7 +174,9 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                       key={ci}
                       style={{
                         padding:
-                          block.layoutOverrides?.spacing === "compact"
+                          setupTracker
+                            ? "0.18in 0.16in"
+                            : block.layoutOverrides?.spacing === "compact"
                             ? "0.18in 0.18in"
                             : block.layoutOverrides?.spacing === "spacious"
                               ? "0.3in 0.22in"
@@ -181,12 +192,13 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
                             ? `1px solid ${branchProfile.worksheetLineColor}`
                             : "none",
                         verticalAlign: "top",
+                        height: setupTracker ? (rows.length <= 1 ? "4in" : "1.75in") : undefined,
                         lineHeight: spacing.lineHeight,
                         wordWrap: "break-word",
-                        ...bodyTextStyle(block, 13),
+                        ...bodyTextStyle(block, setupTracker ? 12 : 13),
                       }}
                     >
-                      {cell}
+                      <RichText text={cell} />
                     </td>
                   ))}
                 </tr>
@@ -213,6 +225,25 @@ export function TableTemplate({ block, branchProfile, pageNumber, totalPages }: 
         pageNumber={pageNumber}
         totalPages={totalPages}
       />
-    </PageCanvas>
+    </BasePage>
+  );
+}
+
+function tableColumnWidths(headers: string[]): string[] {
+  if (isSetupTrackerTable(headers)) return ["16%", "16%", "28%", "18%", "22%"];
+
+  if (headers.length === 5) return ["22%", "14%", "32%", "15%", "17%"];
+  if (headers.length === 4) return ["25%", "22%", "33%", "20%"];
+  if (headers.length === 3) return ["30%", "40%", "30%"];
+
+  return [];
+}
+
+function isSetupTrackerTable(headers: string[]): boolean {
+  const normalized = headers.map((header) => header.toLowerCase().trim());
+  return (
+    normalized.length === 5 &&
+    normalized.includes("setup area") &&
+    normalized.includes("next step")
   );
 }

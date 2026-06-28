@@ -32,11 +32,9 @@ export type QCReportMvp = {
 };
 
 const SAMPLE_TEXT_MARKERS = [
-  "Get Your Business Straight",
   "Set Your Priorities",
   "Before your business can look polished online",
   "Structure / Legitimacy / Foundation",
-  "A Best Collective Brand Kit",
 ];
 
 const PLACEHOLDER_MARKERS = [
@@ -167,6 +165,32 @@ function addBlockChecks(block: BuilderBlock, issues: QCIssue[]) {
     }
   }
 
+  if (block.pageType === "lesson-activity") {
+    if (!block.body.trim()) {
+      issues.push(
+        issue("blocker", "Lesson Activity", title, "Lesson Activity Page needs lesson body text."),
+      );
+    }
+    if (
+      (block.activityType === "checklist" || block.activityType === "action-steps") &&
+      !block.activityItems.trim()
+    ) {
+      issues.push(
+        issue(
+          "blocker",
+          "Lesson Activity",
+          title,
+          "Lesson Activity Page needs checklist or action items.",
+        ),
+      );
+    }
+    if (block.activityType === "writing-prompt" && !block.prompt.trim()) {
+      issues.push(
+        issue("blocker", "Lesson Activity", title, "Lesson Activity Page needs a writing prompt."),
+      );
+    }
+  }
+
   if (block.pageType === "notes" && (block.lines === "" || Number(block.lines) < 4)) {
     issues.push(
       issue("warning", "Workbook Usability", title, "Notes page needs usable writing space."),
@@ -245,6 +269,9 @@ function joinBlockText(block: BuilderBlock): string {
     block.title,
     block.subtitle,
     block.body,
+    block.bottomNote,
+    block.activityTitle,
+    block.activityItems,
     block.keywords,
     block.prompt,
     ...block.tableData.headers,

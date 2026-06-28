@@ -4,6 +4,7 @@ export type PageType =
   | "cover"
   | "divider"
   | "lesson"
+  | "lesson-activity"
   | "table"
   | "workbook"
   | "checklist"
@@ -42,6 +43,8 @@ export type LayoutOverrides = {
   spacing?: LayoutSpacing;
 };
 
+export type LessonActivityType = "checklist" | "action-steps" | "writing-prompt";
+
 export type Block = {
   id: string;
   pageType: PageType;
@@ -49,6 +52,10 @@ export type Block = {
   title: string;
   subtitle?: string;
   body?: string;
+  bottomNote?: string;
+  activityType?: LessonActivityType;
+  activityTitle?: string;
+  activityItems?: string;
   footerLabel?: string;
   prompt?: string;
   lines?: number;

@@ -81,6 +81,18 @@ const BODY_EDITOR_PAGE_TYPES: PageType[] = [
   "closing",
 ];
 
+const BOTTOM_NOTE_PAGE_TYPES: PageType[] = [
+  "lesson",
+  "lesson-activity",
+  "workbook",
+  "notes",
+  "reflection",
+  "prompt-page",
+  "action-plan",
+  "progress-check",
+  "closing",
+];
+
 const PROMPT_EDITOR_PAGE_TYPES: PageType[] = [
   "quote",
   "reflection",
@@ -295,7 +307,7 @@ function BuilderPage() {
       <PageHeader
         eyebrow="Production builder"
         title="Builder"
-        description="Build and polish workbook pages, then save versions or export production files."
+        description="Build the workbook pages here. Use page types to control structure, then export the final PDF from this draft."
       />
 
       <ActionBar>
@@ -367,6 +379,14 @@ function BuilderPage() {
         />
         <StatusItem label="Pages" value={`${kit.blocks.length}`} />
       </StatusStrip>
+
+      <div
+        className="mb-6 rounded-md border px-4 py-3 text-sm"
+        style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#4b4450" }}
+      >
+        <strong>Builder flow:</strong> edit page blocks, save the draft, preview/export the PDF,
+        then open Fillable Fields only after the final PDF looks right.
+      </div>
 
       {warnings.length > 0 ? (
         <Alert className="mb-6" style={{ borderColor: "#E0B040", background: "#FFF8E1" }}>
@@ -767,7 +787,10 @@ function CurrentBlockEditor({
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Field label="Page Type">
+        <Field
+          label="Change Page Type"
+          hint="Use this if the importer picked the wrong page style. Lesson Activity keeps a short lesson plus checklist/action/prompt together. Multi-Prompt keeps several questions on one worksheet page."
+        >
           <select
             value={block.pageType}
             onChange={(event) => onChange(block.id, { pageType: event.target.value as PageType })}
@@ -825,6 +848,10 @@ function CurrentBlockEditor({
               onChange={(event) => onChange(block.id, { body: event.target.value })}
             />
           </Field>
+        ) : null}
+
+        {block.pageType === "lesson-activity" ? (
+          <LessonActivityEditor block={block} onChange={(patch) => onChange(block.id, patch)} />
         ) : null}
 
         {PROMPT_EDITOR_PAGE_TYPES.includes(block.pageType) ? (
@@ -939,6 +966,19 @@ function CurrentBlockEditor({
               />
             </Field>
           </>
+        ) : null}
+
+        {BOTTOM_NOTE_PAGE_TYPES.includes(block.pageType) ? (
+          <Field
+            label="Bottom Note"
+            hint="Optional encouragement or reminder near the bottom of the page."
+          >
+            <Textarea
+              rows={2}
+              value={block.bottomNote}
+              onChange={(event) => onChange(block.id, { bottomNote: event.target.value })}
+            />
+          </Field>
         ) : null}
 
         <PagePolishPanel
@@ -1262,12 +1302,17 @@ function getPolishContentField(
     pageType === "cover" ||
     pageType === "divider" ||
     pageType === "lesson" ||
+    pageType === "lesson-activity" ||
     pageType === "checklist" ||
     pageType === "multi-prompt" ||
     pageType === "back-cover" ||
     BODY_EDITOR_PAGE_TYPES.includes(pageType)
   ) {
-    return { key: "body", label: "Polish Body Text", rows: pageType === "lesson" ? 6 : 4 };
+    return {
+      key: "body",
+      label: "Polish Body Text",
+      rows: pageType === "lesson" || pageType === "lesson-activity" ? 6 : 4,
+    };
   }
 
   if (
@@ -1346,6 +1391,84 @@ function promptFieldHint(pageType: PageType): string | undefined {
   if (pageType === "prompt-page") return "This is the main prompt above the writing lines.";
   if (pageType === "reflection") return "This appears above the writing lines.";
   return undefined;
+}
+
+function LessonActivityEditor({
+  block,
+  onChange,
+}: {
+  block: BuilderBlock;
+  onChange: (patch: Partial<BuilderBlock>) => void;
+}) {
+  return (
+    <div className="space-y-3 rounded-md border p-3" style={{ borderColor: "#D8CEC2" }}>
+      <Field label="Lesson Body" hint="Teaching text for the top part of this page.">
+        <Textarea
+          rows={7}
+          value={block.body}
+          onChange={(event) => onChange({ body: event.target.value })}
+        />
+      </Field>
+      <Field label="Activity Type">
+        <select
+          value={block.activityType}
+          onChange={(event) =>
+            onChange({
+              activityType: event.target.value as BuilderBlock["activityType"],
+            })
+          }
+          className="w-full rounded-md border px-3 py-2 text-sm"
+          style={{ borderColor: "#D8CEC2", background: "#fff" }}
+        >
+          <option value="checklist">Checklist</option>
+          <option value="action-steps">Action Steps</option>
+          <option value="writing-prompt">Writing Prompt</option>
+        </select>
+      </Field>
+      <Field label="Activity Title" hint="Example: Remember This, Action Steps, Try This.">
+        <Input
+          value={block.activityTitle}
+          onChange={(event) => onChange({ activityTitle: event.target.value })}
+        />
+      </Field>
+      {block.activityType === "writing-prompt" ? (
+        <>
+          <Field label="Activity Prompt">
+            <Textarea
+              rows={3}
+              value={block.prompt}
+              onChange={(event) => onChange({ prompt: event.target.value })}
+            />
+          </Field>
+          <Field label="Writing Lines Count">
+            <Input
+              type="number"
+              min={4}
+              max={8}
+              value={block.lines}
+              onChange={(event) =>
+                onChange({
+                  lines:
+                    event.target.value === "" ? "" : Number.parseInt(event.target.value, 10) || 0,
+                })
+              }
+            />
+          </Field>
+        </>
+      ) : (
+        <Field
+          label={block.activityType === "action-steps" ? "Action Steps" : "Checklist Items"}
+          hint="One item per line. These stay on this lesson page."
+        >
+          <Textarea
+            rows={6}
+            value={block.activityItems}
+            onChange={(event) => onChange({ activityItems: event.target.value })}
+          />
+        </Field>
+      )}
+    </div>
+  );
 }
 
 function BuilderTableEditor({

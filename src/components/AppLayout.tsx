@@ -20,8 +20,8 @@ const NAV_GROUPS = [
       { to: "/builder", label: "Builder", icon: Wrench },
       { to: "/version-library", label: "Version Library", icon: Library },
       { to: "/qc", label: "QC", icon: ClipboardCheck },
-      { to: "/package-export", label: "Package", icon: PackageCheck },
       { to: "/fillable-fields", label: "Fillable Fields", icon: MousePointer2 },
+      { to: "/package-export", label: "Package", icon: PackageCheck },
     ],
   },
   {
@@ -44,7 +44,7 @@ export function AppLayout() {
               Best Collective
             </div>
             <div
-              className="mt-1 text-lg"
+              className="mt-1 text-[1.35rem]"
               style={{
                 fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
                 color: "#4F2D68",

@@ -6,8 +6,15 @@ import {
   titleOffsetStyle,
   titleTextStyle,
 } from "@/lib/layout-polish";
-import { PageCanvas } from "../PageCanvas";
-import { BotanicalSprig, CoverOrganicFrame, Diamond, KitFooterBand, SparkleRule } from "./_decor";
+import { BasePage } from "./BasePage";
+import {
+  BotanicalSprig,
+  CoverOrganicFrame,
+  Diamond,
+  KitFooterBand,
+  RichText,
+  SparkleRule,
+} from "./_decor";
 
 type Props = {
   block: Block;
@@ -35,7 +42,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
   const titleSize = titleLines.length <= 1 ? 138 : titleLines.length === 2 ? 108 : 86;
 
   return (
-    <PageCanvas
+    <BasePage
       branchProfile={branchProfile}
       pageNumber={pageNumber}
       totalPages={totalPages}
@@ -92,7 +99,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             fontFamily: "var(--font-display, 'Cormorant Garamond', serif)",
           }}
         >
-          {block.subtitle}
+          <RichText text={block.subtitle} />
         </p>
 
         <h1
@@ -103,7 +110,6 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
             color: branchProfile.primaryColor,
             margin: 0,
             letterSpacing: "0.005em",
-            textShadow: "0 8px 22px rgba(40, 36, 44, 0.045)",
             ...titleTextStyle(block, titleSize, "center"),
             ...titleOffsetStyle(block),
           }}
@@ -177,7 +183,9 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
                   style={{ display: "inline-flex", alignItems: "center", gap: "0.09in" }}
                 >
                   {i > 0 ? <Diamond color={smallMark} size={9} inline /> : null}
-                  <span>{word}</span>
+                  <span>
+                    <RichText text={word} />
+                  </span>
                 </span>
               ));
             })()}
@@ -194,7 +202,7 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
                 ...bodyTextStyle(block, 16, "center"),
               }}
             >
-              {block.body}
+              <RichText text={block.body} />
             </p>
           ) : null}
         </div>
@@ -208,6 +216,6 @@ export function CoverTemplate({ block, branchProfile, pageNumber, totalPages }: 
         showPageNumber={false}
         height="0.72in"
       />
-    </PageCanvas>
+    </BasePage>
   );
 }

@@ -455,11 +455,31 @@ function ImportPage() {
       <PageHeader
         eyebrow="Production import"
         title="Import Content"
-        description="Upload or paste kit content, review the detected pages, then send a clean draft to Builder."
+        description="Use this screen for source content only: MD, TXT, or DOCX. Final styled PDFs belong in Fillable Fields after the workbook is exported."
       />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(420px,0.8fr)_minmax(0,1fr)]">
         <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Import Flow</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-3 text-sm md:grid-cols-3">
+              <FlowNote
+                title="1. Source file"
+                body="Upload MD, TXT, or DOCX. Do not use PDF here unless you only need to read text."
+              />
+              <FlowNote
+                title="2. Review pages"
+                body="Check page types, branch, multi-prompt pages, line counts, and QC blockers."
+              />
+              <FlowNote
+                title="3. Send to Builder"
+                body="Builder becomes the place to edit, preview, save versions, and export PDF."
+              />
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Import Kit Content</CardTitle>
@@ -473,6 +493,9 @@ function ImportPage() {
                 >
                   Upload .txt, .md, or .docx
                 </Label>
+                <div className="mt-1 text-xs" style={{ color: "#6b6470" }}>
+                  Use structured source files. Exported PDFs are uploaded later in Fillable Fields.
+                </div>
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <Input
                     id="kit-file-upload"
@@ -492,9 +515,17 @@ function ImportPage() {
                 rows={24}
                 value={rawText}
                 onChange={(event) => setRawText(event.target.value)}
-                placeholder="Paste kit title, modules, lessons, worksheets, prompts, checklists, and trackers here."
+                placeholder="Paste kit title, branch, lessons, worksheets, multi-prompt pages, checklists, and trackers here. Use Multi-Prompt Page when several prompts should stay on one page."
                 className="font-mono text-xs leading-5"
               />
+              <div
+                className="rounded-md border px-3 py-2 text-xs"
+                style={{ borderColor: "#D8CEC2", background: "#FAF6F0", color: "#6b6470" }}
+              >
+                Multi-prompt tip: use <strong>Multi-Prompt Page:</strong> when several short
+                questions should stay together. Separate <strong>Prompt Page:</strong> labels create
+                separate pages.
+              </div>
               {hasContent && detected.cleanupNotes.length > 0 ? (
                 <div
                   className="rounded-md border p-3 text-sm"
@@ -797,7 +828,7 @@ function ImportQualityGate({
 
         {visible && report.issues.length > 0 ? (
           <div className="space-y-2">
-            {report.issues.slice(0, 8).map((issue) => (
+            {report.issues.map((issue) => (
               <div
                 key={issue.id}
                 className="rounded-md border p-3 text-sm"
@@ -1157,6 +1188,19 @@ function TextAreaField({
         {label}
       </Label>
       <Textarea rows={rows} value={value} onChange={(event) => onChange(event.target.value)} />
+    </div>
+  );
+}
+
+function FlowNote({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-md border p-3" style={{ borderColor: "#D8CEC2", background: "#fff" }}>
+      <div className="font-semibold" style={{ color: "#222026" }}>
+        {title}
+      </div>
+      <div className="mt-1 leading-5" style={{ color: "#6b6470" }}>
+        {body}
+      </div>
     </div>
   );
 }

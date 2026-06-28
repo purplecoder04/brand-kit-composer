@@ -1,5 +1,12 @@
 import { resolveBranchProfile } from "./branch-profile";
-import type { Block, Kit, LayoutOverrides, PageType, TableData } from "./kit-types";
+import type {
+  Block,
+  Kit,
+  LayoutOverrides,
+  LessonActivityType,
+  PageType,
+  TableData,
+} from "./kit-types";
 import { SAMPLE_KIT } from "./sample-kit";
 
 export const RESERVED_BUILDER_KIT_ID = "builder-preview";
@@ -14,6 +21,10 @@ export type BuilderBlock = {
   title: string;
   subtitle: string;
   body: string;
+  bottomNote: string;
+  activityType: LessonActivityType;
+  activityTitle: string;
+  activityItems: string;
   keywords: string;
   prompt: string;
   lines: number | "";
@@ -42,6 +53,7 @@ export type BuilderWarning = {
     | "cover"
     | "divider"
     | "lesson"
+    | "lesson-activity"
     | "table"
     | "workbook"
     | "checklist"
@@ -68,8 +80,8 @@ export type PageCountWarning = {
 };
 
 const BUILDER_PAYLOAD_PREFIX = "best_collective_builder_print:";
-const LESSON_CHAR_LIMIT = 1400;
-const LESSON_PARAGRAPH_LIMIT = 6;
+const LESSON_CHAR_LIMIT = 2600;
+const LESSON_PARAGRAPH_LIMIT = 11;
 const TABLE_ROWS_PER_PAGE = 8;
 const WORKBOOK_PROMPT_LIMIT = 280;
 const CHECKLIST_ITEMS_PER_PAGE = 12;
@@ -85,6 +97,7 @@ export const BUILDER_BLOCK_TYPES: Array<{ type: PageType; label: string }> = [
   { type: "cover", label: "Cover" },
   { type: "divider", label: "Section Divider" },
   { type: "lesson", label: "Lesson Page" },
+  { type: "lesson-activity", label: "Lesson Activity Page" },
   { type: "table", label: "Table / Tracker Page" },
   { type: "workbook", label: "Workbook Page" },
   { type: "checklist", label: "Checklist Page" },
@@ -127,6 +140,10 @@ export function createBuilderBlock(pageType: PageType, order = 1): BuilderBlock 
     title: "",
     subtitle: "",
     body: "",
+    bottomNote: "",
+    activityType: "checklist",
+    activityTitle: "",
+    activityItems: "",
     keywords: "",
     prompt: "",
     lines:
@@ -151,6 +168,10 @@ export function createSampleBuilderDraft(): BuilderDraft {
       title: block.title,
       subtitle: block.subtitle ?? "",
       body: block.body ?? "",
+      bottomNote: block.bottomNote ?? "",
+      activityType: block.activityType ?? "checklist",
+      activityTitle: block.activityTitle ?? "",
+      activityItems: block.activityItems ?? "",
       keywords: block.keywords?.join(", ") ?? "",
       prompt: block.prompt ?? "",
       lines: block.lines ?? "",
@@ -254,10 +275,17 @@ export function buildBuilderKit(draft: BuilderDraft): Kit {
 
 export function buildPagesFromKitDraft(draft: BuilderDraft): Block[] {
   return normalizeDraft(draft).blocks.flatMap((block) => {
-    if (block.pageType === "lesson") return buildLessonPages(block);
-    if (block.pageType === "table") return buildTablePages(block);
-    if (block.pageType === "checklist") return buildChecklistPages(block);
-    return [toRenderableBlock(block)];
+    const repairedBlock = applyKnownBrandKitPdfRepairs(block);
+    if (isBusinessSetupTrackerBlock(repairedBlock)) {
+      const repairedTrackerPages = buildBusinessSetupTrackerRepairPages(repairedBlock);
+      if (repairedTrackerPages.length > 0) return repairedTrackerPages;
+    }
+    if (repairedBlock.pageType === "lesson") return buildLessonPages(repairedBlock);
+    if (repairedBlock.pageType === "lesson-activity")
+      return buildLessonActivityPages(repairedBlock);
+    if (repairedBlock.pageType === "table") return buildTablePages(repairedBlock);
+    if (repairedBlock.pageType === "checklist") return buildChecklistPages(repairedBlock);
+    return [toRenderableBlock(repairedBlock)];
   });
 }
 
@@ -299,6 +327,38 @@ export function getBuilderWarnings(draft: BuilderDraft): BuilderWarning[] {
           blockId: block.id,
           scope: "lesson",
           message: `${block.title || "Lesson page"} has overflow risk and will create continuation lesson pages.`,
+        });
+      }
+    }
+
+    if (block.pageType === "lesson-activity") {
+      const paragraphs = splitParagraphs(block.body);
+      if (block.body.length > LESSON_CHAR_LIMIT || paragraphs.length > LESSON_PARAGRAPH_LIMIT) {
+        warnings.push({
+          blockId: block.id,
+          scope: "lesson-activity",
+          message: `${block.title || "Lesson activity page"} has overflow risk and may need to become separate lesson/activity pages.`,
+        });
+      }
+      if (
+        (block.activityType === "checklist" || block.activityType === "action-steps") &&
+        parseChecklistItems(block.activityItems).length === 0
+      ) {
+        warnings.push({
+          blockId: block.id,
+          scope: "lesson-activity",
+          message: `${block.title || "Lesson activity page"} has no activity items.`,
+        });
+      }
+      if (
+        block.activityType === "writing-prompt" &&
+        !block.prompt.trim() &&
+        !block.activityItems.trim()
+      ) {
+        warnings.push({
+          blockId: block.id,
+          scope: "lesson-activity",
+          message: `${block.title || "Lesson activity page"} is missing a writing prompt.`,
         });
       }
     }
@@ -487,6 +547,244 @@ function buildLessonPages(block: BuilderBlock): Block[] {
   }));
 }
 
+function applyKnownBrandKitPdfRepairs(block: BuilderBlock): BuilderBlock {
+  let next: BuilderBlock = {
+    ...block,
+    title: repairKnownBrandKitText(block.title),
+    subtitle: repairKnownBrandKitText(block.subtitle),
+    body: repairKnownBrandKitText(block.body),
+    prompt: repairKnownBrandKitText(block.prompt),
+    bottomNote: repairKnownBrandKitText(block.bottomNote),
+    activityTitle: repairKnownBrandKitText(block.activityTitle),
+    activityItems: repairKnownBrandKitText(block.activityItems),
+    tableData: repairKnownBrandKitTable(block.title, block.tableData),
+  };
+
+  if (/how\s+to\s+use\s+this\s+workbook/i.test(next.title) && /lesson pages explain/i.test(next.body)) {
+    next = {
+      ...next,
+      title: next.title.replace(/workbook/gi, "Lesson Guide"),
+    };
+  }
+
+  if (isMistakesToAvoidBlock(next)) {
+    next = {
+      ...next,
+      body: next.body
+        .replace(/(^|\n)\s*WHAT TO DO INSTEAD\s*(?=\n|$)/i, "$1COMMON EARLY MISTAKES")
+        .replace(/(^|\n)\s*Common Early Mistakes\s*(?=\n|$)/i, "$1"),
+    };
+  }
+
+  return next;
+}
+
+function repairKnownBrandKitText(value: string): string {
+  return value
+    .replace(
+      /The full tracker table is in your Workbook \+ Action Planner\./gi,
+      "The full business setup tracker table is in your Workbook + Action Planner.",
+    )
+    .replace(
+      /Complete the Write It Out page before moving on\./gi,
+      "Complete the matching page in your Workbook + Action Planner before moving on.",
+    )
+    .replace(/Trademark Search or TESS/gi, "the USPTO Trademark Search tool")
+    .replace(
+      /through a registrar like Namecheap,\s*GoDaddy,\s*or Google Domains/gi,
+      "through a current domain registrar",
+    )
+    .replace(
+      /This workbook is not here to scare you\./gi,
+      "This lesson guide is not here to scare you.",
+    )
+    .replace(/This workbook can be used by/gi, "This kit can be used by")
+    .replace(/opened this workbook/gi, "opened this kit")
+    .replace(/\bWHAT TO DO INSTEAD\b/gi, "COMMON EARLY MISTAKES");
+}
+
+function repairKnownBrandKitTable(title: string, tableData: TableData): TableData {
+  if (!/where\s+to\s+check\s+your\s+name/i.test(title)) return tableData;
+  if (tableData.headers.length < 3) return tableData;
+
+  return {
+    headers: tableData.headers.map((header, index) =>
+      index === 2 && header.trim() === "" ? "What to Record" : header,
+    ),
+    rows: tableData.rows.map((row) =>
+      row.map((cell, index) =>
+        index === 2 && cell.trim() === "" ? "What you find / next step" : cell,
+      ),
+    ),
+  };
+}
+
+function isMistakesToAvoidBlock(block: BuilderBlock): boolean {
+  return /mistakes\s+to\s+avoid/i.test(block.title) && /what\s+to\s+do\s+instead/i.test(block.body);
+}
+
+function isBusinessSetupTrackerBlock(block: BuilderBlock): boolean {
+  return /business\s+setup\s+tracker\s+and\s+priority\s*map/i.test(block.title);
+}
+
+function buildBusinessSetupTrackerRepairPages(block: BuilderBlock): Block[] {
+  const trackerRows = parseTrackerRows(block.body);
+  if (trackerRows.length === 0) return [];
+
+  const trackerPages = balancedTrackerChunks(trackerRows).map((rowsForPage, index) =>
+    toRenderableBlock({
+      ...block,
+      id: index === 0 ? block.id : `${block.id}-continued-${index + 1}`,
+      pageType: "table",
+      title: index === 0 ? block.title : continuedTitle(block.title),
+      subtitle: "",
+      body: "",
+      order: block.order + index / 100,
+      tableData: {
+        headers: ["Setup Area", "Status", "Next Step", "Deadline", "Notes"],
+        rows: rowsForPage,
+      },
+    }),
+  );
+
+  const worksheetPrompts = parseTrackerWorksheetPrompts(block.body);
+  if (worksheetPrompts.length > 0) {
+    trackerPages.push(
+      toRenderableBlock({
+        ...block,
+        id: `${block.id}-worksheet`,
+        pageType: "multi-prompt",
+        title: block.title,
+        subtitle: "Priority Map",
+        body: worksheetPrompts
+          .map((prompt) => `Prompt: ${prompt}\nWriting Lines: 3`)
+          .join("\n\n"),
+        prompt: "",
+        tableData: {
+          headers: ["", "", ""],
+          rows: [["", "", ""]],
+        },
+        order: block.order + trackerPages.length / 100,
+      }),
+    );
+  }
+
+  return trackerPages;
+}
+
+function parseTrackerRows(body: string): string[][] {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*]\s+/, "").trim())
+    .filter(Boolean)
+    .map((line) => {
+      const [rawArea, ...rest] = line.split(":");
+      const setupArea = rawArea?.trim();
+      if (/^(prompt|writing\s+lines?)$/i.test(setupArea)) return null;
+      if (/^excel\s+calculator$/i.test(setupArea)) return null;
+      const nextStep = trackerStepForArea(setupArea, rest.join(":").trim());
+      if (!setupArea || !nextStep) return null;
+      return [titleCaseTrackerArea(setupArea), "", nextStep, "", ""];
+    })
+    .filter((row): row is string[] => Boolean(row));
+}
+
+function parseTrackerWorksheetPrompts(body: string): string[] {
+  return body
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^[-*]\s+/, "").trim())
+    .filter(Boolean)
+    .map((line) => {
+      const match = line.match(/^prompt\s*:\s*(.+)$/i);
+      return match?.[1]?.trim() ?? "";
+    })
+    .filter(Boolean);
+}
+
+function trackerStepForArea(setupArea: string, fallback: string): string {
+  const normalized = setupArea.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const knownSteps: Record<string, string> = {
+    "business clarity": "Write your one-line business description.",
+    "name check": "Search state, trademark, domain, and social handles.",
+    structure: "Compare structures and list questions for a professional.",
+    "official filing or dba": "Check filing portal and local DBA rules.",
+    ein: "Apply through IRS.gov if needed and save confirmation.",
+    "bank account": "Ask what documents are required and open business checking.",
+    "business address": "Choose an address type and check what becomes public.",
+    "licenses and permits": "Check state, city, county, and industry requirements.",
+    "state and local tax registration": "Check state registration and sales tax requirements.",
+    "contact details": "Choose your business email and public contact method.",
+    "domain and business email": "Choose direction, save login, and calendar renewal.",
+    "organization system": "Create folders for filings, taxes, banking, receipts, and logins.",
+    "startup costs": "List must-pay, soon, and wait-until-later costs.",
+    "tax habits": "Choose a tax savings percentage and schedule tax support.",
+    recordkeeping: "Store EIN, filing, banking, receipts, contracts, and tax records.",
+    "contracts and policies": "List agreements, policies, and terms you need.",
+    "insurance review": "List your risk areas and ask about coverage.",
+    "privacy and data practices": "List what customer information you collect and protect.",
+    "business credit and funding": "Check what is needed before using credit or funding.",
+    "business credit later":
+      "Wait until the foundation is clean, then learn what business credit would help you do.",
+    "hiring or contractor support": "List tasks to outsource and what support should include.",
+    "hiring awareness":
+      "Review employee, contractor, and compliance rules before paying anyone.",
+    "boi or ownership reporting": "Confirm whether BOI reporting applies before filing.",
+    "boi and current rules":
+      "Check FinCEN.gov for current BOI rules before relying on old videos or blog posts.",
+    "boi and current rules check":
+      "Check FinCEN.gov for current BOI rules before relying on old videos or blog posts.",
+    "mistakes to avoid": "Review risky shortcuts and choose what to verify first.",
+    "excel calculator": "Open the calculator and enter your real setup costs.",
+  };
+  return knownSteps[normalized] ?? cleanTrackerStep(fallback);
+}
+
+function cleanTrackerStep(value: string): string {
+  const cleaned = value.replace(/\s+/g, " ").trim();
+  const withoutTrailingDots = cleaned.replace(/\.+$/, "");
+  if (!withoutTrailingDots) return "";
+  return /[.!?]$/.test(withoutTrailingDots) ? withoutTrailingDots : `${withoutTrailingDots}.`;
+}
+
+function titleCaseTrackerArea(value: string): string {
+  const normalized = value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+  const knownLabels: Record<string, string> = {
+    "boi and current rules": "BOI and Current Rules",
+    "boi and current rules check": "BOI and Current Rules",
+    "boi or ownership reporting": "BOI and Ownership Reporting",
+  };
+  if (knownLabels[normalized]) return knownLabels[normalized];
+
+  return value
+    .split(/\s+/)
+    .map((word) => {
+      if (/^boi$/i.test(word)) return "BOI";
+      if (/^(and|or|for|to|of)$/i.test(word)) return word.toLowerCase();
+      return word ? `${word[0].toUpperCase()}${word.slice(1)}` : word;
+    })
+    .join(" ");
+}
+
+function balancedTrackerChunks(rows: string[][]): string[][][] {
+  return chunk(rows, 2);
+}
+
+function buildLessonActivityPages(block: BuilderBlock): Block[] {
+  const chunks = chunkLessonBody(block.body);
+  if (chunks.length <= 1) return [toRenderableBlock(block)];
+
+  return chunks.map((body, index) => ({
+    ...toRenderableBlock(block),
+    id: index === 0 ? block.id : `${block.id}-continued-${index + 1}`,
+    title: index === 0 ? block.title : continuedTitle(block.title),
+    body,
+    activityTitle: index === 0 ? block.activityTitle : "",
+    activityItems: index === 0 ? block.activityItems : "",
+    prompt: index === 0 ? block.prompt : "",
+    order: block.order + index / 100,
+  }));
+}
+
 function buildTablePages(block: BuilderBlock): Block[] {
   const rows = block.tableData.rows.length > 0 ? block.tableData.rows : [["", "", ""]];
   const chunks = chunk(rows, TABLE_ROWS_PER_PAGE);
@@ -526,6 +824,10 @@ function toRenderableBlock(block: BuilderBlock): Block {
     title: renderBlock.title,
     subtitle: renderBlock.subtitle,
     body: renderBlock.body,
+    bottomNote: renderBlock.bottomNote,
+    activityType: renderBlock.activityType,
+    activityTitle: renderBlock.activityTitle,
+    activityItems: renderBlock.activityItems,
     footerLabel: renderBlock.pageType === "cover" ? renderBlock.subtitle : undefined,
     keywords: renderBlock.pageType === "cover" && keywords.length > 0 ? keywords : undefined,
     prompt: renderBlock.prompt,
@@ -560,6 +862,7 @@ function normalizeBlock(block: BuilderBlock): BuilderBlock {
   return {
     ...blank,
     ...block,
+    activityType: normalizeActivityType(block.activityType),
     tableData: {
       headers: normalizeHeaders(block.tableData?.headers),
       rows: normalizeRows(block.tableData?.rows),
@@ -568,6 +871,13 @@ function normalizeBlock(block: BuilderBlock): BuilderBlock {
     lines:
       block.lines === "" ? "" : Number.isFinite(Number(block.lines)) ? Number(block.lines) : "",
   };
+}
+
+function normalizeActivityType(value?: string): LessonActivityType {
+  if (value === "action-steps" || value === "writing-prompt" || value === "checklist") {
+    return value;
+  }
+  return "checklist";
 }
 
 function normalizeLayoutOverrides(overrides?: LayoutOverrides): LayoutOverrides | undefined {
@@ -627,14 +937,21 @@ function normalizeLayoutOverrides(overrides?: LayoutOverrides): LayoutOverrides 
 }
 
 function normalizeHeaders(headers?: string[]): string[] {
-  const next = (headers ?? []).slice(0, 3);
+  const next = (headers ?? []).slice(0, 5);
   while (next.length < 3) next.push("");
   return next;
 }
 
 function normalizeRows(rows?: string[][]): string[][] {
   const next = rows && rows.length > 0 ? rows : [["", "", ""]];
-  return next.map((row) => normalizeHeaders(row));
+  const columnCount = Math.max(3, ...next.map((row) => row.length));
+  return next.map((row) => normalizeRow(row, columnCount));
+}
+
+function normalizeRow(row: string[], columnCount: number): string[] {
+  const next = row.slice(0, columnCount);
+  while (next.length < columnCount) next.push("");
+  return next;
 }
 
 function parseBuilderDraft(raw: string): BuilderDraft | null {

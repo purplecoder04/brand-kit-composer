@@ -26,7 +26,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageRenderer } from "@/components/PageRenderer";
 import { EmptyState, PageHeader } from "@/components/ProductionUI";
-import { buildBuilderKit, buildPagesFromKitDraft, type BuilderDraft } from "@/lib/builder-content";
+import {
+  buildBuilderKit,
+  buildPagesFromKitDraft,
+  loadBuilderDraft,
+  type BuilderDraft,
+} from "@/lib/builder-content";
 import {
   clearFillableFieldSource,
   clampField,
@@ -37,6 +42,7 @@ import {
   fieldTypeLabel,
   loadFillableFieldMaps,
   loadFillableFieldSource,
+  saveFillableFieldSource,
   saveFillableFieldMaps,
   type FillableField,
   type FillableFieldInput,
@@ -66,7 +72,6 @@ const fieldTypes: Array<{ type: FillableFieldType; label: string }> = [
 
 function FillableFieldsPage() {
   const navigate = useNavigate();
-  const exportPageRefs = useRef<Array<HTMLDivElement | null>>([]);
   const basePdfInputRef = useRef<HTMLInputElement | null>(null);
   const [source, setSource] = useState<FillableFieldSource | null>(() => loadFillableFieldSource());
   const [records, setRecords] = useState<FillableFieldMapRecord[]>(() => loadFillableFieldMaps());
@@ -99,6 +104,12 @@ function FillableFieldsPage() {
     fieldMap?.fields.filter((field) => field.pageNumber === selectedPageNumber) ?? [];
   const selectedField = fieldMap?.fields.find((field) => field.id === selectedFieldId) ?? null;
   const counts = fieldCounts(fieldMap?.fields ?? []);
+  const pageCountMismatch = basePdfPageCount !== null && basePdfPageCount !== pages.length;
+  const canExportFillablePdf =
+    Boolean(basePdfBytes) &&
+    !pageCountMismatch &&
+    !isExportingPdf &&
+    (fieldMap?.fields.length ?? 0) > 0;
 
   const saveMap = (nextMap = fieldMap) => {
     if (!nextMap) return;
@@ -120,20 +131,43 @@ function FillableFieldsPage() {
     toast.success("Field map saved");
   };
 
+  const reloadLatestBuilderDraft = () => {
+    const latestDraft = loadBuilderDraft();
+    if (!latestDraft) {
+      toast.error("No Builder draft found to reload.");
+      return;
+    }
+
+    const nextSource = saveFillableFieldSource(latestDraft, "Current Builder Draft");
+    const freshMap = createFieldMapForSource(nextSource);
+    setSource(nextSource);
+    setFieldMap(freshMap);
+    setSelectedPageNumber(1);
+    setSelectedFieldId(null);
+    deleteBasePdfDocument(false);
+    toast.success(`Reloaded Builder draft with ${freshMap.pageCount} pages`);
+  };
+
   const handleExportFillablePdf = async () => {
     if (!fieldMap) return;
     if (fieldMap.fields.length === 0) {
       toast.error("Add fields before exporting a fillable PDF.");
       return;
     }
+    if (!basePdfBytes) {
+      toast.error("Upload the final workbook PDF before exporting.");
+      return;
+    }
+    if (pageCountMismatch) {
+      toast.error("Uploaded PDF page count must match this field map before export.");
+      return;
+    }
 
     try {
       setIsExportingPdf(true);
-      const pageElements = pages.map((_, index) => exportPageRefs.current[index]);
       const bytes = await exportFillablePdf({
         fieldMap,
         pages,
-        pageElements,
         basePdfBytes,
       });
       downloadBytes(bytes, fillablePdfFileName(fieldMap.kitName));
@@ -362,9 +396,9 @@ function FillableFieldsPage() {
           description="Create, save, and export fillable field maps for workbook-style PDFs."
         />
         <div className="max-w-2xl">
-          <EmptyState
-            title="No kit loaded"
-            description="Open Fillable Fields from Builder or Version Library so the editor knows which kit to use."
+        <EmptyState
+          title="No kit loaded"
+            description="Open Fillable Fields from Builder or Version Library so the editor knows which kit and page list to use. Then upload the final workbook PDF here before exporting fillable fields."
             actions={
               <>
                 <Button onClick={() => navigate({ to: "/builder" })}>Open Builder</Button>
@@ -384,8 +418,21 @@ function FillableFieldsPage() {
       <PageHeader
         eyebrow="Production fillable fields"
         title="Fillable Fields"
-        description="Create, save, and export fillable field maps for workbook-style PDFs."
+        description="Map fields on the final styled workbook PDF. Export the workbook from Builder first, then upload that exact PDF here."
       />
+
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Fillable Workflow</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-3 text-sm md:grid-cols-5">
+          <WorkflowNote title="1. Export PDF" body="Use Builder or Print Preview in Chrome." />
+          <WorkflowNote title="2. Upload PDF" body="Upload the final styled workbook PDF here." />
+          <WorkflowNote title="3. Place Fields" body="Add or auto-place fields on the pages." />
+          <WorkflowNote title="4. Save Map" body="Save the field map to the library." />
+          <WorkflowNote title="5. Export" body="Download the fillable PDF." />
+        </CardContent>
+      </Card>
 
       <div
         className="rounded-md border px-4 py-3 text-sm"
@@ -410,6 +457,15 @@ function FillableFieldsPage() {
                 variant="outline"
                 size="sm"
                 className="mt-3 w-full"
+                onClick={reloadLatestBuilderDraft}
+              >
+                Reload Latest Builder Draft
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="w-full"
                 onClick={deleteCurrentDocument}
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete Document
@@ -630,7 +686,8 @@ function FillableFieldsPage() {
                 />
               ) : (
                 <p className="text-sm" style={{ color: "#6b6470" }}>
-                  Select a field or click the page to add a text field.
+                  Select a field to adjust it, or choose a field type above and click the page to
+                  place a new field.
                 </p>
               )}
             </CardContent>
@@ -690,7 +747,7 @@ function FillableFieldsPage() {
                 style={{ borderColor: "#D8CEC2", background: "#FAF6F0" }}
               >
                 <Label className="text-xs uppercase tracking-wide" style={{ color: "#4F2D68" }}>
-                  Base Workbook PDF
+                  Final Workbook PDF required
                 </Label>
                 <Input
                   ref={basePdfInputRef}
@@ -702,12 +759,13 @@ function FillableFieldsPage() {
                 <div className="mt-2 text-xs" style={{ color: "#6b6470" }}>
                   {basePdfName
                     ? `${basePdfName} loaded${basePdfPageCount ? ` - ${basePdfPageCount} pages` : ""}. Export will place fields on this PDF.`
-                    : "Recommended: print/save the workbook PDF first, then upload it here before exporting the fillable PDF."}
+                    : "Upload the final workbook PDF you want buyers to receive. Fields will be placed on this PDF. Fillable export stays disabled until the matching PDF is uploaded."}
                 </div>
-                {basePdfPageCount && basePdfPageCount !== pages.length ? (
+                {pageCountMismatch ? (
                   <div className="mt-2 text-xs" style={{ color: "#8B1E24" }}>
-                    Page count does not match the current draft ({pages.length} pages). Review field
-                    placement before exporting.
+                    Export is disabled because the uploaded PDF has {basePdfPageCount} pages and
+                    this field map has {pages.length} pages. Upload the matching final PDF or remap
+                    the fields.
                   </div>
                 ) : null}
                 {basePdfName ? (
@@ -718,7 +776,7 @@ function FillableFieldsPage() {
                     className="mt-3 w-full"
                     onClick={deleteBasePdfDocument}
                   >
-                    <Trash2 className="mr-2 h-4 w-4" /> Delete Document
+                    <Trash2 className="mr-2 h-4 w-4" /> Delete Uploaded PDF
                   </Button>
                 ) : null}
               </div>
@@ -735,10 +793,14 @@ function FillableFieldsPage() {
                 className="w-full"
                 variant="outline"
                 onClick={handleExportFillablePdf}
-                disabled={isExportingPdf || fieldMap.fields.length === 0}
+                disabled={!canExportFillablePdf}
               >
                 <Download className="mr-2 h-4 w-4" />
-                {isExportingPdf ? "Exporting..." : "Export Fillable PDF"}
+                {isExportingPdf
+                  ? "Exporting..."
+                  : basePdfBytes
+                    ? "Export Fillable PDF"
+                    : "Upload PDF to Export"}
               </Button>
               <Button type="button" variant="outline" className="w-full" onClick={clearPageFields}>
                 <Eraser className="mr-2 h-4 w-4" /> Clear Fields on This Page
@@ -750,46 +812,13 @@ function FillableFieldsPage() {
                 className="rounded-md border px-3 py-2 text-xs"
                 style={{ borderColor: "#D8CEC2", color: "#6b6470" }}
               >
-                <FileText className="mr-1 inline h-3 w-3" /> Best flow: upload the finished workbook
-                PDF above, then export. If no base PDF is uploaded, the app uses a slower fallback.
+                <FileText className="mr-1 inline h-3 w-3" /> Path 2 workflow: export the finished
+                workbook PDF first, upload it here, save the field map, then export the fillable
+                PDF.
               </div>
             </CardContent>
           </Card>
         </aside>
-      </div>
-
-      <div
-        aria-hidden="true"
-        style={{
-          position: "fixed",
-          left: "-10000px",
-          top: 0,
-          width: "8.5in",
-          pointerEvents: "none",
-          zIndex: -1,
-        }}
-      >
-        {pages.map((page, index) => (
-          <div
-            key={`export-${page.id}-${index}`}
-            ref={(element) => {
-              exportPageRefs.current[index] = element;
-            }}
-            style={{
-              width: "8.5in",
-              height: "11in",
-              overflow: "hidden",
-              background: "#ffffff",
-            }}
-          >
-            <PageRenderer
-              block={page}
-              branchProfile={kit.branchProfile}
-              pageNumber={index + 1}
-              totalPages={pages.length}
-            />
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -1033,6 +1062,19 @@ function Field({ label, children }: { label: string; children: ReactNode }) {
   );
 }
 
+function WorkflowNote({ title, body }: { title: string; body: string }) {
+  return (
+    <div className="rounded-md border p-3" style={{ borderColor: "#D8CEC2", background: "#fff" }}>
+      <div className="font-semibold" style={{ color: "#222026" }}>
+        {title}
+      </div>
+      <div className="mt-1 leading-5" style={{ color: "#6b6470" }}>
+        {body}
+      </div>
+    </div>
+  );
+}
+
 function buildAutoFieldsForPage(page: Block, pageNumber: number): FillableField[] {
   if (page.pageType === "workbook") {
     return buildWritingLineFields(page, pageNumber, page.prompt ? 30.6 : 22.8);
@@ -1048,6 +1090,10 @@ function buildAutoFieldsForPage(page: Block, pageNumber: number): FillableField[
 
   if (page.pageType === "multi-prompt") {
     return buildMultiPromptFields(page, pageNumber);
+  }
+
+  if (page.pageType === "lesson-activity") {
+    return buildLessonActivityFields(page, pageNumber);
   }
 
   if (page.pageType === "reflection") {
@@ -1129,7 +1175,7 @@ function buildMultiPromptFields(page: Block, pageNumber: number): FillableField[
 
   for (const [itemIndex, item] of items.entries()) {
     const lineCount = Math.max(1, Math.min(item.lines, 8));
-    const firstLineY = sectionTopPercent + 7.2;
+    const firstLineY = sectionTopPercent + 6.5;
     for (let lineIndex = 0; lineIndex < lineCount; lineIndex += 1) {
       fields.push(
         createAutoField({
@@ -1140,14 +1186,41 @@ function buildMultiPromptFields(page: Block, pageNumber: number): FillableField[
           xPercent: 12.8,
           yPercent: firstLineY + lineIndex * 2.55,
           widthPercent: 75,
-          heightPercent: 2.35,
+          heightPercent: 2.08,
         }),
       );
     }
-    sectionTopPercent += 10.6 + lineCount * 2.55;
+    sectionTopPercent += 7.4 + lineCount * 2.55;
   }
 
   return fields;
+}
+
+function buildLessonActivityFields(page: Block, pageNumber: number): FillableField[] {
+  if (page.activityType === "writing-prompt") {
+    return buildWritingLineFields(page, pageNumber, page.prompt ? 61 : 58);
+  }
+
+  if (page.activityType === "checklist") {
+    const items = (page.activityItems ?? "")
+      .split(/\r?\n/)
+      .map((item) => item.trim())
+      .filter(Boolean);
+    return items.map((_, index) =>
+      createAutoField({
+        name: `Auto Activity Checklist ${index + 1}`,
+        type: "checkbox",
+        page,
+        pageNumber,
+        xPercent: 11.4,
+        yPercent: 62.6 + index * 3.35,
+        widthPercent: 2.4,
+        heightPercent: 2.4,
+      }),
+    );
+  }
+
+  return [];
 }
 
 function buildChecklistFields(page: Block, pageNumber: number): FillableField[] {
@@ -1225,11 +1298,23 @@ function isSameAutoField(existingField: FillableField, autoField: FillableField)
 
 function shouldClearAutoFieldsForPage(field: FillableField, page: Block, pageNumber: number) {
   if (field.pageNumber !== pageNumber) return false;
+  if (isAutoGeneratedField(field)) {
+    if (!isAutoCompatiblePage(page)) return true;
+    if (field.blockId && field.blockId !== page.id) return true;
+    if (field.pageType !== page.pageType) return true;
+  }
   if (field.blockId !== page.id) return false;
+  if (page.pageType === "lesson-activity") {
+    if (page.activityType === "checklist") return "Auto-fill Activity Checklist";
+    if (page.activityType === "writing-prompt") return "Auto-fill Activity Writing Lines";
+    return null;
+  }
+
   if (
     page.pageType === "workbook" ||
     page.pageType === "prompt-page" ||
-    page.pageType === "multi-prompt"
+    page.pageType === "multi-prompt" ||
+    page.pageType === "lesson-activity"
   ) {
     return (
       field.name === "Auto Writing Area" ||
@@ -1240,11 +1325,20 @@ function shouldClearAutoFieldsForPage(field: FillableField, page: Block, pageNum
   return isLegacyAutoWritingArea(field, pageNumber);
 }
 
+function isAutoGeneratedField(field: FillableField): boolean {
+  return field.name.startsWith("Auto ");
+}
+
+function isAutoCompatiblePage(page: Block): boolean {
+  return getAutoPatternLabel(page) !== null;
+}
+
 function isLegacyAutoWritingArea(field: FillableField, pageNumber?: number): boolean {
   const isWritingPage =
     field.pageType === "workbook" ||
     field.pageType === "prompt-page" ||
     field.pageType === "multi-prompt" ||
+    field.pageType === "lesson-activity" ||
     field.pageType === "notes" ||
     field.pageType === "reflection";
   if (!isWritingPage) return false;
@@ -1258,7 +1352,8 @@ function getAutoPatternLabel(page: Block): string | null {
     page.pageType === "notes" ||
     page.pageType === "reflection" ||
     page.pageType === "prompt-page" ||
-    page.pageType === "multi-prompt"
+    page.pageType === "multi-prompt" ||
+    page.pageType === "lesson-activity"
   ) {
     return "Auto-fill Writing Lines";
   }
