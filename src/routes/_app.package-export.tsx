@@ -18,6 +18,7 @@ import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { PageHeader } from "@/components/ProductionUI";
+import { WorkflowContext } from "@/components/WorkflowContext";
 import {
   buildBuilderKit,
   loadBuilderDraft,
@@ -338,6 +339,7 @@ function PackageExportPage() {
           </>
         }
       />
+      <WorkflowContext currentStep={5} />
 
       <div
         className="rounded-md border px-4 py-3 text-sm"

@@ -45,6 +45,7 @@ import {
 } from "@/lib/import-history";
 import { clearImportSession, loadImportSession, saveImportSession } from "@/lib/import-session";
 import { detectImportedKitText, getImportWarnings, type ImportWarning } from "@/lib/kit-importer";
+import { WorkflowContext } from "@/components/WorkflowContext";
 import type { PageType } from "@/lib/kit-types";
 import { createQCReport, type QCReportMvp } from "@/lib/qc-report";
 
@@ -469,6 +470,7 @@ function ImportPage() {
         title="Import Content"
         description="Use this screen for source content only: MD, TXT, or DOCX. Final styled PDFs belong in Fillable Fields after the workbook is exported."
       />
+      <WorkflowContext currentStep={1} />
 
       {step === "preview" ? (
         <DetectionPreviewScreen

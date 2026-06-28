@@ -22,6 +22,7 @@ import { Route as AppPrintPreviewRouteImport } from './routes/_app.print-preview
 import { Route as AppPackageExportRouteImport } from './routes/_app.package-export'
 import { Route as AppMapperRouteImport } from './routes/_app.mapper'
 import { Route as AppLessonGuideRouteImport } from './routes/_app.lesson-guide'
+import { Route as AppImportGuideRouteImport } from './routes/_app.import-guide'
 import { Route as AppImportRouteImport } from './routes/_app.import'
 import { Route as AppHowToKitRouteImport } from './routes/_app.how-to-kit'
 import { Route as AppFillableFieldsRouteImport } from './routes/_app.fillable-fields'
@@ -93,6 +94,11 @@ const AppLessonGuideRoute = AppLessonGuideRouteImport.update({
   path: '/lesson-guide',
   getParentRoute: () => AppRoute,
 } as any)
+const AppImportGuideRoute = AppImportGuideRouteImport.update({
+  id: '/import-guide',
+  path: '/import-guide',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppImportRoute = AppImportRouteImport.update({
   id: '/import',
   path: '/import',
@@ -134,6 +140,7 @@ export interface FileRoutesByFullPath {
   '/fillable-fields': typeof AppFillableFieldsRoute
   '/how-to-kit': typeof AppHowToKitRoute
   '/import': typeof AppImportRoute
+  '/import-guide': typeof AppImportGuideRoute
   '/lesson-guide': typeof AppLessonGuideRoute
   '/mapper': typeof AppMapperRoute
   '/package-export': typeof AppPackageExportRoute
@@ -154,6 +161,7 @@ export interface FileRoutesByTo {
   '/fillable-fields': typeof AppFillableFieldsRoute
   '/how-to-kit': typeof AppHowToKitRoute
   '/import': typeof AppImportRoute
+  '/import-guide': typeof AppImportGuideRoute
   '/lesson-guide': typeof AppLessonGuideRoute
   '/mapper': typeof AppMapperRoute
   '/package-export': typeof AppPackageExportRoute
@@ -176,6 +184,7 @@ export interface FileRoutesById {
   '/_app/fillable-fields': typeof AppFillableFieldsRoute
   '/_app/how-to-kit': typeof AppHowToKitRoute
   '/_app/import': typeof AppImportRoute
+  '/_app/import-guide': typeof AppImportGuideRoute
   '/_app/lesson-guide': typeof AppLessonGuideRoute
   '/_app/mapper': typeof AppMapperRoute
   '/_app/package-export': typeof AppPackageExportRoute
@@ -198,6 +207,7 @@ export interface FileRouteTypes {
     | '/fillable-fields'
     | '/how-to-kit'
     | '/import'
+    | '/import-guide'
     | '/lesson-guide'
     | '/mapper'
     | '/package-export'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/fillable-fields'
     | '/how-to-kit'
     | '/import'
+    | '/import-guide'
     | '/lesson-guide'
     | '/mapper'
     | '/package-export'
@@ -239,6 +250,7 @@ export interface FileRouteTypes {
     | '/_app/fillable-fields'
     | '/_app/how-to-kit'
     | '/_app/import'
+    | '/_app/import-guide'
     | '/_app/lesson-guide'
     | '/_app/mapper'
     | '/_app/package-export'
@@ -351,6 +363,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppLessonGuideRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/import-guide': {
+      id: '/_app/import-guide'
+      path: '/import-guide'
+      fullPath: '/import-guide'
+      preLoaderRoute: typeof AppImportGuideRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/import': {
       id: '/_app/import'
       path: '/import'
@@ -403,6 +422,7 @@ interface AppRouteChildren {
   AppFillableFieldsRoute: typeof AppFillableFieldsRoute
   AppHowToKitRoute: typeof AppHowToKitRoute
   AppImportRoute: typeof AppImportRoute
+  AppImportGuideRoute: typeof AppImportGuideRoute
   AppLessonGuideRoute: typeof AppLessonGuideRoute
   AppMapperRoute: typeof AppMapperRoute
   AppPackageExportRoute: typeof AppPackageExportRoute
@@ -420,6 +440,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppFillableFieldsRoute: AppFillableFieldsRoute,
   AppHowToKitRoute: AppHowToKitRoute,
   AppImportRoute: AppImportRoute,
+  AppImportGuideRoute: AppImportGuideRoute,
   AppLessonGuideRoute: AppLessonGuideRoute,
   AppMapperRoute: AppMapperRoute,
   AppPackageExportRoute: AppPackageExportRoute,

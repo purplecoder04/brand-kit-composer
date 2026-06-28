@@ -164,32 +164,38 @@ function DashboardPage() {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">Main Production Workflow</CardTitle>
+          <CardTitle className="text-base">Production Workflow</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
             <WorkflowStep
               step="1"
-              title="Import Content"
-              description="Bring in MD, TXT, or DOCX source content."
+              title="Import"
+              description="Paste or upload source content. The importer detects pages and prepares your kit."
               to="/import"
             />
             <WorkflowStep
               step="2"
-              title="Open Builder"
-              description="Review pages, edit blocks, and export the workbook PDF."
+              title="Builder"
+              description="Review, edit, and refine every page. Save a version when the kit is ready."
               to="/builder"
             />
             <WorkflowStep
               step="3"
-              title="Open Version Library"
-              description="Reopen saved kits, guides, packages, and field maps."
-              to="/version-library"
+              title="Export PDF"
+              description="Export a clean PDF from Builder or print to PDF in Chrome. This is the file your buyer receives."
+              to="/builder"
             />
             <WorkflowStep
               step="4"
-              title="Continue Package"
-              description="Track what is ready, missing, or needs review."
+              title="Fillable Fields"
+              description="Upload your exported PDF. Map the fillable input fields to exact positions on each page."
+              to="/fillable-fields"
+            />
+            <WorkflowStep
+              step="5"
+              title="Package"
+              description="Track what is ready, flag what is missing, and prepare the kit for sale."
               to="/package-export"
             />
           </div>
