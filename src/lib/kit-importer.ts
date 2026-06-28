@@ -14,6 +14,7 @@ export type ImportWarning = {
 
 export type ImportedKitReview = {
   draft: BuilderDraft;
+  parserWarnings: ImportWarning[];
   warnings: ImportWarning[];
   cleanedText: string;
   cleanupNotes: string[];
@@ -35,12 +36,16 @@ type ParsedSection = {
   tableRows: string[][];
 };
 
-const KIT_TITLE_RE = /^(kit\s*)?(title|kit name)\s*:\s*(.+)$/i;
+const KIT_NAME_RE = /^(kit\s*name|kit\s*title)\s*:\s*(.+)$/i;
+const TITLE_RE = /^title\s*:\s*(.+)$/i;
+const TYPE_RE = /^type\s*:\s*(.+)$/i;
 const SUBTITLE_RE = /^subtitle\s*:\s*(.+)$/i;
 const BRANCH_RE = /^branch\s*:\s*(.+)$/i;
 const AUDIENCE_RE = /^audience\s*:\s*(.+)$/i;
 const TONE_RE = /^tone\s*:\s*(.+)$/i;
 const TAGLINE_RE = /^tagline\s*:\s*(.+)$/i;
+const BLOCK_SEPARATOR_RE = /^---+$/;
+const LABEL_LINE_RE = /^([A-Za-z][A-Za-z0-9\s/+&-]*?)\s*:\s*(.*)$/;
 const HEADING_RE =
   /^(cover|section|divider|module intro|module|lesson activity|lesson activity page|lesson|step|worksheet|workbook prompt|workbook|reflection|checklist|notes|table|tracker|back cover|start here|quote|opening thought|action plan|resource|case study|example|prompt page|multi prompt|multi prompts|multi-prompt|multiple prompt|multiple prompts|prompt group|prompt set|progress check|closing|next steps)\s*(?:\d+|one|two|three|four|five|six|seven|eight|nine|ten)?\s*[:.-]\s*(.*)$/i;
 const BARE_HEADING_RE =
@@ -73,12 +78,29 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
   const cleanup = cleanupImportedKitText(raw);
   const draft = createBlankBuilderDraft();
   const sections: ParsedSection[] = [];
+  const parserWarnings: ImportWarning[] = [];
+  const parserWarningMessages = new Set<string>();
   let current: ParsedSection | null = null;
+  let hasSeenMeaningfulLine = false;
+
+  const addParserWarning = (message: string) => {
+    if (parserWarningMessages.has(message)) return;
+    parserWarningMessages.add(message);
+    parserWarnings.push({ message });
+  };
 
   const lines = cleanup.cleanedText.replace(/\r\n/g, "\n").split("\n");
-  for (const rawLine of lines) {
+  for (const [lineIndex, rawLine] of lines.entries()) {
     const line = rawLine.trim();
     if (!line) continue;
+
+    if (BLOCK_SEPARATOR_RE.test(line)) {
+      current = null;
+      continue;
+    }
+
+    const isFirstMeaningfulLine = !hasSeenMeaningfulLine;
+    hasSeenMeaningfulLine = true;
 
     const markdownHeading = line.match(MARKDOWN_HEADING_RE);
     if (markdownHeading) {
@@ -107,9 +129,39 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
       continue;
     }
 
-    const kitTitle = line.match(KIT_TITLE_RE);
-    if (kitTitle) {
-      draft.kitName = kitTitle[3]?.trim() ?? "";
+    const kitName = line.match(KIT_NAME_RE);
+    if (kitName) {
+      draft.kitName = kitName[2]?.trim() ?? "";
+      continue;
+    }
+
+    const typeLabel = line.match(TYPE_RE);
+    if (typeLabel) {
+      const nextType = normalizeSectionType(typeLabel[1] ?? "");
+      if (current && !sectionHasContent(current)) {
+        current.type = nextType;
+      } else {
+        current = createSection(typeLabel[1] ?? "lesson", "");
+        sections.push(current);
+      }
+      continue;
+    }
+
+    const title = line.match(TITLE_RE);
+    if (title) {
+      const titleText = title[1]?.trim() ?? "";
+      if (isFirstMeaningfulLine && !draft.kitName.trim() && sections.length === 0 && !current) {
+        draft.kitName = titleText;
+        continue;
+      }
+      if (!current) {
+        current = createSection("lesson", "");
+        sections.push(current);
+        addParserWarning(
+          `Line ${lineIndex + 1}: "title:" appeared before a page type, so it was kept as a page title. Add "type:" or a page label before it.`,
+        );
+      }
+      current.title = titleText;
       continue;
     }
 
@@ -172,6 +224,9 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
     if (!current) {
       current = createSection("lesson", "");
       sections.push(current);
+      addParserWarning(
+        `Line ${lineIndex + 1}: Content appeared before the first page heading. Add a page label such as "Lesson Page:", "Workbook Page:", or "Cover Page:".`,
+      );
     }
 
     const body = line.match(BODY_RE);
@@ -210,6 +265,13 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
       if (shouldTreatPromptAsMultiPrompt(current, prompt[1] ?? "")) {
         ensureMultiPromptSection(current);
         appendText(current, "body", `Prompt: ${prompt[2] ?? ""}`);
+        continue;
+      }
+      if (current.type === "lesson") {
+        addParserWarning(
+          `Line ${lineIndex + 1}: Prompt text was found inside a Lesson page. The page stayed a Lesson. Use Workbook Page, Lesson Activity Page, or Multi-Prompt Page if it should be fillable.`,
+        );
+        appendText(current, "body", line);
         continue;
       }
       if (
@@ -258,6 +320,19 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
       const cells = splitCells(line);
       if (current.tableHeaders.length === 0) current.tableHeaders = cells;
       else current.tableRows.push(cells);
+      continue;
+    }
+
+    const unknownLabel = line.match(LABEL_LINE_RE);
+    if (unknownLabel) {
+      addParserWarning(
+        `Line ${lineIndex + 1}: "${unknownLabel[1]?.trim() ?? "Unknown"}:" is not a supported import label yet, so it was kept as regular page text.`,
+      );
+      appendText(
+        current,
+        current.type === "workbook" || current.type === "notes" ? "prompt" : "body",
+        line,
+      );
       continue;
     }
 
@@ -317,7 +392,8 @@ export function detectImportedKitText(raw: string): ImportedKitReview {
 
   return {
     draft: normalizedDraft,
-    warnings: getImportWarnings(normalizedDraft),
+    parserWarnings,
+    warnings: [...parserWarnings, ...getImportWarnings(normalizedDraft)],
     cleanedText: cleanup.cleanedText,
     cleanupNotes: cleanup.notes,
   };
@@ -627,6 +703,22 @@ function appendText(section: ParsedSection, field: "body" | "prompt", value: str
   section[field] = section[field] ? `${section[field]}\n\n${trimmed}` : trimmed;
 }
 
+function sectionHasContent(section: ParsedSection): boolean {
+  return Boolean(
+    section.title.trim() ||
+      section.subtitle.trim() ||
+      section.body.trim() ||
+      section.bottomNote.trim() ||
+      section.activityTitle.trim() ||
+      section.activityItems.length > 0 ||
+      section.prompt.trim() ||
+      section.lines !== "" ||
+      section.checklistItems.length > 0 ||
+      section.tableHeaders.length > 0 ||
+      section.tableRows.length > 0,
+  );
+}
+
 function shouldTreatPromptAsMultiPrompt(section: ParsedSection, label: string): boolean {
   if (section.type === "multi-prompt") return true;
   if (/^prompt\s*\d+$/i.test(label.trim())) return true;
@@ -718,7 +810,7 @@ function splitCells(value: string): string[] {
 const STRICT_LABEL_ALIASES: Record<string, string> = {
   "kit title": "Kit Name",
   "kit name": "Kit Name",
-  title: "Kit Name",
+  title: "Title",
   "cover title": "Kit Name",
   description: "Body",
   "lesson title": "Lesson",

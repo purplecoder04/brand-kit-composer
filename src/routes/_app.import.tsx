@@ -43,7 +43,7 @@ import {
   type ImportHistoryRecord,
 } from "@/lib/import-history";
 import { clearImportSession, loadImportSession, saveImportSession } from "@/lib/import-session";
-import { detectImportedKitText, getImportWarnings } from "@/lib/kit-importer";
+import { detectImportedKitText, getImportWarnings, type ImportWarning } from "@/lib/kit-importer";
 import type { PageType } from "@/lib/kit-types";
 import { createQCReport, type QCReportMvp } from "@/lib/qc-report";
 
@@ -137,7 +137,10 @@ function ImportPage() {
   const [reviewDraft, setReviewDraft] = useState<BuilderDraft>(
     savedSession?.reviewDraft ?? detected.draft,
   );
-  const warnings = useMemo(() => getImportWarnings(reviewDraft), [reviewDraft]);
+  const warnings = useMemo(
+    () => mergeImportWarnings(detected.parserWarnings, getImportWarnings(reviewDraft)),
+    [detected.parserWarnings, reviewDraft],
+  );
   const importQcReport = useMemo(() => createQCReport(reviewDraft), [reviewDraft]);
   const importQcBlockers = importQcReport.issues.filter((issue) => issue.severity === "blocker");
   const importQcWarnings = importQcReport.issues.filter((issue) => issue.severity === "warning");
@@ -718,6 +721,22 @@ function ImportPage() {
       </div>
     </div>
   );
+}
+
+function mergeImportWarnings(...groups: ImportWarning[][]): ImportWarning[] {
+  const seen = new Set<string>();
+  const merged: ImportWarning[] = [];
+
+  for (const group of groups) {
+    for (const warning of group) {
+      const key = `${warning.blockId ?? "kit"}:${warning.message}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(warning);
+    }
+  }
+
+  return merged;
 }
 
 function ImportQualityGate({
